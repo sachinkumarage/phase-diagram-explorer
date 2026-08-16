@@ -34,6 +34,17 @@ class SystemDefinition(BaseModel):
     phases: list[Phase]
 
 
+class GibbsCoefficients(BaseModel):
+    a: float = 0.0
+    b: float = 0.0
+    c: float = 0.0
+    d: float = 0.0
+    e: float = 0.0
+    f: float = 0.0
+    T_min: float | None = None
+    T_max: float | None = None
+
+
 def load_system(path: str | Path) -> SystemDefinition:
     path = Path(path)
     text = path.read_text()
