@@ -15,6 +15,7 @@ dependencies = [
     "plotly",
     "streamlit",
     "pydantic",
+    "pyyaml",
     "pytest",
 ]
 

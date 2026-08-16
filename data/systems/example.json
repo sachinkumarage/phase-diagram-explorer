@@ -1,0 +1,25 @@
+{
+  "name": "A-B",
+  "elements": [
+    {
+      "symbol": "A",
+      "name": "Element A",
+      "reference_state": "solid"
+    },
+    {
+      "symbol": "B",
+      "name": "Element B",
+      "reference_state": "solid"
+    }
+  ],
+  "phases": [
+    {
+      "name": "LIQUID",
+      "model_type": "solution"
+    },
+    {
+      "name": "FCC_A1",
+      "model_type": "solution"
+    }
+  ]
+}
