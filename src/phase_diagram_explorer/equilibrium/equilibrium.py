@@ -67,17 +67,13 @@ def _phase_composition(system: dict, label: str, grid_x: float) -> float:
     return grid_x
 
 
-def compute_equilibrium(
-    system: dict, T: float, x_overall: float, n_points: int = 500
-) -> EquilibriumResult:
-    """Compute the stable phase(s), compositions, and fractions at (T, x_overall).
+def _hull_for_temperature(system: dict, T: float, n_points: int = 500):
+    """Evaluate every phase's Gibbs energy curve at T and build the labeled hull.
 
-    Builds the global lower convex hull over every phase's Gibbs energy curve
-    (the common-tangent construction), then reads off the equilibrium state
-    for x_overall from the hull segment it falls on: a single stable phase if
-    x_overall lands on a segment belonging to one phase, or two phases tied
-    together by a common tangent (a two-phase tie line) otherwise, with phase
-    fractions from the lever rule.
+    This is the expensive step (one Gibbs energy evaluation per phase per grid
+    point) and depends only on T, not on composition, so callers that need
+    equilibrium at many compositions for the same T should compute this once
+    and reuse it via _resolve_from_hull.
     """
     x, curves = evaluate_phase_curves(system, T, n_points=n_points)
 
@@ -90,10 +86,20 @@ def compute_equilibrium(
         all_G.append(curve[finite])
         all_labels.extend([name] * int(finite.sum()))
 
-    hull_x, hull_G, hull_labels = _labeled_lower_hull(
+    return _labeled_lower_hull(
         np.concatenate(all_x), np.concatenate(all_G), all_labels
     )
 
+
+def _resolve_from_hull(
+    system: dict,
+    T: float,
+    x_overall: float,
+    hull_x: np.ndarray,
+    hull_G: np.ndarray,
+    hull_labels: list[str],
+) -> EquilibriumResult:
+    """Read off the equilibrium state at x_overall from a precomputed hull."""
     if x_overall < hull_x[0] - COMPOSITION_TOLERANCE or x_overall > hull_x[-1] + COMPOSITION_TOLERANCE:
         raise ValueError(
             f"x_overall={x_overall} is outside the valid composition range "
@@ -147,3 +153,19 @@ def compute_equilibrium(
         phase_fractions={label_left: fraction_left, label_right: fraction_right},
         total_gibbs=total_gibbs,
     )
+
+
+def compute_equilibrium(
+    system: dict, T: float, x_overall: float, n_points: int = 500
+) -> EquilibriumResult:
+    """Compute the stable phase(s), compositions, and fractions at (T, x_overall).
+
+    Builds the global lower convex hull over every phase's Gibbs energy curve
+    (the common-tangent construction), then reads off the equilibrium state
+    for x_overall from the hull segment it falls on: a single stable phase if
+    x_overall lands on a segment belonging to one phase, or two phases tied
+    together by a common tangent (a two-phase tie line) otherwise, with phase
+    fractions from the lever rule.
+    """
+    hull_x, hull_G, hull_labels = _hull_for_temperature(system, T, n_points=n_points)
+    return _resolve_from_hull(system, T, x_overall, hull_x, hull_G, hull_labels)
