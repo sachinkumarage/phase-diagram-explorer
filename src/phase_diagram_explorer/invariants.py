@@ -62,10 +62,11 @@ def _refine_composition(
     return result.phase_compositions
 
 
-def _classify(p2: str, is_eutectic_type: bool, liquid_phases: set[str]) -> str:
+def _classify(phases: tuple[str, str, str], is_eutectic_type: bool, liquid_phases: set[str]) -> str:
+    involves_liquid = any(phase in liquid_phases for phase in phases)
     if is_eutectic_type:
-        return EUTECTIC if p2 in liquid_phases else EUTECTOID
-    return PERITECTIC if p2 in liquid_phases else PERITECTOID
+        return EUTECTIC if involves_liquid else EUTECTOID
+    return PERITECTIC if involves_liquid else PERITECTOID
 
 
 def _find_reactions(
@@ -98,7 +99,7 @@ def _find_reactions(
         reactions.append(
             InvariantReaction(
                 temperature=(T_with_p2 + T_without_p2) / 2.0,
-                type=_classify(p2, is_eutectic_type, liquid_phases),
+                type=_classify((p1, p2, p3), is_eutectic_type, liquid_phases),
                 phases=(p1, p2, p3),
                 composition={p1: x1, p2: x2, p3: x3},
             )

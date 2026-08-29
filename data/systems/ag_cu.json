@@ -1,0 +1,45 @@
+{
+  "name": "Ag-Cu",
+  "_source": "Simplified two-term CALPHAD-style model. Pure-element melting points and enthalpies of fusion from standard reference tables (Ag: Tm=1234.93 K, dHfus=11090 J/mol; Cu: Tm=1357.77 K, dHfus=13050 J/mol), consistent with SGTE-derived unary assessments (Dinsdale, CALPHAD 15 (1991) 317-425). LIQUID is modeled as an ideal solution whose end-member energies follow the standard linear fusion approximation dG_fus(T) = dHfus*(1 - T/Tm) relative to each element's own solid reference state (G=0). The terminal fcc solid solutions are modeled as two distinct ideal solutions (FCC_AG, FCC_CU) with a large positive cross-endpoint energy standing in for a simplified mutual-immiscibility interaction, fitted so the computed invariant reproduces the experimentally assessed Ag-Cu eutectic (T=779 C, x_Cu=39.9 at%; Subramanian & Perepezko, J. Phase Equilib. 14 (1993) 62-75).",
+  "elements": [
+    {
+      "symbol": "Ag",
+      "name": "Silver",
+      "reference_state": "fcc_a1"
+    },
+    {
+      "symbol": "Cu",
+      "name": "Copper",
+      "reference_state": "fcc_a1"
+    }
+  ],
+  "phases": [
+    {
+      "name": "LIQUID",
+      "model_type": "solution",
+      "end_members": {
+        "Ag": { "a": 11090.0, "b": -8.980266087956402 },
+        "Cu": { "a": 13050.0, "b": -9.611348019178505 }
+      },
+      "interaction_parameters": []
+    },
+    {
+      "name": "FCC_AG",
+      "model_type": "solution",
+      "end_members": {
+        "Ag": { "a": 0.0 },
+        "Cu": { "a": 6400.0 }
+      },
+      "interaction_parameters": []
+    },
+    {
+      "name": "FCC_CU",
+      "model_type": "solution",
+      "end_members": {
+        "Ag": { "a": 4200.0 },
+        "Cu": { "a": 0.0 }
+      },
+      "interaction_parameters": []
+    }
+  ]
+}
