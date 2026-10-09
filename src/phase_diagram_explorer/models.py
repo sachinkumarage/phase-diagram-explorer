@@ -21,6 +21,8 @@ class Element(BaseModel):
     symbol: str
     name: str
     reference_state: str
+    # Standard atomic weight in g/mol, used for mole <-> weight fraction conversion.
+    atomic_mass: float | None = None
 
 
 class GibbsCoefficients(BaseModel):
@@ -53,6 +55,34 @@ class SystemDefinition(BaseModel):
     name: str
     elements: list[Element]
     phases: list[Phase]
+    # Full temperature range (K) over which the system is analysed: invariant
+    # reactions are always detected over this range, independent of what is
+    # displayed, and it is the default display range.
+    t_range_k: tuple[float, float] | None = None
+
+    @model_validator(mode="after")
+    def check_t_range(self) -> "SystemDefinition":
+        if self.t_range_k is not None:
+            T_min, T_max = self.t_range_k
+            if not 0.0 < T_min < T_max:
+                raise ValueError(f"t_range_k must satisfy 0 < T_min < T_max, got {self.t_range_k}")
+        return self
+
+    def _binary_elements(self) -> tuple[Element, Element]:
+        if len(self.elements) != 2:
+            raise ValueError(f"expected a binary system with 2 elements, got {len(self.elements)}")
+        return self.elements[0], self.elements[1]
+
+    @property
+    def base_element(self) -> Element:
+        """First listed element: x = 0 on the composition axis."""
+        return self._binary_elements()[0]
+
+    @property
+    def dependent_element(self) -> Element:
+        """Second listed element: the composition axis is its mole fraction,
+        so x = 1 is the pure dependent element."""
+        return self._binary_elements()[1]
 
 
 def load_system(path: str | Path) -> SystemDefinition:

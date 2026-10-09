@@ -4,66 +4,34 @@ import numpy as np
 import plotly.graph_objects as go
 import streamlit as st
 
+from phase_diagram_explorer.builder import build_system
 from phase_diagram_explorer.diagram import compute_diagram
 from phase_diagram_explorer.equilibrium.curves import evaluate_phase_curves
 from phase_diagram_explorer.equilibrium.equilibrium import compute_equilibrium
-from phase_diagram_explorer.invariants import detect_invariants
+from phase_diagram_explorer.invariants import detect_invariants_over_range
 from phase_diagram_explorer.models import SystemDefinition, load_system
-from phase_diagram_explorer.thermo.pure import PureElementGibbs
-from phase_diagram_explorer.thermo.solution import SolutionPhase
 from phase_diagram_explorer.thermo.stoichiometric import StoichiometricPhase
+from phase_diagram_explorer.units import (
+    ATOMIC_PERCENT,
+    COMPOSITION_UNITS,
+    KELVIN,
+    TEMPERATURE_UNITS,
+    composition_from_display,
+    composition_label,
+    composition_to_display,
+    temperature_from_display,
+    temperature_label,
+    temperature_to_display,
+)
 from phase_diagram_explorer.visualization import plot_diagram
 
 SYSTEMS_DIR = Path(__file__).resolve().parents[2] / "data" / "systems"
 
-BASE_OFFSET = 6000.0
-OFFSET_STEP = 3000.0
-FUSION_ENTHALPY = 9000.0
-MELTING_T = 900.0
-
-
-def _build_computable_system(definition: SystemDefinition) -> dict[str, SolutionPhase | StoichiometricPhase]:
-    """Construct evaluable thermodynamic phase objects for a loaded system definition.
-
-    The system JSON schema records phase names and model types but not raw
-    Gibbs energy coefficients, so each phase's curve is generated
-    deterministically from its name and position in the phase list: phases
-    named "liquid" (case-insensitive) get a simple linear fusion model that
-    favors them at high temperature, other solution phases get alternating
-    endpoint offsets so consecutive solid phases compete across composition,
-    and stoichiometric phases get an increasingly favorable formation energy.
-    """
-    system: dict[str, SolutionPhase | StoichiometricPhase] = {}
-    solution_index = 0
-    stoichiometric_index = 0
-
-    for phase in definition.phases:
-        if phase.model_type == "solution":
-            if "liquid" in phase.name.lower():
-                endpoint = PureElementGibbs(a=FUSION_ENTHALPY, b=-FUSION_ENTHALPY / MELTING_T)
-                system[phase.name] = SolutionPhase(endpoint, endpoint)
-            else:
-                offset = BASE_OFFSET + OFFSET_STEP * (solution_index // 2)
-                if solution_index % 2 == 0:
-                    gibbs_a, gibbs_b = PureElementGibbs(a=0.0), PureElementGibbs(a=offset)
-                else:
-                    gibbs_a, gibbs_b = PureElementGibbs(a=offset), PureElementGibbs(a=0.0)
-                system[phase.name] = SolutionPhase(gibbs_a, gibbs_b)
-            solution_index += 1
-        elif phase.model_type == "stoichiometric":
-            formation = -(5000.0 + 1000.0 * stoichiometric_index)
-            system[phase.name] = StoichiometricPhase(
-                gibbs_a=PureElementGibbs(a=0.0),
-                gibbs_b=PureElementGibbs(a=0.0),
-                m=1,
-                n=1,
-                g_form=PureElementGibbs(a=formation),
-            )
-            stoichiometric_index += 1
-        else:
-            st.warning(f"Skipping phase {phase.name!r}: model_type {phase.model_type!r} is not supported.")
-
-    return system
+# Temperature slider limits (K). Used as the analysis range for systems whose
+# JSON has no "t_range_k".
+SLIDER_LIMITS_K = (200.0, 2000.0)
+GIBBS_UNIT = "J/mol"
+TANGENT_POINTS = 200
 
 
 @st.cache_data(show_spinner=False)
@@ -71,25 +39,35 @@ def _load_definition(system_path: str) -> SystemDefinition:
     return load_system(system_path)
 
 
+def _analysis_range(definition: SystemDefinition) -> tuple[float, float]:
+    return tuple(definition.t_range_k) if definition.t_range_k else SLIDER_LIMITS_K
+
+
 @st.cache_data(show_spinner="Computing phase diagram...")
 def _cached_diagram(system_path: str, T_min: float, T_max: float, n_T: int, n_x: int, n_points: int):
+    system = build_system(_load_definition(system_path))
+    return compute_diagram(system, T_range=(T_min, T_max), n_T=n_T, n_x=n_x, n_points=n_points)
+
+
+@st.cache_data(show_spinner="Detecting invariant reactions...")
+def _cached_invariants(system_path: str, n_points: int):
     definition = _load_definition(system_path)
-    system = _build_computable_system(definition)
-    diagram = compute_diagram(system, T_range=(T_min, T_max), n_T=n_T, n_x=n_x, n_points=n_points)
-    reactions = detect_invariants(diagram, system, n_points=n_points)
-    return diagram, reactions
+    return detect_invariants_over_range(build_system(definition), _analysis_range(definition), n_points=n_points)
 
 
-def _tangent_line_figure(system, T: float, x_overall: float, n_points: int) -> go.Figure:
+def _tangent_line_figure(system, T: float, x_overall: float, n_points: int, to_x, x_title: str, T_text: str) -> go.Figure:
     x, curves = evaluate_phase_curves(system, T, n_points=n_points)
+    x_display = to_x(x)
     fig = go.Figure()
 
     for name, curve in curves.items():
         finite = np.isfinite(curve)
         if finite.sum() == 1:
-            fig.add_trace(go.Scatter(x=x[finite], y=curve[finite], mode="markers", name=name, marker=dict(size=10)))
+            fig.add_trace(
+                go.Scatter(x=x_display[finite], y=curve[finite], mode="markers", name=name, marker=dict(size=10))
+            )
         else:
-            fig.add_trace(go.Scatter(x=x, y=curve, mode="lines", name=name))
+            fig.add_trace(go.Scatter(x=x_display, y=curve, mode="lines", name=name))
 
     result = compute_equilibrium(system, T, x_overall, n_points=n_points)
 
@@ -101,27 +79,29 @@ def _tangent_line_figure(system, T: float, x_overall: float, n_points: int) -> g
         g2 = phase2.molar_gibbs(T) if isinstance(phase2, StoichiometricPhase) else float(phase2.molar_gibbs(T, x2))
 
         if x2 != x1:
+            # The tangent is a straight line in mole fraction; sample it densely
+            # so it is drawn correctly on a non-linear (wt%) axis as well.
             slope = (g2 - g1) / (x2 - x1)
-            line_x = np.array([0.0, 1.0])
+            line_x = np.linspace(0.0, 1.0, TANGENT_POINTS)
             line_y = g1 + slope * (line_x - x1)
             fig.add_trace(
                 go.Scatter(
-                    x=line_x, y=line_y, mode="lines", name="common tangent",
+                    x=to_x(line_x), y=line_y, mode="lines", name="common tangent",
                     line=dict(color="black", dash="dash"),
                 )
             )
         fig.add_trace(
             go.Scatter(
-                x=[x1, x2], y=[g1, g2], mode="markers", name="tangent points",
+                x=to_x(np.array([x1, x2])), y=[g1, g2], mode="markers", name="tangent points",
                 marker=dict(color="black", size=10, symbol="x"),
             )
         )
 
-    fig.add_vline(x=x_overall, line=dict(color="gray", dash="dot"))
+    fig.add_vline(x=to_x(x_overall), line=dict(color="gray", dash="dot"))
     fig.update_layout(
-        title=f"Gibbs energy curves at T={T:.1f}",
-        xaxis_title="Composition (mole fraction B)",
-        yaxis_title="Molar Gibbs energy",
+        title=f"Gibbs energy curves at T = {T_text}",
+        xaxis_title=x_title,
+        yaxis_title=f"Molar Gibbs energy ({GIBBS_UNIT})",
     )
     return fig
 
@@ -139,32 +119,81 @@ selected_name = st.selectbox("System", system_names)
 selected_path = system_paths[system_names.index(selected_name)]
 
 definition = _load_definition(str(selected_path))
-system = _build_computable_system(definition)
+try:
+    system = build_system(definition)
+except ValueError as error:
+    st.error(f"System {selected_name!r} cannot be computed: {error}")
+    st.stop()
+
+base = definition.base_element
+dependent = definition.dependent_element
+atomic_masses = (base.atomic_mass, dependent.atomic_mass)
+analysis_range_K = _analysis_range(definition)
 
 st.caption(
-    f"Elements: {', '.join(element.symbol for element in definition.elements)} · "
+    f"Elements: {base.symbol} (x = 0), {dependent.symbol} (x = 1) · "
     f"Phases: {', '.join(phase.name for phase in definition.phases)}"
 )
 
 with st.sidebar:
+    st.header("Units")
+    T_unit = st.radio("Temperature unit", TEMPERATURE_UNITS, horizontal=True)
+    available_composition_units = COMPOSITION_UNITS if None not in atomic_masses else (ATOMIC_PERCENT,)
+    x_unit = st.radio("Composition unit", available_composition_units, horizontal=True)
+
+
+def to_T(T_kelvin):
+    return temperature_to_display(T_kelvin, T_unit)
+
+
+def to_x(x_b):
+    return composition_to_display(x_b, x_unit, *atomic_masses)
+
+
+def is_displayed(reaction) -> bool:
+    return T_range[0] <= reaction.temperature <= T_range[1]
+
+
+x_title = composition_label(dependent.symbol, x_unit)
+T_title = temperature_label(T_unit)
+
+with st.sidebar:
     st.header("Diagram settings")
-    T_range = st.slider("Temperature range (K)", 200.0, 2000.0, (400.0, 900.0), step=10.0)
-    x_overall = st.slider("Composition (mole fraction B)", 0.0, 1.0, 0.5, step=0.01)
+    T_range_display = st.slider(
+        f"Temperature range ({T_unit})",
+        to_T(SLIDER_LIMITS_K[0]), to_T(SLIDER_LIMITS_K[1]),
+        (to_T(analysis_range_K[0]), to_T(analysis_range_K[1])),
+        step=10.0,
+    )
+    T_range = (temperature_from_display(T_range_display[0], T_unit), temperature_from_display(T_range_display[1], T_unit))
+    x_display = st.slider(f"Composition {x_title}", 0.0, 100.0, 50.0, step=0.1)
+    x_overall = min(max(composition_from_display(x_display, x_unit, *atomic_masses), 0.0), 1.0)
     with st.expander("Grid resolution"):
         n_T = st.slider("Temperature points", 20, 300, 80, step=10)
         n_x = st.slider("Composition points", 20, 300, 150, step=10)
         n_points = st.slider("Gibbs curve resolution", 100, 2000, 500, step=100)
-    T_selected = st.slider(
-        "Temperature (K) for equilibrium and Gibbs curves",
-        T_range[0], T_range[1], (T_range[0] + T_range[1]) / 2.0,
+    T_selected_display = st.slider(
+        f"Temperature ({T_unit}) for equilibrium and Gibbs curves",
+        T_range_display[0], T_range_display[1], (T_range_display[0] + T_range_display[1]) / 2.0,
     )
+    T_selected = temperature_from_display(T_selected_display, T_unit)
 
-diagram, reactions = _cached_diagram(str(selected_path), T_range[0], T_range[1], n_T, n_x, n_points)
+diagram = _cached_diagram(str(selected_path), T_range[0], T_range[1], n_T, n_x, n_points)
+reactions = _cached_invariants(str(selected_path), n_points)
+displayed_reactions = [r for r in reactions if is_displayed(r)]
 
 st.subheader("Phase diagram")
-st.plotly_chart(plot_diagram(diagram, selected_name, invariants=reactions), width='stretch')
+st.plotly_chart(
+    plot_diagram(
+        diagram, selected_name, invariants=displayed_reactions,
+        dependent_symbol=dependent.symbol, temperature_unit=T_unit,
+        composition_unit=x_unit, atomic_masses=atomic_masses,
+    ),
+    width='stretch',
+)
 
-st.subheader(f"Equilibrium at T={T_selected:.1f}, x={x_overall:.3f}")
+T_selected_text = f"{T_selected_display:.1f} {T_unit}"
+st.subheader(f"Equilibrium at T = {T_selected_text}, {x_title} = {x_display:.1f}")
 result = compute_equilibrium(system, T_selected, x_overall, n_points=n_points)
 
 col1, col2 = st.columns(2)
@@ -176,20 +205,38 @@ with col1:
 with col2:
     st.markdown("**Phase compositions**")
     st.table(
-        {"phase": list(result.phase_compositions.keys()), "composition": list(result.phase_compositions.values())}
+        {
+            "phase": list(result.phase_compositions.keys()),
+            x_title: [to_x(x) for x in result.phase_compositions.values()],
+        }
     )
-    st.markdown("**Total Gibbs energy**")
+    st.markdown(f"**Molar Gibbs energy ({GIBBS_UNIT})**")
     st.write(f"{result.total_gibbs:.2f}")
 
 st.subheader("Gibbs energy curves and common tangent")
-st.plotly_chart(_tangent_line_figure(system, T_selected, x_overall, n_points), width='stretch')
+st.plotly_chart(
+    _tangent_line_figure(system, T_selected, x_overall, n_points, to_x, x_title, T_selected_text),
+    width='stretch',
+)
 
+st.subheader("Invariant reactions")
+st.caption(
+    f"Detected over {to_T(analysis_range_K[0]):.0f}–{to_T(analysis_range_K[1]):.0f} {T_unit}, "
+    "independent of the displayed range."
+)
 if reactions:
-    st.subheader("Invariant reactions")
     st.table(
         {
             "type": [r.type for r in reactions],
-            "temperature": [r.temperature for r in reactions],
+            T_title: [to_T(r.temperature) for r in reactions],
             "phases": ["+".join(r.phases) for r in reactions],
+            x_title: [
+                ", ".join(f"{phase} {to_x(x):.1f}" for phase, x in r.composition.items()) for r in reactions
+            ],
+            "note": [
+                "" if is_displayed(r) else "outside displayed temperature range" for r in reactions
+            ],
         }
     )
+else:
+    st.write("None found.")

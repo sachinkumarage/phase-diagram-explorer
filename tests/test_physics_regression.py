@@ -1,15 +1,13 @@
 """Physics regression tests for the Ag-Cu system as rendered by the Streamlit app.
 
-tests/test_systems.py validates a model built directly from the coefficients in
-data/systems/ag_cu.json. The app does not use those coefficients: it builds
-placeholder Gibbs curves from phase names and list positions (see
-app._build_computable_system), so what the user sees disagrees with the
-assessed Ag-Cu diagram. These tests drive the real app through Streamlit's
-AppTest harness and are marked xfail(strict=True) until the app is fixed; once
-it is, they will XPASS and the markers must be removed. See docs/audit_v0.1.md.
+These drive the real app through Streamlit's AppTest harness and check what a
+user sees against the assessed Ag-Cu diagram. They were introduced as strict
+xfails in 0.1.1, when the app used placeholder Gibbs curves instead of the
+system JSON (see docs/audit_v0.1.md), and pass since 0.1.2.
 
 Composition is the mole fraction of the second element listed in the system
-JSON ("mole fraction B"). For ag_cu.json that is Cu, so x = x(Cu).
+JSON (SystemDefinition.dependent_element). For ag_cu.json that is Cu, so
+x = x(Cu); the app shows it in at% by default.
 """
 import json
 from pathlib import Path
@@ -33,16 +31,9 @@ EUTECTIC_X_CU = 0.399
 EUTECTIC_X_TOLERANCE = 0.015
 
 T_RANGE_LABEL = "Temperature range (K)"
-X_LABEL = "Composition (mole fraction B)"
+X_LABEL = "Composition x(Cu) (at%)"
 N_T_LABEL = "Temperature points"
 T_SELECTED_LABEL = "Temperature (K) for equilibrium and Gibbs curves"
-
-KNOWN_APP_BUG = pytest.mark.xfail(
-    strict=True,
-    raises=AssertionError,
-    reason="app ignores ag_cu.json coefficients and maps FCC phases by list position (docs/audit_v0.1.md)",
-)
-
 
 def _slider(at: AppTest, label: str):
     matches = [slider for slider in at.slider if slider.label == label]
@@ -68,7 +59,7 @@ def _stable_phases_at(T: float, x: float) -> list[str]:
     # The equilibrium temperature slider is recreated when T_range changes,
     # so it can only be set on a second run.
     _slider(at, T_SELECTED_LABEL).set_value(T)
-    _slider(at, X_LABEL).set_value(x)
+    _slider(at, X_LABEL).set_value(100.0 * x)
     at.run()
     assert not at.exception
 
@@ -78,11 +69,12 @@ def _stable_phases_at(T: float, x: float) -> list[str]:
 
 
 def _invariant_markers(at: AppTest) -> list[tuple[float, float, str]]:
-    """(x, T, label) of each invariant marker drawn on the phase diagram."""
+    """(x, T, label) of each invariant marker drawn on the phase diagram, with
+    x converted from the app's default at% display to mole fraction."""
     figure = json.loads(at.get("plotly_chart")[0].proto.spec)
     for trace in figure["data"]:
         if trace.get("name") == "invariant reactions":
-            return list(zip(trace["x"], trace["y"], trace["text"]))
+            return [(x / 100.0, T, text) for x, T, text in zip(trace["x"], trace["y"], trace["text"])]
     return []
 
 
@@ -92,7 +84,6 @@ def test_ag_cu_json_lists_ag_then_cu():
     assert [element.symbol for element in definition.elements] == ["Ag", "Cu"]
 
 
-@KNOWN_APP_BUG
 def test_ag_melts_at_reference_temperature():
     below = _stable_phases_at(AG_MELTING_K - MELTING_TOLERANCE_K, x=0.0)
     above = _stable_phases_at(AG_MELTING_K + MELTING_TOLERANCE_K, x=0.0)
@@ -100,7 +91,6 @@ def test_ag_melts_at_reference_temperature():
     assert above == ["LIQUID"]
 
 
-@KNOWN_APP_BUG
 def test_cu_melts_at_reference_temperature():
     below = _stable_phases_at(CU_MELTING_K - MELTING_TOLERANCE_K, x=1.0)
     above = _stable_phases_at(CU_MELTING_K + MELTING_TOLERANCE_K, x=1.0)
@@ -108,7 +98,6 @@ def test_cu_melts_at_reference_temperature():
     assert above == ["LIQUID"]
 
 
-@KNOWN_APP_BUG
 def test_eutectic_temperature_and_composition():
     at = _run_app(T_range=(1000.0, 1100.0), n_T=300)
 
@@ -119,7 +108,6 @@ def test_eutectic_temperature_and_composition():
     assert x_liquid == pytest.approx(EUTECTIC_X_CU, abs=EUTECTIC_X_TOLERANCE)
 
 
-@KNOWN_APP_BUG
 def test_ag_rich_terminal_phase_is_on_the_ag_side():
     assert _stable_phases_at(800.0, x=0.0) == ["FCC_AG"]
     assert _stable_phases_at(800.0, x=1.0) == ["FCC_CU"]

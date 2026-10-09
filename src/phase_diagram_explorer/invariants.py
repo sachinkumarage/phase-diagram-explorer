@@ -1,6 +1,8 @@
 from dataclasses import dataclass
 
-from phase_diagram_explorer.diagram import PhaseDiagram
+import numpy as np
+
+from phase_diagram_explorer.diagram import PhaseDiagram, compute_diagram
 from phase_diagram_explorer.equilibrium.equilibrium import compute_equilibrium
 
 EUTECTIC = "eutectic"
@@ -155,3 +157,26 @@ def detect_invariants(
         )
 
     return reactions
+
+
+INVARIANT_T_STEP_K = 2.0
+INVARIANT_N_X = 201
+
+
+def detect_invariants_over_range(
+    system: dict,
+    T_range: tuple[float, float],
+    T_step: float = INVARIANT_T_STEP_K,
+    n_x: int = INVARIANT_N_X,
+    n_points: int = 500,
+    liquid_phases: set[str] | None = None,
+) -> list[InvariantReaction]:
+    """Detect invariant reactions over a full temperature range on a dedicated
+    grid with spacing of at most `T_step`, so the result does not depend on
+    the grid used to display a diagram. Reaction temperatures are accurate to
+    about T_step / 2.
+    """
+    T_min, T_max = T_range
+    n_T = max(int(np.ceil((T_max - T_min) / T_step)) + 1, 2)
+    diagram = compute_diagram(system, T_range=(T_min, T_max), n_T=n_T, n_x=n_x, n_points=n_points)
+    return detect_invariants(diagram, system, liquid_phases=liquid_phases, n_points=n_points)

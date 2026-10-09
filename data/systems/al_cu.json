@@ -5,14 +5,17 @@
     {
       "symbol": "Al",
       "name": "Aluminum",
-      "reference_state": "fcc_a1"
+      "reference_state": "fcc_a1",
+      "atomic_mass": 26.9815385
     },
     {
       "symbol": "Cu",
       "name": "Copper",
-      "reference_state": "fcc_a1"
+      "reference_state": "fcc_a1",
+      "atomic_mass": 63.546
     }
   ],
+  "t_range_k": [500.0, 1450.0],
   "phases": [
     {
       "name": "LIQUID",
