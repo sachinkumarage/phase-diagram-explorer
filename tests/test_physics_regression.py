@@ -37,6 +37,19 @@ AG_RICH_FCC_X_TOLERANCE = 0.015
 CU_RICH_FCC_X_CU = 0.950
 CU_RICH_FCC_X_TOLERANCE = 0.010
 
+AL_CU_EUTECTIC_K = 821.0
+AL_CU_EUTECTIC_TOLERANCE_K = 3.0
+AL_CU_EUTECTIC_LIQUID_X_CU = 0.173
+AL_CU_EUTECTIC_LIQUID_X_TOLERANCE = 0.010
+AL_CU_FCC_AL_MAX_X_CU = 0.0248
+AL_CU_FCC_AL_MAX_X_TOLERANCE = 0.003
+
+AL_CU_DATA_PENDING = pytest.mark.xfail(
+    strict=True,
+    raises=AssertionError,
+    reason="provisional Al-Cu data; fixed by assessed data",
+)
+
 SOLVUS_DATA_PENDING = pytest.mark.xfail(
     strict=True,
     raises=AssertionError,
@@ -54,10 +67,10 @@ def _slider(at: AppTest, label: str):
     return matches[0]
 
 
-def _run_app(T_range: tuple[float, float], n_T: int | None = None) -> AppTest:
+def _run_app(T_range: tuple[float, float], n_T: int | None = None, system: str = "ag_cu") -> AppTest:
     at = AppTest.from_file(str(APP_PATH), default_timeout=120)
     at.run()
-    at.selectbox[0].set_value("ag_cu")
+    at.selectbox[0].set_value(system)
     _slider(at, T_RANGE_LABEL).set_value(T_range)
     if n_T is not None:
         _slider(at, N_T_LABEL).set_value(n_T)
@@ -91,19 +104,26 @@ def _invariant_markers(at: AppTest) -> list[tuple[float, float, str]]:
     return []
 
 
-def _eutectic_solid_compositions() -> tuple[float, float]:
-    """x(Cu) of the Ag-rich and Cu-rich solid phases at the eutectic, read
-    from the app's invariant reaction table (at%, by phase)."""
-    at = _run_app(T_range=(500.0, 1450.0))
+def _eutectic_from_table(system: str = "ag_cu") -> tuple[float, dict[str, float]]:
+    """(T in K, {phase: x(Cu)}) of the single eutectic in the app's invariant
+    reaction table (K and at% by default)."""
+    at = _run_app(T_range=(500.0, 1450.0), system=system)
     table = at.table[-1].value
     eutectics = table[table["type"] == "eutectic"]
     assert len(eutectics) == 1
 
-    solids = []
-    for entry in eutectics.iloc[0]["x(Cu) (at%)"].split(", "):
+    row = eutectics.iloc[0]
+    compositions = {}
+    for entry in row["x(Cu) (at%)"].split(", "):
         phase, at_percent = entry.rsplit(" ", 1)
-        if "liquid" not in base_phase_name(phase).lower():
-            solids.append(float(at_percent) / 100.0)
+        compositions[phase] = float(at_percent) / 100.0
+    return float(row["Temperature (K)"]), compositions
+
+
+def _eutectic_solid_compositions() -> tuple[float, float]:
+    """x(Cu) of the Ag-rich and Cu-rich solid phases at the eutectic."""
+    _, compositions = _eutectic_from_table()
+    solids = [x for phase, x in compositions.items() if "liquid" not in base_phase_name(phase).lower()]
     assert len(solids) == 2
     return min(solids), max(solids)
 
@@ -159,3 +179,26 @@ def test_max_cu_solubility_in_ag_rich_fcc_at_eutectic():
 def test_cu_rich_fcc_composition_at_eutectic():
     _, cu_rich = _eutectic_solid_compositions()
     assert cu_rich == pytest.approx(CU_RICH_FCC_X_CU, abs=CU_RICH_FCC_X_TOLERANCE)
+
+
+@pytest.mark.slow
+@AL_CU_DATA_PENDING
+def test_al_cu_eutectic_temperature():
+    T, _ = _eutectic_from_table("al_cu")
+    assert T == pytest.approx(AL_CU_EUTECTIC_K, abs=AL_CU_EUTECTIC_TOLERANCE_K)
+
+
+@pytest.mark.slow
+@AL_CU_DATA_PENDING
+def test_al_cu_eutectic_liquid_composition():
+    _, compositions = _eutectic_from_table("al_cu")
+    assert compositions["LIQUID"] == pytest.approx(
+        AL_CU_EUTECTIC_LIQUID_X_CU, abs=AL_CU_EUTECTIC_LIQUID_X_TOLERANCE
+    )
+
+
+@pytest.mark.slow
+@AL_CU_DATA_PENDING
+def test_al_cu_max_cu_solubility_in_fcc_al_at_eutectic():
+    _, compositions = _eutectic_from_table("al_cu")
+    assert compositions["FCC_AL"] == pytest.approx(AL_CU_FCC_AL_MAX_X_CU, abs=AL_CU_FCC_AL_MAX_X_TOLERANCE)

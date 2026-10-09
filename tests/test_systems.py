@@ -4,7 +4,7 @@ import pytest
 
 from phase_diagram_explorer.builder import build_system
 from phase_diagram_explorer.diagram import compute_diagram
-from phase_diagram_explorer.invariants import EUTECTIC, PERITECTIC, detect_invariants
+from phase_diagram_explorer.invariants import EUTECTIC, detect_invariants, detect_invariants_over_range
 from phase_diagram_explorer.models import load_system
 from phase_diagram_explorer.thermo.stoichiometric import StoichiometricPhase
 
@@ -72,20 +72,20 @@ def test_ag_cu_phase_fractions_sum_to_one_at_eutectic_composition():
     assert sum(reaction.composition.values()) > 0  # sanity: compositions were populated
 
 
-def test_al_cu_has_at_least_one_invariant_reaction_involving_liquid():
+@pytest.mark.slow
+def test_engine_finds_single_al_cu_reaction():
+    """Engine test, not a physics test: with the current provisional Al-Cu
+    data, invariant detection over the system's range on the default grid
+    finds exactly one LIQUID + FCC_AL + AL2CU reaction, even though its
+    Al-rich liquid field is far narrower than any composition grid step.
+    Physical expectations for Al-Cu are in tests/test_physics_regression.py."""
     definition = load_system(SYSTEMS_DIR / "al_cu.json")
     system = build_system(definition)
 
-    # The Al-rich liquid field at the eutectic is only ~0.005 wide in x(Cu),
-    # so the composition grid must be fine enough to resolve it.
-    diagram = compute_diagram(system, T_range=(900.0, 950.0), n_T=26, n_x=1001, n_points=2001)
-    reactions = detect_invariants(diagram, system, n_points=2001)
-    liquid_reactions = [
-        r for r in reactions if r.type in (EUTECTIC, PERITECTIC) and "LIQUID" in r.phases
-    ]
+    reactions = detect_invariants_over_range(system, definition.t_range_k)
 
-    assert len(liquid_reactions) >= 1
-    assert "AL2CU" in liquid_reactions[0].phases
+    assert len(reactions) == 1
+    assert set(reactions[0].phases) == {"LIQUID", "FCC_AL", "AL2CU"}
 
 
 def test_al_cu_compound_composition_matches_stoichiometry():

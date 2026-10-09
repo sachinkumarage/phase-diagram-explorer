@@ -58,6 +58,8 @@ class SystemDefinition(BaseModel):
     model_config = ConfigDict(populate_by_name=True)
 
     name: str
+    # Free-text description of where the data come from.
+    source: str | None = Field(default=None, alias="_source")
     # Data status, e.g. "provisional" for parameters not yet validated against
     # assessed data, with a short human-readable reason.
     status: str | None = Field(default=None, alias="_status")

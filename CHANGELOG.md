@@ -1,5 +1,46 @@
 # Changelog
 
+## 0.1.4 - 2026-10-09
+
+### Added
+- Phase boundary tracing (`tracing.trace_diagram`). Boundaries are traced
+  from exact tie-line endpoint compositions, independent of any composition
+  grid. Temperature levels are adaptive: field changes are bisected,
+  invariants get levels at ±1e-4 K, and intervals are subdivided where a
+  boundary moves far or bends sharply.
+- Vector rendering. Phase regions are polygons built from the traced
+  boundaries and invariant lines, labelled at their centroids with plain
+  phase names. Invariant reactions are horizontal lines across their three
+  compositions. Hover shows the phases of a field, or T and composition on a
+  boundary.
+- "Export figure" as SVG or PDF (`export.py`): a white publication style,
+  axis labels with units, invariant temperatures annotated, the data source
+  as a footnote, and no raster content.
+- `equilibrium.phase_assemblage` and exact common-tangent refinement
+  (`equilibrium/tangent.py`), with an analytic `SolutionPhase.molar_gibbs_derivative`.
+- `_source` is read into `SystemDefinition.source`.
+- Strict-xfail Al-Cu physics tests for the assessed eutectic (821 K, liquid
+  x(Cu) = 0.173, FCC_AL x(Cu) = 0.0248).
+- Tests for tracing (no NaN gaps, boundaries meeting invariant lines,
+  non-overlapping polygons covering the diagram, the traced binodal against
+  the analytical solution), grid-independent invariants and vector export.
+
+### Changed
+- Invariant reactions are refined by root-finding on the three-phase
+  condition (to 1e-6 K), report all three phase compositions, and are
+  deduplicated (same phases within 0.5 K). Results no longer depend on the
+  composition grid or the scan step.
+- `compute_equilibrium` returns exact common-tangent compositions instead of
+  Gibbs-curve grid points.
+- `plot_diagram` takes a `TracedDiagram`. The heatmap of grid labels is
+  gone, and so is the app's composition-points slider.
+- The Al-Cu test that needed n_x = 1001 and asserted the provisional model's
+  eutectic is replaced by `test_engine_finds_single_al_cu_reaction`.
+- Ag-Cu eutectic, now root-found: 1051.739 K; x(Cu) = 0.261164 (FCC_AG),
+  0.387868 (LIQUID), 0.542955 (FCC_CU).
+- Ag-Cu diagram plus invariants at the default settings: about 2.1 s, down
+  from about 4.1 s.
+
 ## 0.1.3 - 2026-10-09
 
 ### Added

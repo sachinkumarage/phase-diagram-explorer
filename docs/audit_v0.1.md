@@ -345,24 +345,120 @@ values below:
   - `pytest -m "slow or not slow"` runs everything, which is what CI does.
 - The Fe-C unit check is tightened to 3.44 ± 0.01 at% C for 0.76 wt% C.
 
+## Resolved in 0.1.4
+
+### Traced boundaries and vector rendering (grid-limited precision)
+
+- `equilibrium.phase_assemblage(system, T)` returns every field across
+  composition at one temperature. `compute_equilibrium` is built on it.
+  - The sampled convex hull is used only to find which fields exist.
+  - Each tie line is then refined to the exact common tangent
+    (`equilibrium/tangent.py`, using an analytic dG/dx for solution phases).
+  - Each tie line is checked against every other phase, and split if a phase
+    lies below it. Ties whose tangents cross are merged.
+  - Tie-line compositions therefore no longer depend on any composition grid
+    or on the Gibbs-curve sampling.
+- `tracing.trace_diagram` traces fields from these assemblages. It never
+  uses grid cell labels, and it chooses its temperature levels adaptively:
+  - every change of field structure is bracketed to 1e-3 K by bisection;
+  - each invariant gets levels at ±1e-4 K;
+  - an interval is subdivided, down to 0.05 K, where a boundary moves more
+    than 0.01 in x or bends more than 0.001.
+- The ~0.005-wide Al-rich LIQUID + FCC_AL field is traced, even though it is
+  narrower than one step of the app's grid.
+- The app no longer draws a heatmap.
+  - Phase regions are filled polygons bounded by the traced lines.
+  - Invariants are horizontal lines across their three compositions.
+  - Fields are labelled at their centroids with plain phase names, for
+    example "LIQUID + FCC_AG" and "ALPHA + ALPHA".
+  - Hovering a field shows its phases; hovering a boundary shows T and
+    composition.
+- The composition-points slider is gone, because drawing no longer uses a
+  composition grid. "Temperature points" now sets the number of starting
+  levels for the tracer.
+
+### Invariants by root-finding
+
+- Candidate reactions come from changes in the phase assemblage between
+  temperature levels.
+- Each candidate is refined with `brentq` on the three-phase condition: the
+  reacting phase just touches the common tangent of the other two. The
+  temperature tolerance is 1e-6 K.
+- All three phase compositions are reported.
+- A reaction with the same phases within 0.5 K of another is merged with it.
+- Results are identical for n_x = 101 and n_x = 1001, and for scan steps
+  from 2 K to 25 K.
+
+Ag-Cu eutectic (root-found, provisional data):
+
+| Quantity | 0.1.3 (2 K grid) | 0.1.4 (root-found) |
+|---|---|---|
+| T | 1051.0 K | **1051.739 K (778.589 °C)** |
+| x(Cu) FCC_AG | 0.2605 | **0.261164** |
+| x(Cu) LIQUID | 0.3878 | **0.387868** |
+| x(Cu) FCC_CU | 0.5431 | **0.542955** |
+
+The tolerances of the existing Ag-Cu tests are unchanged.
+
+### Al-Cu tests that encoded non-physical results
+
+- The `tests/test_systems.py` test that needed n_x = 1001 is removed. That
+  test asserted the provisional model's eutectic (liquid at ~0.4 at% Cu) as
+  if it were a physical result.
+- In its place, `test_engine_finds_single_al_cu_reaction` checks only that
+  the engine finds exactly one LIQUID + FCC_AL + AL2CU reaction for the
+  current data, on the default grid. The app's invariant table now lists
+  this reaction: 930.306 K, with FCC_AL at 0.0009, LIQUID at 0.0056 and
+  AL2CU at 0.3333.
+- Three new strict-xfail tests record the assessed Al-Cu eutectic:
+  821 ± 3 K, liquid x(Cu) = 0.173 ± 0.010, and maximum Cu solubility in
+  FCC_AL x(Cu) = 0.0248 ± 0.003.
+
+### Figure export
+
+- "Export figure (SVG)" and "Export figure (PDF)" render the traced diagram
+  with matplotlib, in a white publication style. The figure has:
+  - axis labels with units;
+  - each invariant temperature written beside its line;
+  - a footnote naming the data source and its provisional status.
+- Exported files contain only lines, polygons and text, so they have no
+  raster images. Tests check for `<image` in SVG and `/Subtype /Image` in
+  PDF.
+
+### Performance
+
+Ag-Cu at the app's default settings (500–1450 K, invariants over the full
+system range):
+
+| | Diagram | Invariants | Total |
+|---|---|---|---|
+| 0.1.3 (grid labels + 2 K invariant grid) | 0.48 s | 3.59 s | **4.06 s** |
+| 0.1.4 (traced + root-found) | 0.98 s | 1.09 s | **2.07 s** |
+
+These are medians of three local runs. The 0.1.4 diagram time includes
+building the Plotly figure.
+
 ## Still open
 
 - **Ag-Cu solvus.** The simplified FCC_AG and FCC_CU parameters put the
-  eutectic solid solubilities at x(Cu) = 0.261 and 0.543, against assessed
-  values of 0.141 and 0.950. The two strict-xfail tests above record this.
-  It will be fixed by assessed database parameters, together with
-  converting the system to a single FCC_A1 phase, which the engine now
-  supports.
-- **Ag-Cu eutectic liquid composition.** It is 0.3878, which clears the
+  eutectic solid solubilities at x(Cu) = 0.2612 and 0.5430, against assessed
+  values of 0.141 and 0.950. Two strict-xfail tests record this. It will be
+  fixed by assessed database parameters, together with converting the
+  system to a single FCC_A1 phase, which the engine supports.
+- **Ag-Cu eutectic liquid composition.** It is 0.3879, which clears the
   0.399 ± 0.015 band by only about 0.004.
 - **Al-Cu data (provisional).** The model has no Cu-rich solid phases, so
-  LIQUID is stable at the Cu-rich end at every temperature. Its eutectic
-  (931 K, liquid x(Cu) ≈ 0.004) is far from the assessed 821 K and
-  x(Cu) = 0.173.
-- **Al-Cu eutectic is missing from the app.** Its Al-rich liquid field is
-  narrower than the spacing of the app's 201-point invariant grid
-  (Δx = 0.005), so the app's invariant table lists no reaction for Al-Cu.
-  Better grid precision and root-finding are still deferred.
-- **Grid-limited precision.** Invariant temperatures are accurate to about
-  ±1 K, from the 2 K detection grid. Tie-line and binodal compositions are
-  accurate to one Gibbs-curve grid step, 1/(n_points − 1).
+  LIQUID is stable at the Cu-rich end at every temperature. The eutectic is
+  at 930.3 K with liquid x(Cu) = 0.0056 and FCC_AL x(Cu) = 0.0009. The
+  assessed values are 821 K, 0.173 and 0.0248. Three strict-xfail tests
+  record this.
+- **Detection limits.** A field that appears and disappears again between
+  two scan levels (5 K apart for invariants; the tracer's starting levels
+  for drawing) is not found. A miscibility gap is detected from the sampled
+  Gibbs curves, so a gap narrower than the Gibbs-curve sampling step is
+  missed. In practice this only matters within about 0.02 K of a critical
+  temperature.
+- **Boundary drawing.** Between adaptive levels, boundary lines are
+  straight segments. Points on the lines are exact equilibrium compositions,
+  but between levels a line can deviate from the true curve by up to the
+  0.001 bend tolerance.

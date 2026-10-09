@@ -49,3 +49,30 @@ class SolutionPhase:
         if np.ndim(T) == 0 and np.ndim(x) == 0:
             return float(result)
         return result
+
+    def _redlich_kister_derivative(self, x_a: np.ndarray, x_b: np.ndarray) -> np.ndarray:
+        """d/dx_b of x_a*x_b*sum_v L_v*(x_a - x_b)^v, with x_a = 1 - x_b."""
+        diff = x_a - x_b
+        series = np.zeros_like(diff, dtype=float)
+        series_derivative = np.zeros_like(diff, dtype=float)
+        for v, L_v in enumerate(self.L):
+            series = series + L_v * diff**v
+            if v > 0:
+                series_derivative = series_derivative + L_v * v * diff ** (v - 1)
+        return diff * series - 2.0 * x_a * x_b * series_derivative
+
+    def molar_gibbs_derivative(self, T: float, x: float | np.ndarray) -> float | np.ndarray:
+        """dG_m/dx_b at fixed T (analytic), for 0 < x < 1."""
+        x_b = np.asarray(x, dtype=float)
+        x_a = 1.0 - x_b
+        T_arr = np.asarray(T, dtype=float)
+
+        result = (
+            self.gibbs_b.G(T) - self.gibbs_a.G(T)
+            + GAS_CONSTANT * T_arr * np.log(x_b / x_a)
+            + self._redlich_kister_derivative(x_a, x_b)
+        )
+        if np.ndim(T) == 0 and np.ndim(x) == 0:
+            return float(result)
+        return result
+

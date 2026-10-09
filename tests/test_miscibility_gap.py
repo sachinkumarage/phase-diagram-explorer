@@ -19,7 +19,8 @@ from phase_diagram_explorer.equilibrium.equilibrium import base_phase_name, comp
 from phase_diagram_explorer.invariants import EUTECTIC, detect_invariants, detect_invariants_over_range
 from phase_diagram_explorer.models import load_system
 from phase_diagram_explorer.thermo.solution import GAS_CONSTANT
-from phase_diagram_explorer.visualization import _phase_field_ids, plot_diagram
+from phase_diagram_explorer.tracing import trace_diagram
+from phase_diagram_explorer.visualization import plot_diagram
 
 FIXTURES_DIR = Path(__file__).resolve().parent / "fixtures"
 REGULAR_SOLUTION = FIXTURES_DIR / "regular_solution.json"
@@ -124,13 +125,14 @@ def test_diagram_has_gap_field_and_continuous_single_phase_field(regular_solutio
     labels = set(diagram.phase_labels.flat)
     assert ("ALPHA#1", "ALPHA#2") in labels
 
-    _, field_names = _phase_field_ids(diagram.phase_labels)
-    # ALPHA above Tc and ALPHA#1 / ALPHA#2 beside the gap are one field
-    assert sorted(field_names) == ["ALPHA", "ALPHA#1+ALPHA#2"]
     assert detect_invariants(diagram, regular_solution, n_points=1001) == []
 
-    figure = plot_diagram(diagram, "A-B", dependent_symbol="B")
-    assert {trace.name for trace in figure.data} >= {"ALPHA", "ALPHA#1+ALPHA#2"}
+    # Traced and drawn with plain phase names: ALPHA (not ALPHA#1) fields
+    # and an "ALPHA + ALPHA" gap.
+    traced = trace_diagram(regular_solution, (800.0, 1300.0))
+    assert {region.label for region in traced.regions} == {"ALPHA", "ALPHA + ALPHA"}
+    figure = plot_diagram(traced, "A-B", dependent_symbol="B")
+    assert {trace.name for trace in figure.data} >= {"ALPHA", "ALPHA + ALPHA"}
 
 
 def test_eutectic_into_two_composition_sets():

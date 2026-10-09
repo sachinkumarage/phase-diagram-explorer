@@ -2,7 +2,10 @@ from dataclasses import dataclass, field
 
 import numpy as np
 
+from scipy.optimize import minimize_scalar
+
 from phase_diagram_explorer.equilibrium.curves import _cross, evaluate_phase_curves
+from phase_diagram_explorer.equilibrium.tangent import common_tangent, gibbs, tangent_line
 from phase_diagram_explorer.thermo.stoichiometric import StoichiometricPhase
 
 COMPOSITION_TOLERANCE = 1e-6
@@ -228,17 +231,253 @@ def _resolve_from_hull(
     )
 
 
+@dataclass
+class PhaseField:
+    """One composition interval of a PhaseAssemblage: a single-phase stretch
+    (one label) or a two-phase tie line (two labels, lower-x phase first)."""
+
+    phases: tuple[str, ...]
+    x_min: float
+    x_max: float
+
+    @property
+    def is_two_phase(self) -> bool:
+        return len(self.phases) == 2
+
+    @property
+    def base_phases(self) -> tuple[str, ...]:
+        return tuple(base_phase_name(phase) for phase in self.phases)
+
+
+@dataclass
+class PhaseAssemblage:
+    """The equilibrium state of a binary system across all compositions at
+    one temperature: fields tile [0, 1] in composition order, and tie-line
+    endpoints are exact common tangents (not grid points)."""
+
+    T: float
+    fields: list[PhaseField]
+
+    @property
+    def key(self) -> tuple[tuple[str, ...], ...]:
+        """Ordered field structure by base phase name, ignoring compositions."""
+        return tuple(field.base_phases for field in self.fields)
+
+    @property
+    def tie_lines(self) -> list[PhaseField]:
+        return [field for field in self.fields if field.is_two_phase]
+
+
+# Envelope points sampled inside a tie line when checking that no other phase
+# lies below it; geometric spacing resolves fields hugging the tie-line ends.
+STABILITY_SAMPLES = 201
+STABILITY_EDGE_SAMPLES = 40
+STABILITY_TOLERANCE = 1e-6  # J/mol
+MAX_TIE_SPLITS = 4
+
+
+def _sample_inside(x_lo: float, x_hi: float) -> np.ndarray:
+    width = x_hi - x_lo
+    edge = np.geomspace(1e-7, 0.5, STABILITY_EDGE_SAMPLES) * width
+    x = np.concatenate([np.linspace(x_lo, x_hi, STABILITY_SAMPLES), x_lo + edge, x_hi - edge])
+    x = np.unique(x)
+    return x[(x > x_lo) & (x < x_hi) & (x > 0.0) & (x < 1.0)]
+
+
+def _deepest_phase_below(system: dict, T: float, tie: PhaseField):
+    """(phase name, composition, depth) of the phase lying furthest below
+    the tie line's tangent, or None if every other phase lies above it."""
+    left, right = (system[name] for name in tie.base_phases)
+    slope, intercept = tangent_line(left, right, T, tie.x_min, tie.x_max)
+    x = _sample_inside(tie.x_min, tie.x_max)
+    best = None
+
+    for name, phase in system.items():
+        if name in tie.base_phases:
+            continue
+        if isinstance(phase, StoichiometricPhase):
+            if not tie.x_min < phase.composition < tie.x_max:
+                continue
+            x_q = phase.composition
+            depth = float(phase.molar_gibbs(T)) - (slope * x_q + intercept)
+        else:
+            distance = np.asarray(phase.molar_gibbs(T, x), dtype=float) - (slope * x + intercept)
+            k = int(np.argmin(distance))
+            lo, hi = x[max(k - 1, 0)], x[min(k + 1, len(x) - 1)]
+            refined = minimize_scalar(
+                lambda xi: float(phase.molar_gibbs(T, xi)) - (slope * xi + intercept),
+                bounds=(lo, hi), method="bounded", options={"xatol": 1e-12},
+            )
+            x_q, depth = (refined.x, refined.fun) if refined.fun < distance[k] else (x[k], distance[k])
+        if depth < -STABILITY_TOLERANCE and (best is None or depth < best[2]):
+            best = (name, float(x_q), float(depth))
+    return best
+
+
+def _stable_tie_lines(system: dict, T: float, tie: PhaseField, depth: int = 0) -> list[PhaseField]:
+    """Refine a hull tie line to the exact common tangent, splitting it if
+    another phase lies below it (a field too narrow for the sampled hull)."""
+    left, right = (system[name] for name in tie.base_phases)
+    x_min, x_max = common_tangent(left, right, T, tie.x_min, tie.x_max)
+    tie = PhaseField(tie.phases, x_min, x_max)
+
+    below = _deepest_phase_below(system, T, tie) if depth < MAX_TIE_SPLITS else None
+    if below is None:
+        return [tie]
+    name, x_q, _ = below
+    return (
+        _stable_tie_lines(system, T, PhaseField((tie.phases[0], name), tie.x_min, x_q), depth + 1)
+        + [PhaseField((name,), x_q, x_q)]
+        + _stable_tie_lines(system, T, PhaseField((name, tie.phases[1]), x_q, tie.x_max), depth + 1)
+    )
+
+
+def _drop_unstable_middle_phases(system: dict, T: float, fields: list[PhaseField]) -> list[PhaseField]:
+    """Merge tie lines P1+P2, P2+P3 into P1+P3 where the refined tangents
+    show P2 is not actually stable between them (the tangents cross, or
+    their slopes decrease), which the sampled hull cannot always tell."""
+    changed = True
+    while changed:
+        changed = False
+        ties = [k for k, field in enumerate(fields) if field.is_two_phase]
+        for a, b in zip(ties, ties[1:]):
+            left, right = fields[a], fields[b]
+            if any(f.is_two_phase for f in fields[a + 1:b]):
+                continue
+            slope_left, _ = tangent_line(*(system[n] for n in left.base_phases), T, left.x_min, left.x_max)
+            slope_right, _ = tangent_line(*(system[n] for n in right.base_phases), T, right.x_min, right.x_max)
+            if left.x_max <= right.x_min + VERTEX_TOLERANCE and slope_left <= slope_right:
+                continue
+            merged = PhaseField((left.phases[0], right.phases[1]), left.x_min, right.x_max)
+            fields = fields[:a] + _stable_tie_lines(system, T, merged) + fields[b + 1:]
+            changed = True
+            break
+    return fields
+
+
+def phase_assemblage(system: dict, T: float, n_points: int = 500) -> PhaseAssemblage:
+    """Equilibrium fields across the whole composition range at T.
+
+    The sampled convex hull identifies which fields exist; each tie line is
+    then refined to the exact common tangent and checked against every other
+    phase, so the result is independent of any composition grid.
+    """
+    hull_x, _, hull_labels = _hull_for_temperature(system, T, n_points=n_points)
+
+    # Runs of consecutive hull vertices with the same label are single-phase
+    # stretches; the segment between two runs is a tie line.
+    runs: list[tuple[str, float, float]] = []
+    for x, label in zip(hull_x, hull_labels):
+        if runs and runs[-1][0] == label:
+            runs[-1] = (label, runs[-1][1], float(x))
+        else:
+            runs.append((label, float(x), float(x)))
+
+    fields: list[PhaseField] = []
+    for k, (label, x_lo, x_hi) in enumerate(runs):
+        fields.append(PhaseField((label,), x_lo, x_hi))
+        if k + 1 < len(runs):
+            next_label, next_lo, _ = runs[k + 1]
+            for item in _stable_tie_lines(system, T, PhaseField((label, next_label), x_hi, next_lo)):
+                fields.append(item)
+
+    fields = _drop_unstable_middle_phases(system, T, fields)
+
+    # Single-phase stretches span exactly between their neighbouring tie lines.
+    for k, field in enumerate(fields):
+        if field.is_two_phase:
+            continue
+        x_lo = fields[k - 1].x_max if k > 0 else 0.0
+        x_hi = fields[k + 1].x_min if k + 1 < len(fields) else 1.0
+        if x_lo > x_hi:
+            x_lo = x_hi = (x_lo + x_hi) / 2.0
+        field.x_min, field.x_max = x_lo, x_hi
+
+    return PhaseAssemblage(T=T, fields=_label_composition_sets(fields))
+
+
+def _label_composition_sets(fields: list[PhaseField]) -> list[PhaseField]:
+    """Final composition set labels, after tie lines were split or merged.
+
+    Fields alternate single-phase stretch / tie line. A phase with a tie line
+    to itself has a miscibility gap: its stretches are numbered PHASE#1,
+    PHASE#2, ... left to right, and every tie line takes the labels of the
+    stretches on either side of it.
+    """
+    gapped = {f.base_phases[0] for f in fields if f.is_two_phase and f.base_phases[0] == f.base_phases[1]}
+    counts: dict[str, int] = {}
+    singles: list[str] = []
+    for f in fields:
+        if f.is_two_phase:
+            continue
+        base = f.base_phases[0]
+        if base in gapped:
+            counts[base] = counts.get(base, 0) + 1
+            singles.append(composition_set_label(base, counts[base]))
+        else:
+            singles.append(base)
+
+    labelled: list[PhaseField] = []
+    single_index = 0
+    for f in fields:
+        if f.is_two_phase:
+            labelled.append(PhaseField((singles[single_index - 1], singles[single_index]), f.x_min, f.x_max))
+        else:
+            labelled.append(PhaseField((singles[single_index],), f.x_min, f.x_max))
+            single_index += 1
+    return labelled
+
+
+def equilibrium_from_assemblage(system: dict, assemblage: PhaseAssemblage, x_overall: float) -> EquilibriumResult:
+    """Read off the equilibrium at x_overall from a PhaseAssemblage."""
+    T = assemblage.T
+    for field in assemblage.fields:
+        if field.is_two_phase or not field.x_min - VERTEX_TOLERANCE <= x_overall <= field.x_max + VERTEX_TOLERANCE:
+            continue
+        label = field.phases[0]
+        phase = system[base_phase_name(label)]
+        if isinstance(phase, StoichiometricPhase):
+            composition, total_gibbs = phase.composition, float(phase.molar_gibbs(T))
+        else:
+            composition, total_gibbs = x_overall, float(phase.molar_gibbs(T, x_overall))
+        return EquilibriumResult(
+            T=T, x_overall=x_overall, stable_phases=[label],
+            phase_compositions={label: composition}, phase_fractions={label: 1.0},
+            total_gibbs=total_gibbs,
+        )
+
+    for field in assemblage.tie_lines:
+        if not field.x_min < x_overall < field.x_max:
+            continue
+        label_left, label_right = field.phases
+        left, right = (system[name] for name in field.base_phases)
+        fraction_right = (x_overall - field.x_min) / (field.x_max - field.x_min)
+        fraction_left = 1.0 - fraction_right
+        total_gibbs = (
+            fraction_left * gibbs(left, T, field.x_min) + fraction_right * gibbs(right, T, field.x_max)
+        )
+        return EquilibriumResult(
+            T=T, x_overall=x_overall, stable_phases=[label_left, label_right],
+            phase_compositions={label_left: field.x_min, label_right: field.x_max},
+            phase_fractions={label_left: fraction_left, label_right: fraction_right},
+            total_gibbs=total_gibbs,
+        )
+
+    raise ValueError(f"x_overall={x_overall} is not covered by the phase assemblage at T={T}")
+
+
 def compute_equilibrium(
     system: dict, T: float, x_overall: float, n_points: int = 500
 ) -> EquilibriumResult:
     """Compute the stable phase(s), compositions, and fractions at (T, x_overall).
 
     Builds the global lower convex hull over every phase's Gibbs energy curve
-    (the common-tangent construction), then reads off the equilibrium state
-    for x_overall from the hull segment it falls on: a single stable phase if
-    x_overall lands on a segment belonging to one phase, or two phases tied
-    together by a common tangent (a two-phase tie line) otherwise, with phase
-    fractions from the lever rule.
+    (the common-tangent construction) to find which fields exist, refines
+    every tie line to the exact common tangent (see phase_assemblage), then
+    reads off the equilibrium state for x_overall: a single stable phase, or
+    two phases joined by a tie line with phase fractions from the lever rule.
     """
-    hull_x, hull_G, hull_labels = _hull_for_temperature(system, T, n_points=n_points)
-    return _resolve_from_hull(system, T, x_overall, hull_x, hull_G, hull_labels)
+    if x_overall < -COMPOSITION_TOLERANCE or x_overall > 1.0 + COMPOSITION_TOLERANCE:
+        raise ValueError(f"x_overall={x_overall} is outside the valid composition range [0, 1]")
+    x_overall = min(max(x_overall, 0.0), 1.0)
+    return equilibrium_from_assemblage(system, phase_assemblage(system, T, n_points=n_points), x_overall)

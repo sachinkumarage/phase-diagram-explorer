@@ -176,7 +176,11 @@ def test_axes_markers_and_tables_share_units(temperature_unit, composition_unit)
     T_min_display, _ = _slider(at, f"Temperature range ({temperature_unit})").value
     offset = CELSIUS_OFFSET if temperature_unit == "°C" else 0.0
     assert T_min_display == pytest.approx(500.0 - offset)
-    assert _values(_trace(diagram, "phase fields")["y"])[0] == pytest.approx(T_min_display)
+    region_T = [
+        T for trace in diagram["data"] if trace.get("fill") == "toself" for T in _values(trace["y"])
+    ]
+    assert min(region_T) == pytest.approx(T_min_display)
+    assert diagram["layout"]["yaxis"]["range"][0] == pytest.approx(T_min_display)
 
     table = _invariant_table(at)
     marker = _trace(diagram, "invariant reactions")
@@ -229,10 +233,38 @@ def test_composition_sets_in_tables_and_plots(monkeypatch, tmp_path):
 
     diagram = _figure(at, 0)
     legend = {trace.get("name") for trace in diagram["data"]}
-    assert {"ALPHA", "ALPHA#1+ALPHA#2"} <= legend
+    assert {"ALPHA", "ALPHA + ALPHA"} <= legend
 
     gibbs = _figure(at, 1)
     tangent = _trace(gibbs, "tangent points")
     assert tangent is not None
     x1, x2 = _values(tangent["x"])
     assert x1 + x2 == pytest.approx(100.0, abs=0.2)
+
+
+def test_diagram_is_drawn_from_traced_polygons_not_a_heatmap():
+    at = _run()
+    diagram = _figure(at, 0)
+    types = {trace.get("type", "scatter") for trace in diagram["data"]}
+    assert "heatmap" not in types and "contour" not in types
+
+    regions = [trace for trace in diagram["data"] if trace.get("fill") == "toself"]
+    assert {trace["name"] for trace in regions} == {
+        "FCC_AG", "FCC_CU", "LIQUID", "LIQUID + FCC_AG", "LIQUID + FCC_CU", "FCC_AG + FCC_CU",
+    }
+    labels = _trace(diagram, "field labels")
+    assert set(labels["text"]) == {trace["name"] for trace in regions}
+
+
+def test_narrow_al_cu_reaction_is_in_invariant_table_at_default_grid():
+    at = _run("al_cu")
+    table = _invariant_table(at)
+    assert list(table["type"]) == ["eutectic"]
+    assert set(table["phases"][0].split("+")) == {"FCC_AL", "LIQUID", "AL2CU"}
+
+
+@pytest.mark.parametrize("fmt", ["SVG", "PDF"])
+def test_export_buttons_offer_vector_figures(fmt):
+    at = _run()
+    labels = [button.proto.label for button in at.get("download_button")]
+    assert f"Export figure ({fmt})" in labels

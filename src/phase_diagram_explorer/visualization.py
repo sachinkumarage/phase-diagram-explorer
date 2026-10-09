@@ -1,10 +1,8 @@
-import numpy as np
 import plotly.graph_objects as go
 from plotly.colors import qualitative
 
-from phase_diagram_explorer.diagram import PhaseDiagram
-from phase_diagram_explorer.equilibrium.equilibrium import base_phase_name
 from phase_diagram_explorer.invariants import InvariantReaction
+from phase_diagram_explorer.tracing import TracedDiagram
 from phase_diagram_explorer.units import (
     ATOMIC_PERCENT,
     KELVIN,
@@ -14,167 +12,122 @@ from phase_diagram_explorer.units import (
     temperature_to_display,
 )
 
-
-def _phase_field_ids(phase_labels: np.ndarray) -> tuple[np.ndarray, list[str]]:
-    """Assign a stable integer id to each distinct phase-field tuple.
-
-    Returns the id grid (same shape as phase_labels) and the ordered list of
-    field names ("ALPHA", "ALPHA+LIQUID" or "ALPHA#1+ALPHA#2") indexed by id.
-    A single-phase field is named by its base phase, so a composition set
-    (ALPHA#1) and the same phase above its miscibility gap (ALPHA) form one
-    continuous field with no boundary drawn between them.
-    """
-    field_names: list[str] = []
-    field_index: dict[str, int] = {}
-    ids = np.empty(phase_labels.shape, dtype=float)
-
-    for i in range(phase_labels.shape[0]):
-        for j in range(phase_labels.shape[1]):
-            phases = phase_labels[i, j]
-            name = base_phase_name(phases[0]) if len(phases) == 1 else "+".join(phases)
-            if name not in field_index:
-                field_index[name] = len(field_names)
-                field_names.append(name)
-            ids[i, j] = field_index[name]
-
-    return ids, field_names
+# Fields smaller than this fraction of the plotted T-x area get no text label
+# (they still show their phases on hover).
+MIN_LABELLED_AREA_FRACTION = 0.005
+FIELD_OPACITY = 0.35
 
 
-def _discrete_colorscale(n_fields: int) -> list[list]:
-    palette = qualitative.Plotly + qualitative.Set3
-    colors = [palette[i % len(palette)] for i in range(max(n_fields, 1))]
-    colorscale = []
-    for i, color in enumerate(colors):
-        colorscale.append([i / n_fields, color])
-        colorscale.append([(i + 1) / n_fields, color])
-    return colorscale
+def field_colors(labels) -> dict[str, str]:
+    """A stable colour per field label, in order of first appearance."""
+    palette = qualitative.Pastel + qualitative.Set3
+    colors: dict[str, str] = {}
+    for label in labels:
+        if label not in colors:
+            colors[label] = palette[len(colors) % len(palette)]
+    return colors
 
 
-def _hover_customdata(diagram: PhaseDiagram) -> np.ndarray:
-    n_T, n_x = diagram.phase_labels.shape
-    customdata = np.empty((n_T, n_x, 2), dtype=object)
-
-    for i in range(n_T):
-        for j in range(n_x):
-            phases = diagram.phase_labels[i, j]
-            fractions = diagram.phase_fractions[i, j]
-            customdata[i, j, 0] = "+".join(phases)
-            customdata[i, j, 1] = ", ".join(
-                f"{name}: {fraction:.2f}" for name, fraction in fractions.items()
-            )
-
-    return customdata
+def invariant_label(reaction: InvariantReaction, temperature_unit: str) -> str:
+    T = temperature_to_display(reaction.temperature, temperature_unit)
+    return f"{reaction.type.capitalize()} {T:.1f} {temperature_unit}"
 
 
 def plot_diagram(
-    diagram: PhaseDiagram,
+    traced: TracedDiagram,
     system_name: str,
-    invariants: list[InvariantReaction] | None = None,
     *,
     dependent_symbol: str = "B",
     temperature_unit: str = KELVIN,
     composition_unit: str = ATOMIC_PERCENT,
     atomic_masses: tuple[float | None, float | None] = (None, None),
 ) -> go.Figure:
-    """Build an interactive T-x phase diagram figure.
+    """Build an interactive T-x phase diagram from traced boundaries.
 
-    Phase fields are drawn as a discrete colored grid (a Heatmap), with a
-    Contour trace at half-integer levels overlaid to trace crisp phase
-    boundary lines between fields. Hovering any point shows temperature,
-    composition, the stable phase(s), and their phase fractions. If
-    `invariants` is given, each reaction is marked with a labeled point at
-    its reacting phase's composition and temperature.
+    Phase regions are filled polygons bounded by the traced boundary lines
+    and invariant lines (hover shows the phases), each labelled at its
+    centroid with plain phase names. Boundaries are drawn as lines (hover
+    shows T and composition), invariant reactions as horizontal lines across
+    their three phase compositions, with a marker at the reacting phase.
 
-    The diagram is computed in K and mole fraction of the dependent element;
+    Everything is computed in K and mole fraction of the dependent element;
     axes, hover text and markers are all shown in `temperature_unit` and
     `composition_unit` (wt% needs `atomic_masses` of the base and dependent
     element).
     """
-    field_ids, field_names = _phase_field_ids(diagram.phase_labels)
-    customdata = _hover_customdata(diagram)
     mass_a, mass_b = atomic_masses
-    x_display = composition_to_display(diagram.x_grid, composition_unit, mass_a, mass_b)
-    T_display = temperature_to_display(diagram.T_grid, temperature_unit)
+
+    def to_x(x):
+        return composition_to_display(x, composition_unit, mass_a, mass_b)
+
+    def to_T(T):
+        return temperature_to_display(T, temperature_unit)
+
     x_title = composition_label(dependent_symbol, composition_unit)
     T_title = temperature_label(temperature_unit)
+    point_hover = f"{x_title}: %{{x:.3f}}<br>{T_title}: %{{y:.2f}}"
 
     fig = go.Figure()
+    regions = traced.regions
+    colors = field_colors(region.label for region in regions)
+    total_area = traced.T_range[1] - traced.T_range[0]
 
-    fig.add_trace(
-        go.Heatmap(
-            x=x_display,
-            y=T_display,
-            z=field_ids,
-            customdata=customdata,
-            colorscale=_discrete_colorscale(len(field_names)),
-            zmin=0,
-            zmax=len(field_names),
-            showscale=False,
-            hovertemplate=(
-                f"{x_title}: %{{x:.2f}}<br>"
-                f"{T_title}: %{{y:.1f}}<br>"
-                "Stable phases: %{customdata[0]}<br>"
-                "Phase fractions: %{customdata[1]}"
-                "<extra></extra>"
-            ),
-            name="phase fields",
-        )
-    )
-
-    fig.add_trace(
-        go.Contour(
-            x=x_display,
-            y=T_display,
-            z=field_ids,
-            contours=dict(
-                start=0.5,
-                end=len(field_names) - 0.5,
-                size=1.0,
-                coloring="lines",
-            ),
-            line=dict(color="black", width=1),
-            showscale=False,
-            hoverinfo="skip",
-            name="phase boundaries",
-        )
-    )
-
-    for i, name in enumerate(field_names):
+    shown_in_legend: set[str] = set()
+    for region in regions:
+        x, T = region.polygon()
         fig.add_trace(
             go.Scatter(
-                x=[None],
-                y=[None],
-                mode="markers",
-                marker=dict(size=10, color=_discrete_colorscale(len(field_names))[2 * i][1]),
-                name=name,
-                showlegend=True,
+                x=to_x(x), y=to_T(T), mode="lines", fill="toself",
+                fillcolor=colors[region.label], opacity=1.0, line=dict(width=0),
+                name=region.label, legendgroup=region.label,
+                showlegend=region.label not in shown_in_legend,
+                hoveron="fills", hoverinfo="name",
+            )
+        )
+        shown_in_legend.add(region.label)
+
+    for boundary in traced.boundaries:
+        fig.add_trace(
+            go.Scatter(
+                x=to_x(boundary.x), y=to_T(boundary.T), mode="lines",
+                line=dict(color="black", width=1.2), name=boundary.name, showlegend=False,
+                hovertemplate=f"{boundary.name}<br>{point_hover}<extra></extra>",
             )
         )
 
-    if invariants:
-        marker_x = []
-        marker_y = []
-        marker_text = []
-        for reaction in invariants:
-            reacting_phase = reaction.phases[1]
-            x_marker = composition_to_display(
-                reaction.composition[reacting_phase], composition_unit, mass_a, mass_b
-            )
-            T_marker = temperature_to_display(reaction.temperature, temperature_unit)
-            marker_x.append(x_marker)
-            marker_y.append(T_marker)
-            marker_text.append(f"{reaction.type.capitalize()} {T_marker:.0f} {temperature_unit}")
-
+    for reaction in traced.invariants:
+        compositions = list(reaction.composition.values())
+        T = to_T(reaction.temperature)
         fig.add_trace(
             go.Scatter(
-                x=marker_x,
-                y=marker_y,
+                x=[to_x(min(compositions)), to_x(max(compositions))], y=[T, T], mode="lines",
+                line=dict(color="black", width=1.2), showlegend=False,
+                name=f"{reaction.type} line",
+                hovertemplate=f"{invariant_label(reaction, temperature_unit)}<br>{point_hover}<extra></extra>",
+            )
+        )
+
+    labelled = [r for r in regions if r.area >= MIN_LABELLED_AREA_FRACTION * total_area]
+    positions = [r.label_position() for r in labelled]
+    fig.add_trace(
+        go.Scatter(
+            x=[to_x(x) for x, _ in positions], y=[to_T(T) for _, T in positions],
+            mode="text", text=[r.label for r in labelled], textfont=dict(size=12),
+            name="field labels", showlegend=False, hoverinfo="skip",
+        )
+    )
+
+    if traced.invariants:
+        fig.add_trace(
+            go.Scatter(
+                x=[to_x(r.composition[r.phases[1]]) for r in traced.invariants],
+                y=[to_T(r.temperature) for r in traced.invariants],
                 mode="markers+text",
-                text=marker_text,
+                text=[invariant_label(r, temperature_unit) for r in traced.invariants],
                 textposition="top center",
-                marker=dict(symbol="diamond", size=10, color="black"),
+                marker=dict(symbol="diamond", size=9, color="black"),
                 name="invariant reactions",
-                hovertemplate=f"%{{text}}<br>{x_title}: %{{x:.2f}}<br>{T_title}: %{{y:.1f}}<extra></extra>",
+                hovertemplate=f"%{{text}}<br>{point_hover}<extra></extra>",
             )
         )
 
@@ -183,8 +136,12 @@ def plot_diagram(
         xaxis_title=x_title,
         yaxis_title=T_title,
         legend_title="Phase fields",
+        plot_bgcolor="white",
     )
-
+    fig.update_xaxes(range=[to_x(0.0), to_x(1.0)], showline=True, linecolor="black", mirror=True)
+    fig.update_yaxes(
+        range=[to_T(traced.T_range[0]), to_T(traced.T_range[1])], showline=True, linecolor="black", mirror=True
+    )
     return fig
 
 

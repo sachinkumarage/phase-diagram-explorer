@@ -10,6 +10,8 @@ An interactive Streamlit app is included for exploring computed phase diagrams: 
 streamlit run src/phase_diagram_explorer/app.py
 ```
 
+Phase boundaries are traced from exact equilibrium tie lines and invariant reactions are located by root-finding, so neither depends on a composition grid. The diagram can be exported as a vector figure (SVG or PDF) with the "Export figure" buttons.
+
 Only systems in `data/systems/` with complete Gibbs energy data are listed. Systems whose data are marked `"_status": "provisional"` are shown with a preview banner.
 
 ## Running the tests

@@ -6,12 +6,13 @@ import plotly.graph_objects as go
 import streamlit as st
 
 from phase_diagram_explorer.builder import build_system, is_computable
-from phase_diagram_explorer.diagram import compute_diagram
 from phase_diagram_explorer.equilibrium.curves import evaluate_phase_curves
 from phase_diagram_explorer.equilibrium.equilibrium import base_phase_name, compute_equilibrium
+from phase_diagram_explorer.export import EXPORT_FORMATS, export_figure
 from phase_diagram_explorer.invariants import detect_invariants_over_range
 from phase_diagram_explorer.models import SystemDefinition, load_system
 from phase_diagram_explorer.thermo.stoichiometric import StoichiometricPhase
+from phase_diagram_explorer.tracing import trace_diagram
 from phase_diagram_explorer.units import (
     ATOMIC_PERCENT,
     COMPOSITION_UNITS,
@@ -47,16 +48,41 @@ def _analysis_range(definition: SystemDefinition) -> tuple[float, float]:
     return tuple(definition.t_range_k) if definition.t_range_k else SLIDER_LIMITS_K
 
 
-@st.cache_data(show_spinner="Computing phase diagram...")
-def _cached_diagram(system_path: str, T_min: float, T_max: float, n_T: int, n_x: int, n_points: int):
-    system = build_system(_load_definition(system_path))
-    return compute_diagram(system, T_range=(T_min, T_max), n_T=n_T, n_x=n_x, n_points=n_points)
-
-
 @st.cache_data(show_spinner="Detecting invariant reactions...")
 def _cached_invariants(system_path: str, n_points: int):
     definition = _load_definition(system_path)
     return detect_invariants_over_range(build_system(definition), _analysis_range(definition), n_points=n_points)
+
+
+@st.cache_data(show_spinner="Tracing phase boundaries...")
+def _cached_trace(system_path: str, T_min: float, T_max: float, n_T: int, n_points: int):
+    system = build_system(_load_definition(system_path))
+    invariants = _cached_invariants(system_path, n_points)
+    return trace_diagram(system, (T_min, T_max), invariants=invariants, n_levels=n_T, n_points=n_points)
+
+
+def _footnote(definition: SystemDefinition, system_path: str) -> str:
+    """Short data-source note for exported figures."""
+    note = f"Data source: {Path(system_path).name} ({definition.name})."
+    if definition.source:
+        note += " " + definition.source.split(". ")[0].rstrip(".") + "."
+    if definition.is_provisional:
+        note += " Provisional thermodynamic data, not yet validated."
+    return note
+
+
+@st.cache_data(show_spinner="Rendering figure...")
+def _cached_export(
+    system_path: str, T_min: float, T_max: float, n_T: int, n_points: int, T_unit: str, x_unit: str, fmt: str
+) -> bytes:
+    definition = _load_definition(system_path)
+    traced = _cached_trace(system_path, T_min, T_max, n_T, n_points)
+    return export_figure(
+        traced, definition.name, fmt,
+        dependent_symbol=definition.dependent_element.symbol, temperature_unit=T_unit, composition_unit=x_unit,
+        atomic_masses=(definition.base_element.atomic_mass, definition.dependent_element.atomic_mass),
+        footnote=_footnote(definition, system_path),
+    )
 
 
 def _tangent_line_figure(system, T: float, x_overall: float, n_points: int, to_x, x_title: str, T_text: str) -> go.Figure:
@@ -178,7 +204,6 @@ with st.sidebar:
     x_overall = min(max(composition_from_display(x_display, x_unit, *atomic_masses), 0.0), 1.0)
     with st.expander("Grid resolution"):
         n_T = st.slider("Temperature points", 20, 300, 80, step=10)
-        n_x = st.slider("Composition points", 20, 300, 150, step=10)
         n_points = st.slider("Gibbs curve resolution", 100, 2000, 500, step=100)
     T_selected_display = st.slider(
         f"Temperature ({T_unit}) for equilibrium and Gibbs curves",
@@ -186,19 +211,27 @@ with st.sidebar:
     )
     T_selected = temperature_from_display(T_selected_display, T_unit)
 
-diagram = _cached_diagram(str(selected_path), T_range[0], T_range[1], n_T, n_x, n_points)
 reactions = _cached_invariants(str(selected_path), n_points)
-displayed_reactions = [r for r in reactions if is_displayed(r)]
+traced = _cached_trace(str(selected_path), T_range[0], T_range[1], n_T, n_points)
 
 st.subheader("Phase diagram")
 st.plotly_chart(
     plot_diagram(
-        diagram, selected_name, invariants=displayed_reactions,
+        traced, definition.name,
         dependent_symbol=dependent.symbol, temperature_unit=T_unit,
         composition_unit=x_unit, atomic_masses=atomic_masses,
     ),
     width='stretch',
 )
+export_columns = st.columns(len(EXPORT_FORMATS))
+for column, fmt in zip(export_columns, EXPORT_FORMATS):
+    with column:
+        st.download_button(
+            f"Export figure ({fmt.upper()})",
+            data=_cached_export(str(selected_path), T_range[0], T_range[1], n_T, n_points, T_unit, x_unit, fmt),
+            file_name=f"{selected_name}_phase_diagram.{fmt}",
+            mime="image/svg+xml" if fmt == "svg" else "application/pdf",
+        )
 
 T_selected_text = f"{T_selected_display:.1f} {T_unit}"
 st.subheader(f"Equilibrium at T = {T_selected_text}, {x_title} = {x_display:.1f}")
@@ -230,7 +263,7 @@ st.plotly_chart(
 st.subheader("Invariant reactions")
 st.caption(
     f"Detected over {to_T(analysis_range_K[0]):.0f}–{to_T(analysis_range_K[1]):.0f} {T_unit}, "
-    "independent of the displayed range."
+    "independent of the displayed range; temperatures and all three phase compositions by root-finding."
 )
 if reactions:
     st.table(
@@ -239,7 +272,7 @@ if reactions:
             T_title: [to_T(r.temperature) for r in reactions],
             "phases": ["+".join(r.phases) for r in reactions],
             x_title: [
-                ", ".join(f"{phase} {to_x(x):.1f}" for phase, x in r.composition.items()) for r in reactions
+                ", ".join(f"{phase} {to_x(x):.2f}" for phase, x in r.composition.items()) for r in reactions
             ],
             "note": [
                 "" if is_displayed(r) else "outside displayed temperature range" for r in reactions
