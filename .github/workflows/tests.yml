@@ -22,4 +22,20 @@ jobs:
         run: pip install -e .
 
       - name: Run full test suite (including slow tests)
-        run: pytest -q -m "slow or not slow"
+        run: pytest -q -m "not validation"
+
+  validation:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install package with pycalphad
+        run: pip install -e ".[validation]"
+
+      - name: Cross-validate the engine against pycalphad
+        run: pytest -q -m validation

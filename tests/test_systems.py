@@ -3,8 +3,7 @@ from pathlib import Path
 import pytest
 
 from phase_diagram_explorer.builder import build_system
-from phase_diagram_explorer.diagram import compute_diagram
-from phase_diagram_explorer.invariants import EUTECTIC, detect_invariants, detect_invariants_over_range
+from phase_diagram_explorer.invariants import EUTECTIC, detect_invariants_over_range
 from phase_diagram_explorer.models import load_system
 from phase_diagram_explorer.thermo.stoichiometric import StoichiometricPhase
 
@@ -30,12 +29,8 @@ def test_al_cu_loads_without_error():
     assert {phase.name for phase in definition.phases} == {"LIQUID", "FCC_AL", "AL2CU"}
 
 
-def test_ag_cu_reproduces_known_eutectic_point():
-    definition = load_system(SYSTEMS_DIR / "ag_cu.json")
-    system = build_system(definition)
-
-    diagram = compute_diagram(system, T_range=(1000.0, 1150.0), n_T=151, n_x=201, n_points=501)
-    reactions = detect_invariants(diagram, system, n_points=501)
+def test_ag_cu_reproduces_known_eutectic_point(ag_cu_eutectic_scan):
+    _, reactions = ag_cu_eutectic_scan
     eutectics = [r for r in reactions if r.type == EUTECTIC]
 
     assert len(eutectics) == 1
@@ -48,24 +43,16 @@ def test_ag_cu_reproduces_known_eutectic_point():
     assert x_cu == pytest.approx(AG_CU_EUTECTIC_X_CU, abs=COMPOSITION_TOLERANCE)
 
 
-def test_ag_cu_eutectic_phases_are_the_two_terminal_solid_solutions_and_liquid():
-    definition = load_system(SYSTEMS_DIR / "ag_cu.json")
-    system = build_system(definition)
-
-    diagram = compute_diagram(system, T_range=(1000.0, 1150.0), n_T=151, n_x=201, n_points=501)
-    reactions = detect_invariants(diagram, system, n_points=501)
+def test_ag_cu_eutectic_phases_are_the_two_terminal_solid_solutions_and_liquid(ag_cu_eutectic_scan):
+    _, reactions = ag_cu_eutectic_scan
     eutectics = [r for r in reactions if r.type == EUTECTIC]
 
     assert len(eutectics) == 1
     assert set(eutectics[0].phases) == {"LIQUID", "FCC_AG", "FCC_CU"}
 
 
-def test_ag_cu_phase_fractions_sum_to_one_at_eutectic_composition():
-    definition = load_system(SYSTEMS_DIR / "ag_cu.json")
-    system = build_system(definition)
-
-    diagram = compute_diagram(system, T_range=(1000.0, 1150.0), n_T=151, n_x=201, n_points=501)
-    reactions = detect_invariants(diagram, system, n_points=501)
+def test_ag_cu_phase_fractions_sum_to_one_at_eutectic_composition(ag_cu_eutectic_scan):
+    _, reactions = ag_cu_eutectic_scan
     eutectics = [r for r in reactions if r.type == EUTECTIC]
 
     reaction = eutectics[0]

@@ -17,7 +17,7 @@ from dataclasses import dataclass, field as dataclass_field
 import numpy as np
 from matplotlib.path import Path as PolygonPath
 
-from phase_diagram_explorer.equilibrium.equilibrium import PhaseAssemblage
+from phase_diagram_explorer.equilibrium.equilibrium import PhaseAssemblage, composition_set_label
 from phase_diagram_explorer.invariants import (
     InvariantReaction,
     assemblage_changes,
@@ -54,9 +54,13 @@ class TracedField:
 
     @property
     def label(self) -> str:
-        """Textbook label: plain phase names, liquid first ("LIQUID + FCC_AG")."""
+        """Textbook label: plain phase names, liquid first ("LIQUID + FCC_AG").
+        A miscibility gap names its two composition sets ("ALPHA#1 + ALPHA#2")."""
         if not self.is_two_phase:
             return self.phases[0]
+        left, right = self.phases
+        if left == right:
+            return f"{composition_set_label(left, 1)} + {composition_set_label(right, 2)}"
         ordered = sorted(self.phases, key=lambda name: "liquid" not in name.lower())
         return " + ".join(ordered)
 

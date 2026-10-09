@@ -12,6 +12,11 @@ from phase_diagram_explorer.units import (
     temperature_to_display,
 )
 
+# Display precision: temperatures to 0.1 K (or 0.1 °C), compositions to
+# 0.1 at% or wt%. Full precision stays in the API and the CSV export.
+TEMPERATURE_FORMAT = ".1f"
+COMPOSITION_FORMAT = ".1f"
+
 # Fields smaller than this fraction of the plotted T-x area get no text label
 # (they still show their phases on hover).
 MIN_LABELLED_AREA_FRACTION = 0.005
@@ -30,7 +35,7 @@ def field_colors(labels) -> dict[str, str]:
 
 def invariant_label(reaction: InvariantReaction, temperature_unit: str) -> str:
     T = temperature_to_display(reaction.temperature, temperature_unit)
-    return f"{reaction.type.capitalize()} {T:.1f} {temperature_unit}"
+    return f"{reaction.type.capitalize()} {T:{TEMPERATURE_FORMAT}} {temperature_unit}"
 
 
 def plot_diagram(
@@ -65,7 +70,7 @@ def plot_diagram(
 
     x_title = composition_label(dependent_symbol, composition_unit)
     T_title = temperature_label(temperature_unit)
-    point_hover = f"{x_title}: %{{x:.3f}}<br>{T_title}: %{{y:.2f}}"
+    point_hover = f"{x_title}: %{{x:{COMPOSITION_FORMAT}}}<br>{T_title}: %{{y:{TEMPERATURE_FORMAT}}}"
 
     fig = go.Figure()
     regions = traced.regions

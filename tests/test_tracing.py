@@ -13,7 +13,7 @@ from scipy.optimize import brentq
 from phase_diagram_explorer.builder import build_system
 from phase_diagram_explorer.diagram import compute_diagram
 from phase_diagram_explorer.equilibrium.equilibrium import compute_equilibrium
-from phase_diagram_explorer.export import export_figure, publication_figure
+from phase_diagram_explorer.export import export_figure, invariants_csv, publication_figure
 from phase_diagram_explorer.invariants import (
     InvariantReaction,
     _deduplicate,
@@ -40,10 +40,10 @@ def _load(path: Path):
     return definition, build_system(definition)
 
 
-@pytest.fixture(scope="module", params=SYSTEMS, ids=lambda path: path.stem)
-def traced_system(request):
+@pytest.fixture(params=SYSTEMS, ids=lambda path: path.stem)
+def traced_system(request, traced_diagram):
     definition, system = _load(request.param)
-    return definition, system, trace_diagram(system, definition.t_range_k)
+    return definition, system, traced_diagram(request.param)
 
 
 # --- invariants ------------------------------------------------------------
@@ -160,11 +160,10 @@ def test_phase_regions_tile_the_diagram(traced_system):
 
 
 @pytest.mark.slow
-def test_narrow_al_cu_liquid_field_is_traced():
+def test_narrow_al_cu_liquid_field_is_traced(traced_diagram):
     """The Al-rich LIQUID + FCC_AL field is narrower than any display grid
     step and must still be traced."""
-    definition, system = _load(SYSTEMS_DIR / "al_cu.json")
-    traced = trace_diagram(system, definition.t_range_k)
+    traced = traced_diagram(SYSTEMS_DIR / "al_cu.json")
     narrow = [field for field in traced.regions if set(field.phases) == {"LIQUID", "FCC_AL"}]
 
     assert len(narrow) == 1
@@ -186,12 +185,11 @@ def test_levels_are_refined_near_invariants():
 
 
 @pytest.mark.slow
-def test_traced_binodal_matches_analytical_solution():
+def test_traced_binodal_matches_analytical_solution(traced_diagram):
     path = FIXTURES_DIR / "regular_solution.json"
-    definition, system = _load(path)
     L0 = json.loads(path.read_text())["phases"][0]["interaction_parameters"][0]
     T_c = L0 / (2.0 * GAS_CONSTANT)
-    traced = trace_diagram(system, definition.t_range_k)
+    traced = traced_diagram(path)
     (gap,) = [field for field in traced.regions if field.is_two_phase]
 
     for T in (700.0, 850.0, 1000.0, 1100.0, 1180.0):
@@ -207,10 +205,9 @@ def test_traced_binodal_matches_analytical_solution():
 # --- export ----------------------------------------------------------------
 
 
-@pytest.fixture(scope="module")
-def ag_cu_traced():
-    definition, system = _load(SYSTEMS_DIR / "ag_cu.json")
-    return definition, trace_diagram(system, definition.t_range_k)
+@pytest.fixture
+def ag_cu_traced(traced_diagram):
+    return load_system(SYSTEMS_DIR / "ag_cu.json"), traced_diagram(SYSTEMS_DIR / "ag_cu.json")
 
 
 @pytest.mark.slow
@@ -252,3 +249,17 @@ def test_export_rejects_raster_formats(ag_cu_traced):
     definition, traced = ag_cu_traced
     with pytest.raises(ValueError, match="unsupported export format"):
         export_figure(traced, definition.name, "png")
+
+
+def test_invariants_csv_keeps_full_precision():
+    _, system = _load(SYSTEMS_DIR / "ag_cu.json")
+    (reaction,) = detect_invariants_over_range(system, (1000.0, 1100.0))
+    lines = invariants_csv([reaction], "Cu").splitlines()
+
+    assert lines[0] == "type,temperature_K,phase_1,x_Cu_1,phase_2,x_Cu_2,phase_3,x_Cu_3"
+    fields = lines[1].split(",")
+    assert fields[0] == "eutectic"
+    assert float(fields[1]) == reaction.temperature
+    for k, phase in enumerate(reaction.phases):
+        assert fields[2 + 2 * k] == phase
+        assert float(fields[3 + 2 * k]) == reaction.composition[phase]

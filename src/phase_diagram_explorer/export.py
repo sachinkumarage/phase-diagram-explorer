@@ -5,6 +5,7 @@ and field labels as the interactive figure, on a white background. Only
 lines, polygons and text are drawn (text as paths in SVG, embedded TrueType
 in PDF), so exported files contain no raster images.
 """
+import csv
 import io
 import textwrap
 
@@ -13,6 +14,7 @@ import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt  # noqa: E402
 
+from phase_diagram_explorer.invariants import InvariantReaction  # noqa: E402
 from phase_diagram_explorer.tracing import TracedDiagram  # noqa: E402
 from phase_diagram_explorer.units import (  # noqa: E402
     ATOMIC_PERCENT,
@@ -104,4 +106,22 @@ def export_figure(traced: TracedDiagram, system_name: str, fmt: str, **kwargs) -
     with plt.rc_context(STYLE):
         fig.savefig(buffer, format=fmt)
     plt.close(fig)
+    return buffer.getvalue()
+
+
+def invariants_csv(reactions: list[InvariantReaction], dependent_symbol: str = "B") -> str:
+    """Invariant reactions as CSV at full precision: temperature in K and
+    each phase's composition as the mole fraction of the dependent element
+    (shortest round-tripping representation)."""
+    buffer = io.StringIO()
+    writer = csv.writer(buffer, lineterminator="\n")
+    writer.writerow(
+        ["type", "temperature_K", "phase_1", f"x_{dependent_symbol}_1", "phase_2", f"x_{dependent_symbol}_2",
+         "phase_3", f"x_{dependent_symbol}_3"]
+    )
+    for reaction in reactions:
+        row = [reaction.type, repr(float(reaction.temperature))]
+        for phase in reaction.phases:
+            row += [phase, repr(float(reaction.composition[phase]))]
+        writer.writerow(row)
     return buffer.getvalue()

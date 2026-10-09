@@ -1,4 +1,3 @@
-import os
 from pathlib import Path
 
 import numpy as np
@@ -8,9 +7,9 @@ import streamlit as st
 from phase_diagram_explorer.builder import build_system, is_computable
 from phase_diagram_explorer.equilibrium.curves import evaluate_phase_curves
 from phase_diagram_explorer.equilibrium.equilibrium import base_phase_name, compute_equilibrium
-from phase_diagram_explorer.export import EXPORT_FORMATS, export_figure
+from phase_diagram_explorer.export import EXPORT_FORMATS, export_figure, invariants_csv
 from phase_diagram_explorer.invariants import detect_invariants_over_range
-from phase_diagram_explorer.models import SystemDefinition, load_system
+from phase_diagram_explorer.models import SystemDefinition, default_systems_dir, load_system, system_files
 from phase_diagram_explorer.thermo.stoichiometric import StoichiometricPhase
 from phase_diagram_explorer.tracing import trace_diagram
 from phase_diagram_explorer.units import (
@@ -25,11 +24,9 @@ from phase_diagram_explorer.units import (
     temperature_label,
     temperature_to_display,
 )
-from phase_diagram_explorer.visualization import plot_diagram
+from phase_diagram_explorer.visualization import COMPOSITION_FORMAT, TEMPERATURE_FORMAT, plot_diagram
 
-SYSTEMS_DIR = Path(
-    os.environ.get("PHASE_DIAGRAM_SYSTEMS_DIR", Path(__file__).resolve().parents[2] / "data" / "systems")
-)
+SYSTEMS_DIR = default_systems_dir()
 PROVISIONAL_BANNER = "Preview: provisional thermodynamic data, not yet validated."
 
 # Temperature slider limits (K). Used as the analysis range for systems whose
@@ -37,6 +34,13 @@ PROVISIONAL_BANNER = "Preview: provisional thermodynamic data, not yet validated
 SLIDER_LIMITS_K = (200.0, 2000.0)
 GIBBS_UNIT = "J/mol"
 TANGENT_POINTS = 200
+FRACTION_FORMAT = ".3f"
+
+
+def _system_names(paths: list[Path]) -> list[str]:
+    """File stems, or full file names where two files share a stem."""
+    stems = [path.stem for path in paths]
+    return [path.stem if stems.count(path.stem) == 1 else path.name for path in paths]
 
 
 @st.cache_data(show_spinner=False)
@@ -139,15 +143,14 @@ def _tangent_line_figure(system, T: float, x_overall: float, n_points: int, to_x
 st.set_page_config(page_title="Phase Diagram Explorer", layout="wide")
 st.title("Phase Diagram Explorer")
 
-# Only systems with complete Gibbs energy data are offered.
-system_paths = [
-    path for path in sorted(SYSTEMS_DIR.glob("*.json")) if is_computable(_load_definition(str(path)))
-]
+# Only systems whose every phase can be evaluated are offered (JSON, YAML or
+# TDB with its .meta.json).
+system_paths = [path for path in system_files(SYSTEMS_DIR) if is_computable(_load_definition(str(path)))]
 if not system_paths:
     st.error(f"No system definitions with complete Gibbs energy data found in {SYSTEMS_DIR}")
     st.stop()
 
-system_names = [path.stem for path in system_paths]
+system_names = _system_names(system_paths)
 selected_name = st.selectbox("System", system_names)
 selected_path = system_paths[system_names.index(selected_name)]
 
@@ -242,13 +245,18 @@ with col1:
     st.markdown("**Stable phases**")
     st.write(", ".join(result.stable_phases))
     st.markdown("**Phase fractions**")
-    st.table({"phase": list(result.phase_fractions.keys()), "fraction": list(result.phase_fractions.values())})
+    st.table(
+        {
+            "phase": list(result.phase_fractions.keys()),
+            "fraction": [f"{f:{FRACTION_FORMAT}}" for f in result.phase_fractions.values()],
+        }
+    )
 with col2:
     st.markdown("**Phase compositions**")
     st.table(
         {
             "phase": list(result.phase_compositions.keys()),
-            x_title: [to_x(x) for x in result.phase_compositions.values()],
+            x_title: [f"{to_x(x):{COMPOSITION_FORMAT}}" for x in result.phase_compositions.values()],
         }
     )
     st.markdown(f"**Molar Gibbs energy ({GIBBS_UNIT})**")
@@ -269,15 +277,22 @@ if reactions:
     st.table(
         {
             "type": [r.type for r in reactions],
-            T_title: [to_T(r.temperature) for r in reactions],
+            T_title: [f"{to_T(r.temperature):{TEMPERATURE_FORMAT}}" for r in reactions],
             "phases": ["+".join(r.phases) for r in reactions],
             x_title: [
-                ", ".join(f"{phase} {to_x(x):.2f}" for phase, x in r.composition.items()) for r in reactions
+                ", ".join(f"{phase} {to_x(x):{COMPOSITION_FORMAT}}" for phase, x in r.composition.items())
+                for r in reactions
             ],
             "note": [
                 "" if is_displayed(r) else "outside displayed temperature range" for r in reactions
             ],
         }
+    )
+    st.download_button(
+        "Download invariant reactions (CSV, full precision)",
+        data=invariants_csv(reactions, dependent.symbol),
+        file_name=f"{selected_name}_invariants.csv",
+        mime="text/csv",
     )
 else:
     st.write("None found.")

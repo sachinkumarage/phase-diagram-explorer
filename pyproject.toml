@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "phase-diagram-explorer"
-version = "0.1.4"
+version = "0.2.0"
 description = "Interactive exploration and visualization of thermodynamic phase diagrams"
 readme = "README.md"
 requires-python = ">=3.11"
@@ -19,13 +19,22 @@ dependencies = [
     "pytest",
 ]
 
+[project.optional-dependencies]
+# Cross-validation of the equilibrium engine (tests/validation, marker "validation").
+validation = ["pycalphad"]
+
+[project.scripts]
+phase-diagram-explorer = "phase_diagram_explorer.cli:main"
+
 [tool.setuptools.packages.find]
 where = ["src"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
-# Fast local default; run everything with: pytest -m "slow or not slow"
-addopts = ["--strict-markers", "-m", "not slow"]
+# Fast local default; run everything with: pytest -m ""
+addopts = ["--strict-markers", "-m", "not slow and not validation"]
 markers = [
     "slow: full-range invariant detection and headless Streamlit app tests (deselected by default; run in CI)",
+    "validation: cross-validation against pycalphad (needs .[validation]; deselected by default; own CI job)",
 ]
+filterwarnings = ["ignore::DeprecationWarning:pycalphad.*"]

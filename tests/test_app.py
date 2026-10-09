@@ -184,7 +184,7 @@ def test_axes_markers_and_tables_share_units(temperature_unit, composition_unit)
 
     table = _invariant_table(at)
     marker = _trace(diagram, "invariant reactions")
-    assert _values(marker["y"])[0] == pytest.approx(table[T_title][0])
+    assert _values(marker["y"])[0] == pytest.approx(float(table[T_title][0]), abs=0.05)
     assert marker["text"][0].endswith(f" {temperature_unit}")
     liquid_in_table = next(
         part for part in table[x_title][0].split(", ") if part.startswith("LIQUID ")
@@ -233,7 +233,7 @@ def test_composition_sets_in_tables_and_plots(monkeypatch, tmp_path):
 
     diagram = _figure(at, 0)
     legend = {trace.get("name") for trace in diagram["data"]}
-    assert {"ALPHA", "ALPHA + ALPHA"} <= legend
+    assert {"ALPHA", "ALPHA#1 + ALPHA#2"} <= legend
 
     gibbs = _figure(at, 1)
     tangent = _trace(gibbs, "tangent points")
@@ -268,3 +268,32 @@ def test_export_buttons_offer_vector_figures(fmt):
     at = _run()
     labels = [button.proto.label for button in at.get("download_button")]
     assert f"Export figure ({fmt})" in labels
+
+
+def _decimals(text: str) -> int:
+    return len(text.split(".")[1])
+
+
+@pytest.mark.parametrize("temperature_unit", ["K", "°C"])
+def test_display_precision(temperature_unit):
+    """T to 0.1 K or °C, compositions to 0.1 at%, fractions to 0.001."""
+    at = _run(**{"Temperature unit": temperature_unit})
+    T_title = f"Temperature ({temperature_unit})"
+    table = _invariant_table(at)
+    assert _decimals(table[T_title][0]) == 1
+    for part in table["x(Cu) (at%)"][0].split(", "):
+        assert _decimals(part.split()[1]) == 1
+
+    fractions, compositions = at.table[0].value, at.table[1].value
+    assert all(_decimals(value) == 3 for value in fractions["fraction"])
+    assert all(_decimals(value) == 1 for value in compositions["x(Cu) (at%)"])
+
+    diagram = _figure(at, 0)
+    boundary = next(trace for trace in diagram["data"] if " / " in trace.get("name", ""))
+    assert "%{x:.1f}" in boundary["hovertemplate"] and "%{y:.1f}" in boundary["hovertemplate"]
+
+
+def test_invariant_csv_has_full_precision():
+    at = _run()
+    (button,) = [b for b in at.get("download_button") if "CSV" in b.proto.label]
+    assert "full precision" in button.proto.label

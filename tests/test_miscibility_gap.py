@@ -127,12 +127,15 @@ def test_diagram_has_gap_field_and_continuous_single_phase_field(regular_solutio
 
     assert detect_invariants(diagram, regular_solution, n_points=1001) == []
 
-    # Traced and drawn with plain phase names: ALPHA (not ALPHA#1) fields
-    # and an "ALPHA + ALPHA" gap.
+    # Single-phase fields are labelled with the plain phase name; the gap
+    # names its two composition sets.
     traced = trace_diagram(regular_solution, (800.0, 1300.0))
-    assert {region.label for region in traced.regions} == {"ALPHA", "ALPHA + ALPHA"}
+    assert {region.label for region in traced.regions} == {"ALPHA", "ALPHA#1 + ALPHA#2"}
     figure = plot_diagram(traced, "A-B", dependent_symbol="B")
-    assert {trace.name for trace in figure.data} >= {"ALPHA", "ALPHA + ALPHA"}
+    assert {trace.name for trace in figure.data} >= {"ALPHA", "ALPHA#1 + ALPHA#2"}
+    labels = next(trace for trace in figure.data if trace.name == "field labels")
+    assert "ALPHA#1 + ALPHA#2" in labels.text
+    assert "ALPHA + ALPHA" not in {region.label for region in traced.regions}
 
 
 def test_eutectic_into_two_composition_sets():

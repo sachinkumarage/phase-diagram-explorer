@@ -1,0 +1,28 @@
+$ A-B gap eutectic
+$ Written by phase-diagram-explorer 0.2.0.
+$ Synthetic test fixture: tests/fixtures/gap_eutectic.json exported with write_tdb.
+$ Source: Synthetic system for validating invariant detection with composition
+$ sets: the regular solution ALPHA (L0 = 20000 J/mol, Tc = 1202.73 K) plus an
+$ ideal LIQUID whose end members both melt at 1000 K (dHfus = 10000 J/mol).
+$ Below the liquidus minimum the liquid decomposes eutectically into the two
+$ composition sets of ALPHA, symmetrically about x = 0.5.
+$
+ELEMENT /-   ELECTRON_GAS  0.0 0.0 0.0 !
+ELEMENT VA   VACUUM        0.0 0.0 0.0 !
+ELEMENT A ALPHA 50.0 0.0 0.0 !
+ELEMENT B ALPHA 100.0 0.0 0.0 !
+
+TYPE_DEFINITION % SEQ * !
+DEFINE_SYSTEM_DEFAULT ELEMENT 2 !
+DEFAULT_COMMAND DEF_SYS_ELEMENT VA /- !
+
+PHASE LIQUID % 1 1.0 !
+CONSTITUENT LIQUID :A,B: !
+PARAMETER G(LIQUID,A;0) 1.0 10000.0-10.0*T; 10000.0 N !
+PARAMETER G(LIQUID,B;0) 1.0 10000.0-10.0*T; 10000.0 N !
+
+PHASE ALPHA % 1 1.0 !
+CONSTITUENT ALPHA :A,B: !
+PARAMETER G(ALPHA,A;0) 1.0 0.0; 10000.0 N !
+PARAMETER G(ALPHA,B;0) 1.0 0.0; 10000.0 N !
+PARAMETER L(ALPHA,A,B;0) 1.0 20000.0; 10000.0 N !

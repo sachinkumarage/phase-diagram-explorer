@@ -29,10 +29,13 @@ class SolutionPhase:
         self.gibbs_b = gibbs_b
         self.L = list(L) if L is not None else []
 
-    def _redlich_kister(self, x_a: np.ndarray, x_b: np.ndarray) -> np.ndarray:
+    def _interaction_values(self, T) -> list:
+        return [L_v.G(T) if hasattr(L_v, "G") else L_v for L_v in self.L]
+
+    def _redlich_kister(self, T, x_a: np.ndarray, x_b: np.ndarray) -> np.ndarray:
         diff = x_a - x_b
         excess = np.zeros_like(diff, dtype=float)
-        for v, L_v in enumerate(self.L):
+        for v, L_v in enumerate(self._interaction_values(T)):
             excess = excess + L_v * diff**v
         return excess
 
@@ -42,7 +45,7 @@ class SolutionPhase:
 
         ideal = x_a * self.gibbs_a.G(T) + x_b * self.gibbs_b.G(T)
         entropy = GAS_CONSTANT * np.asarray(T, dtype=float) * (_xlogx(x_a) + _xlogx(x_b))
-        excess = x_a * x_b * self._redlich_kister(x_a, x_b)
+        excess = x_a * x_b * self._redlich_kister(T, x_a, x_b)
 
         result = ideal + entropy + excess
 
@@ -50,12 +53,12 @@ class SolutionPhase:
             return float(result)
         return result
 
-    def _redlich_kister_derivative(self, x_a: np.ndarray, x_b: np.ndarray) -> np.ndarray:
+    def _redlich_kister_derivative(self, T, x_a: np.ndarray, x_b: np.ndarray) -> np.ndarray:
         """d/dx_b of x_a*x_b*sum_v L_v*(x_a - x_b)^v, with x_a = 1 - x_b."""
         diff = x_a - x_b
         series = np.zeros_like(diff, dtype=float)
         series_derivative = np.zeros_like(diff, dtype=float)
-        for v, L_v in enumerate(self.L):
+        for v, L_v in enumerate(self._interaction_values(T)):
             series = series + L_v * diff**v
             if v > 0:
                 series_derivative = series_derivative + L_v * v * diff ** (v - 1)
@@ -70,7 +73,7 @@ class SolutionPhase:
         result = (
             self.gibbs_b.G(T) - self.gibbs_a.G(T)
             + GAS_CONSTANT * T_arr * np.log(x_b / x_a)
-            + self._redlich_kister_derivative(x_a, x_b)
+            + self._redlich_kister_derivative(T, x_a, x_b)
         )
         if np.ndim(T) == 0 and np.ndim(x) == 0:
             return float(result)

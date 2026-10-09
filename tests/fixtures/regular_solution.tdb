@@ -1,0 +1,23 @@
+$ A-B regular solution
+$ Written by phase-diagram-explorer 0.2.0.
+$ Synthetic test fixture: tests/fixtures/regular_solution.json exported with write_tdb.
+$ Source: Synthetic symmetric regular solution for validating miscibility gap
+$ handling: one solution phase with ideal end members (G = 0) and a single
+$ Redlich-Kister parameter L0 = 20000 J/mol, so the gap is symmetric about x =
+$ 0.5 with critical temperature Tc = L0 / (2R) = 1202.73 K and binodal
+$ ln(x/(1-x)) = L0(2x-1)/(RT).
+$
+ELEMENT /-   ELECTRON_GAS  0.0 0.0 0.0 !
+ELEMENT VA   VACUUM        0.0 0.0 0.0 !
+ELEMENT A ALPHA 50.0 0.0 0.0 !
+ELEMENT B ALPHA 100.0 0.0 0.0 !
+
+TYPE_DEFINITION % SEQ * !
+DEFINE_SYSTEM_DEFAULT ELEMENT 2 !
+DEFAULT_COMMAND DEF_SYS_ELEMENT VA /- !
+
+PHASE ALPHA % 1 1.0 !
+CONSTITUENT ALPHA :A,B: !
+PARAMETER G(ALPHA,A;0) 1.0 0.0; 10000.0 N !
+PARAMETER G(ALPHA,B;0) 1.0 0.0; 10000.0 N !
+PARAMETER L(ALPHA,A,B;0) 1.0 20000.0; 10000.0 N !

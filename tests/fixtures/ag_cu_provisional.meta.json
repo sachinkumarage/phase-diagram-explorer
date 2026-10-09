@@ -1,0 +1,18 @@
+{
+  "name": "Ag-Cu",
+  "elements": [
+    "Ag",
+    "Cu"
+  ],
+  "element_names": {
+    "Ag": "Silver",
+    "Cu": "Copper"
+  },
+  "t_range_k": [
+    500.0,
+    1450.0
+  ],
+  "_source": "Test fixture: the provisional example system data/systems/ag_cu.json exported with write_tdb. Not literature data. Simplified two-term CALPHAD-style model. Pure-element melting points and enthalpies of fusion from standard reference tables (Ag: Tm=1234.93 K, dHfus=11090 J/mol; Cu: Tm=1357.77 K, dHfus=13050 J/mol), consistent with SGTE-derived unary assessments (Dinsdale, CALPHAD 15 (1991) 317-425). LIQUID is modeled as an ideal solution whose end-member energies follow the standard linear fusion approximation dG_fus(T) = dHfus*(1 - T/Tm) relative to each element's own solid reference state (G=0). The terminal fcc solid solutions are modeled as two distinct ideal solutions (FCC_AG, FCC_CU) with a large positive cross-endpoint energy standing in for a simplified mutual-immiscibility interaction, fitted so the computed invariant reproduces the experimentally assessed Ag-Cu eutectic (T=779 C, x_Cu=39.9 at%; Subramanian & Perepezko, J. Phase Equilib. 14 (1993) 62-75).",
+  "_status": "provisional",
+  "_status_reason": "Solvus compositions are wrong with the simplified fcc parameters (eutectic solid x(Cu) 0.26 and 0.54 vs assessed 0.141 and 0.950)."
+}

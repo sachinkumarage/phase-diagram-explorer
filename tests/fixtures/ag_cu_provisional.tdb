@@ -1,0 +1,42 @@
+$ Ag-Cu
+$ Written by phase-diagram-explorer 0.2.0.
+$ TEST FIXTURE: the provisional example system data/systems/ag_cu.json exported
+$ with write_tdb. NOT LITERATURE DATA.
+$ Source: Simplified two-term CALPHAD-style model. Pure-element melting points
+$ and enthalpies of fusion from standard reference tables (Ag: Tm=1234.93 K,
+$ dHfus=11090 J/mol; Cu: Tm=1357.77 K, dHfus=13050 J/mol), consistent with
+$ SGTE-derived unary assessments (Dinsdale, CALPHAD 15 (1991) 317-425). LIQUID
+$ is modeled as an ideal solution whose end-member energies follow the
+$ standard linear fusion approximation dG_fus(T) = dHfus*(1 - T/Tm) relative
+$ to each element's own solid reference state (G=0). The terminal fcc solid
+$ solutions are modeled as two distinct ideal solutions (FCC_AG, FCC_CU) with
+$ a large positive cross-endpoint energy standing in for a simplified mutual-
+$ immiscibility interaction, fitted so the computed invariant reproduces the
+$ experimentally assessed Ag-Cu eutectic (T=779 C, x_Cu=39.9 at%; Subramanian
+$ & Perepezko, J. Phase Equilib. 14 (1993) 62-75).
+$ Status: provisional. Solvus compositions are wrong with the simplified fcc
+$ parameters (eutectic solid x(Cu) 0.26 and 0.54 vs assessed 0.141 and 0.950).
+$
+ELEMENT /-   ELECTRON_GAS  0.0 0.0 0.0 !
+ELEMENT VA   VACUUM        0.0 0.0 0.0 !
+ELEMENT AG FCC_A1 107.8682 0.0 0.0 !
+ELEMENT CU FCC_A1 63.546 0.0 0.0 !
+
+TYPE_DEFINITION % SEQ * !
+DEFINE_SYSTEM_DEFAULT ELEMENT 2 !
+DEFAULT_COMMAND DEF_SYS_ELEMENT VA /- !
+
+PHASE LIQUID % 1 1.0 !
+CONSTITUENT LIQUID :AG,CU: !
+PARAMETER G(LIQUID,AG;0) 1.0 11090.0-8.980266087956402*T; 10000.0 N !
+PARAMETER G(LIQUID,CU;0) 1.0 13050.0-9.611348019178505*T; 10000.0 N !
+
+PHASE FCC_AG % 1 1.0 !
+CONSTITUENT FCC_AG :AG,CU: !
+PARAMETER G(FCC_AG,AG;0) 1.0 0.0; 10000.0 N !
+PARAMETER G(FCC_AG,CU;0) 1.0 6400.0; 10000.0 N !
+
+PHASE FCC_CU % 1 1.0 !
+CONSTITUENT FCC_CU :AG,CU: !
+PARAMETER G(FCC_CU,AG;0) 1.0 4200.0; 10000.0 N !
+PARAMETER G(FCC_CU,CU;0) 1.0 0.0; 10000.0 N !

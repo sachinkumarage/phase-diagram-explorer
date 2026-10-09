@@ -1,5 +1,81 @@
 # Changelog
 
+## 0.2.0 - 2026-10-10
+
+### Added
+- TDB import (`tdb/` package, and `load_system` on `.tdb` files).
+  - Reads the binary subset: ELEMENT, FUNCTION, PHASE, CONSTITUENT,
+    PARAMETER (G, and L of Redlich-Kister orders 0..n), TYPE_DEFINITION,
+    DEFINE_SYSTEM_DEFAULT and DEFAULT_COMMAND. Handles comments,
+    multi-line commands and Thermo-Calc keyword abbreviations.
+  - Unsupported keywords and parameter types raise `NotImplementedError`
+    naming them and their line number.
+  - Substitutional phases (including ones with a VA-only sublattice) and
+    stoichiometric compounds are converted to the existing models, per mole
+    of atoms.
+  - TC/BMAGN parameters, magnetic type definitions and multi-sublattice
+    phases are stored. `build_system` raises `NotImplementedError` for them
+    instead of ignoring them.
+  - The element order and the dependent element come from
+    `<name>.meta.json` or from `load_system(..., elements=...)` /
+    `dependent_element=`. The order is never guessed.
+- Safe TDB expression evaluation (`tdb/expression.py`).
+  - A tokenizer plus a recursive-descent parser, evaluated with numpy; no
+    `eval`/`exec`. Supports `+ - * / **`, `T`, `R`, `LN`, `LOG`, `EXP`, and
+    nested FUNCTION references, which are checked for undefined names and
+    cycles.
+  - Piecewise functions with Y/N ranges. Evaluating outside every range
+    raises `ValueError`.
+- TDB export: `tdb.writer.write_tdb` and `write_metadata`, and the CLI
+  `export-tdb` command. JSON → TDB → JSON round trips give identical Gibbs
+  energies, with relative difference < 1e-10 at 20 (T, x) points per phase.
+- TDB test fixtures:
+  - `tests/fixtures/ag_cu_provisional.tdb` and `al_cu_provisional.tdb`,
+    labelled as provisional and not literature data;
+  - synthetic `regular_solution.tdb` and `gap_eutectic.tdb`.
+- Cross-validation against pycalphad.
+  - New `validation` extra and pytest marker, a separate CI job,
+    `tests/validation/`, and `python -m phase_diagram_explorer.validation`
+    for the report (`docs/validation/engine_vs_pycalphad.md`, with overlay
+    plots in `docs/img/`).
+  - Same stable phases at all 30 points of every system. Phase fractions and
+    compositions agree to within 2e-5.
+  - Ag-Cu eutectic: 1051.739 K from both engines.
+  - Regular-solution binodal agrees to within 1e-5.
+  - Also checked against pycalphad's Pb-Sn literature test database:
+    Gibbs energies, equilibria, and the eutectic at 454.56 K.
+- CLI: `phase-diagram-explorer plot --system ag_cu` writes an SVG or PDF
+  figure; there are also `export-tdb` and `list` commands. Installed as a
+  console script.
+- The app downloads the invariant reactions as a full-precision CSV
+  (`export.invariants_csv`).
+- `docs/data_format.md` documents the JSON format, the supported TDB subset
+  and the `.meta.json` fields.
+
+### Changed
+- Miscibility-gap fields are labelled "ALPHA#1 + ALPHA#2", not
+  "ALPHA + ALPHA".
+- Display precision: T to 0.1 K (or 0.1 °C), compositions to 0.1 at% or
+  wt%, and phase fractions to 0.001, in the app's tables, hover text and
+  labels. The API and the CSV export keep full precision.
+- `SolutionPhase` accepts temperature-dependent interaction parameters
+  (anything with a `G(T)` method).
+- The app and CLI list `.json`, `.yaml` and `.tdb` systems, but not
+  `*.meta.json` files (`models.system_files`).
+- `is_computable` returns False for phases that raise
+  `NotImplementedError`.
+- Expensive diagram computations are shared through session-scoped
+  fixtures (`tests/conftest.py`).
+  - The tests that existed in 0.1.4 run in 14.1 s by default, down from
+    19.5 s.
+  - The whole default run, with 210 tests instead of 123, takes 16.7 s.
+- The default pytest run deselects `slow` and `validation` tests. Run
+  `pytest -m ""` for everything.
+
+### Fixed
+- The CLI only printed its name. It now has working commands, and the
+  README examples match it.
+
 ## 0.1.4 - 2026-10-09
 
 ### Added

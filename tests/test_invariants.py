@@ -66,33 +66,31 @@ def test_known_eutectic_point_is_consistent():
     assert x_beta == pytest.approx(1.0 - x_alpha)
 
 
-def test_detects_single_eutectic_reaction_near_known_point():
+SCAN_T_RANGE = (400.0, 800.0)
+SCAN_N_T = 81
+
+
+@pytest.fixture(scope="session")
+def eutectic_scan_reactions():
     system = _eutectic_system()
+    diagram = compute_diagram(system, T_range=SCAN_T_RANGE, n_T=SCAN_N_T, n_x=201, n_points=1001)
+    return detect_invariants(diagram, system, n_points=1001)
+
+
+def test_detects_single_eutectic_reaction_near_known_point(eutectic_scan_reactions):
     T_eu, x_alpha, x_beta = _known_eutectic_point()
-
-    T_range = (400.0, 800.0)
-    n_T = 81
-    diagram = compute_diagram(system, T_range=T_range, n_T=n_T, n_x=201, n_points=1001)
-
-    reactions = detect_invariants(diagram, system, n_points=1001)
-    eutectics = [r for r in reactions if r.type == EUTECTIC]
+    eutectics = [r for r in eutectic_scan_reactions if r.type == EUTECTIC]
 
     assert len(eutectics) == 1
     reaction = eutectics[0]
 
-    T_step = (T_range[1] - T_range[0]) / (n_T - 1)
+    T_step = (SCAN_T_RANGE[1] - SCAN_T_RANGE[0]) / (SCAN_N_T - 1)
     assert reaction.temperature == pytest.approx(T_eu, abs=T_step)
 
 
-def test_eutectic_reaction_phases_and_composition():
-    system = _eutectic_system()
+def test_eutectic_reaction_phases_and_composition(eutectic_scan_reactions):
     T_eu, x_alpha, x_beta = _known_eutectic_point()
-
-    diagram = compute_diagram(
-        system, T_range=(400.0, 800.0), n_T=81, n_x=201, n_points=1001
-    )
-    reactions = detect_invariants(diagram, system, n_points=1001)
-    eutectics = [r for r in reactions if r.type == EUTECTIC]
+    eutectics = [r for r in eutectic_scan_reactions if r.type == EUTECTIC]
 
     assert len(eutectics) == 1
     reaction = eutectics[0]

@@ -1,0 +1,16 @@
+{
+  "name": "A-B gap eutectic",
+  "elements": [
+    "A",
+    "B"
+  ],
+  "element_names": {
+    "A": "Element A",
+    "B": "Element B"
+  },
+  "t_range_k": [
+    600.0,
+    1100.0
+  ],
+  "_source": "Synthetic test fixture: tests/fixtures/gap_eutectic.json exported with write_tdb. Synthetic system for validating invariant detection with composition sets: the regular solution ALPHA (L0 = 20000 J/mol, Tc = 1202.73 K) plus an ideal LIQUID whose end members both melt at 1000 K (dHfus = 10000 J/mol). Below the liquidus minimum the liquid decomposes eutectically into the two composition sets of ALPHA, symmetrically about x = 0.5."
+}

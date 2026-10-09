@@ -370,7 +370,8 @@ values below:
   - Phase regions are filled polygons bounded by the traced lines.
   - Invariants are horizontal lines across their three compositions.
   - Fields are labelled at their centroids with plain phase names, for
-    example "LIQUID + FCC_AG" and "ALPHA + ALPHA".
+    example "LIQUID + FCC_AG". (From 0.2.0, a miscibility gap is labelled
+    "ALPHA#1 + ALPHA#2".)
   - Hovering a field shows its phases; hovering a boundary shows T and
     composition.
 - The composition-points slider is gone, because drawing no longer uses a
@@ -438,6 +439,45 @@ system range):
 These are medians of three local runs. The 0.1.4 diagram time includes
 building the Plotly figure.
 
+## Resolved in 0.2.0
+
+### Engine cross-validated against pycalphad
+
+`tests/validation/` runs both engines on the same TDB files: the provisional
+Ag-Cu and Al-Cu systems exported with `write_tdb`, and the two synthetic
+gap fixtures. It compares them at 30 (T, x) points per system:
+
+- the stable phase sets agree at every point;
+- phase fractions and phase compositions agree to within 2e-5, against a
+  tolerance of 1e-3;
+- the Ag-Cu eutectic is 1051.739 K from both engines;
+- the regular-solution binodal agrees to within 1e-5.
+
+Further checks:
+
+- On the gap eutectic, the engine matches the analytical temperature,
+  643.192 K. pycalphad's value is 0.07 K lower.
+- pycalphad's Pb-Sn literature test database (Ngai and Chang 1981) gives
+  matching Gibbs energies, equilibria and the eutectic (454.56 K).
+
+So the engine solves the models correctly. The open Ag-Cu and Al-Cu issues
+below are in the data, not in the engine. The full report is
+`docs/validation/engine_vs_pycalphad.md`.
+
+### TDB import and export
+
+- Assessed databases can now be loaded directly, which is the planned route
+  to fixing the Ag-Cu and Al-Cu data.
+- Magnetic and multi-sublattice phases are read but rejected by
+  `build_system` with `NotImplementedError`, so their contributions are
+  never silently dropped.
+
+### Review fixes
+
+- Gap fields are labelled with their composition sets.
+- Tables and labels round to 0.1 K and 0.1 at%.
+- The CLI `plot` command works and is smoke-tested.
+
 ## Still open
 
 - **Ag-Cu solvus.** The simplified FCC_AG and FCC_CU parameters put the
@@ -458,6 +498,9 @@ building the Plotly figure.
   Gibbs curves, so a gap narrower than the Gibbs-curve sampling step is
   missed. In practice this only matters within about 0.02 K of a critical
   temperature.
+- **Models not yet evaluated.** Magnetic contributions (TC, BMAGN) and
+  multi-sublattice phases from TDB files raise `NotImplementedError`. The
+  magnetic model is planned for 0.2.1.
 - **Boundary drawing.** Between adaptive levels, boundary lines are
   straight segments. Points on the lines are exact equilibrium compositions,
   but between levels a line can deviate from the true curve by up to the

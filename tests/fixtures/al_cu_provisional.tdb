@@ -1,0 +1,42 @@
+$ Al-Cu
+$ Written by phase-diagram-explorer 0.2.0.
+$ TEST FIXTURE: the provisional example system data/systems/al_cu.json exported
+$ with write_tdb. NOT LITERATURE DATA.
+$ Source: Simplified two-term CALPHAD-style model. Pure-element melting points
+$ and enthalpies of fusion from standard reference tables (Al: Tm=933.47 K,
+$ dHfus=10711 J/mol; Cu: Tm=1357.77 K, dHfus=13050 J/mol), consistent with
+$ SGTE-derived unary assessments (Dinsdale, CALPHAD 15 (1991) 317-425). LIQUID
+$ follows the standard linear fusion approximation dG_fus(T) = dHfus*(1 -
+$ T/Tm) relative to each element's own solid reference state. FCC_AL is a
+$ simplified ideal solid solution with a large positive cross-endpoint energy
+$ standing in for the very limited real Cu solubility in fcc Al. AL2CU (theta
+$ phase) is modeled as a stoichiometric Al2Cu compound with a negative Gibbs
+$ energy of formation, giving the qualitative eutectic reaction LIQUID ->
+$ FCC_AL + AL2CU characteristic of the Al-rich Al-Cu system (Murray, Int. Met.
+$ Rev. 30 (1985) 211-233); unlike Ag-Cu, this system's invariant point is not
+$ numerically calibrated against experiment.
+$ Status: provisional. Cu-rich solid phases are missing and the eutectic is
+$ wrong (931 K, liquid x(Cu) ~0.005 vs assessed 821 K, 0.173).
+$
+ELEMENT /-   ELECTRON_GAS  0.0 0.0 0.0 !
+ELEMENT VA   VACUUM        0.0 0.0 0.0 !
+ELEMENT AL FCC_A1 26.9815385 0.0 0.0 !
+ELEMENT CU FCC_A1 63.546 0.0 0.0 !
+
+TYPE_DEFINITION % SEQ * !
+DEFINE_SYSTEM_DEFAULT ELEMENT 2 !
+DEFAULT_COMMAND DEF_SYS_ELEMENT VA /- !
+
+PHASE LIQUID % 1 1.0 !
+CONSTITUENT LIQUID :AL,CU: !
+PARAMETER G(LIQUID,AL;0) 1.0 10711.0-11.4743912498527*T; 10000.0 N !
+PARAMETER G(LIQUID,CU;0) 1.0 13050.0-9.611348019178505*T; 10000.0 N !
+
+PHASE FCC_AL % 1 1.0 !
+CONSTITUENT FCC_AL :AL,CU: !
+PARAMETER G(FCC_AL,AL;0) 1.0 0.0; 10000.0 N !
+PARAMETER G(FCC_AL,CU;0) 1.0 18000.0; 10000.0 N !
+
+PHASE AL2CU % 2 2.0 1.0 !
+CONSTITUENT AL2CU :AL:CU: !
+PARAMETER G(AL2CU,AL:CU;0) 1.0 -36000.0; 10000.0 N !

@@ -1,0 +1,16 @@
+{
+  "name": "A-B regular solution",
+  "elements": [
+    "A",
+    "B"
+  ],
+  "element_names": {
+    "A": "Element A",
+    "B": "Element B"
+  },
+  "t_range_k": [
+    600.0,
+    1400.0
+  ],
+  "_source": "Synthetic test fixture: tests/fixtures/regular_solution.json exported with write_tdb. Synthetic symmetric regular solution for validating miscibility gap handling: one solution phase with ideal end members (G = 0) and a single Redlich-Kister parameter L0 = 20000 J/mol, so the gap is symmetric about x = 0.5 with critical temperature Tc = L0 / (2R) = 1202.73 K and binodal ln(x/(1-x)) = L0(2x-1)/(RT)."
+}
