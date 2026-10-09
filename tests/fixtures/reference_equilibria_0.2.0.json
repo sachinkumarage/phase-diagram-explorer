@@ -1,0 +1,7623 @@
+{
+ "generated_with": "0.2.0",
+ "systems": {
+  "data/systems/ag_cu.json": {
+   "points": [
+    {
+     "T": 510.0,
+     "x": 0.0,
+     "phases": [
+      "FCC_AG"
+     ],
+     "fractions": {
+      "FCC_AG": 1.0
+     },
+     "compositions": {
+      "FCC_AG": 0.0
+     },
+     "total_gibbs": 0.0
+    },
+    {
+     "T": 510.0,
+     "x": 0.02,
+     "phases": [
+      "FCC_AG"
+     ],
+     "fractions": {
+      "FCC_AG": 1.0
+     },
+     "compositions": {
+      "FCC_AG": 0.02
+     },
+     "total_gibbs": -287.7226966577615
+    },
+    {
+     "T": 510.0,
+     "x": 0.15,
+     "phases": [
+      "FCC_AG"
+     ],
+     "fractions": {
+      "FCC_AG": 1.0
+     },
+     "compositions": {
+      "FCC_AG": 0.15
+     },
+     "total_gibbs": -832.4454435144132
+    },
+    {
+     "T": 510.0,
+     "x": 0.3333333333333333,
+     "phases": [
+      "FCC_AG",
+      "FCC_CU"
+     ],
+     "fractions": {
+      "FCC_AG": 0.6589242650841873,
+      "FCC_CU": 0.34107573491581267
+     },
+     "compositions": {
+      "FCC_AG": 0.15139113989176417,
+      "FCC_CU": 0.6848274850087153
+     },
+     "total_gibbs": -999.1769268190694
+    },
+    {
+     "T": 510.0,
+     "x": 0.5,
+     "phases": [
+      "FCC_AG",
+      "FCC_CU"
+     ],
+     "fractions": {
+      "FCC_AG": 0.34648461189533963,
+      "FCC_CU": 0.6535153881046604
+     },
+     "compositions": {
+      "FCC_AG": 0.15139113989176417,
+      "FCC_CU": 0.6848274850087153
+     },
+     "total_gibbs": -1150.7218945709749
+    },
+    {
+     "T": 510.0,
+     "x": 0.71,
+     "phases": [
+      "FCC_CU"
+     ],
+     "fractions": {
+      "FCC_CU": 1.0
+     },
+     "compositions": {
+      "FCC_CU": 0.71
+     },
+     "total_gibbs": -1335.3495041941458
+    },
+    {
+     "T": 510.0,
+     "x": 0.9,
+     "phases": [
+      "FCC_CU"
+     ],
+     "fractions": {
+      "FCC_CU": 1.0
+     },
+     "compositions": {
+      "FCC_CU": 0.9
+     },
+     "total_gibbs": -958.4740173058573
+    },
+    {
+     "T": 510.0,
+     "x": 0.99,
+     "phases": [
+      "FCC_CU"
+     ],
+     "fractions": {
+      "FCC_CU": 1.0
+     },
+     "compositions": {
+      "FCC_CU": 0.99
+     },
+     "total_gibbs": -195.46755861145084
+    },
+    {
+     "T": 510.0,
+     "x": 1.0,
+     "phases": [
+      "FCC_CU"
+     ],
+     "fractions": {
+      "FCC_CU": 1.0
+     },
+     "compositions": {
+      "FCC_CU": 1.0
+     },
+     "total_gibbs": 0.0
+    },
+    {
+     "T": 665.0,
+     "x": 0.0,
+     "phases": [
+      "FCC_AG"
+     ],
+     "fractions": {
+      "FCC_AG": 1.0
+     },
+     "compositions": {
+      "FCC_AG": 0.0
+     },
+     "total_gibbs": 0.0
+    },
+    {
+     "T": 665.0,
+     "x": 0.02,
+     "phases": [
+      "FCC_AG"
+     ],
+     "fractions": {
+      "FCC_AG": 1.0
+     },
+     "compositions": {
+      "FCC_AG": 0.02
+     },
+     "total_gibbs": -414.0697907400224
+    },
+    {
+     "T": 665.0,
+     "x": 0.15,
+     "phases": [
+      "FCC_AG"
+     ],
+     "fractions": {
+      "FCC_AG": 1.0
+     },
+     "compositions": {
+      "FCC_AG": 0.15
+     },
+     "total_gibbs": -1377.2082743864407
+    },
+    {
+     "T": 665.0,
+     "x": 0.3333333333333333,
+     "phases": [
+      "FCC_AG",
+      "FCC_CU"
+     ],
+     "fractions": {
+      "FCC_AG": 0.6791450179846472,
+      "FCC_CU": 0.32085498201535273
+     },
+     "compositions": {
+      "FCC_AG": 0.1960664381358149,
+      "FCC_CU": 0.6238824387954222
+     },
+     "total_gibbs": -1673.9783750928514
+    },
+    {
+     "T": 665.0,
+     "x": 0.5,
+     "phases": [
+      "FCC_AG",
+      "FCC_CU"
+     ],
+     "fractions": {
+      "FCC_AG": 0.2895694378060195,
+      "FCC_CU": 0.7104305621939805
+     },
+     "compositions": {
+      "FCC_AG": 0.1960664381358149,
+      "FCC_CU": 0.6238824387954222
+     },
+     "total_gibbs": -1907.633984128412
+    },
+    {
+     "T": 665.0,
+     "x": 0.71,
+     "phases": [
+      "FCC_CU"
+     ],
+     "fractions": {
+      "FCC_CU": 1.0
+     },
+     "compositions": {
+      "FCC_CU": 0.71
+     },
+     "total_gibbs": -2111.3674907629547
+    },
+    {
+     "T": 665.0,
+     "x": 0.9,
+     "phases": [
+      "FCC_CU"
+     ],
+     "fractions": {
+      "FCC_CU": 1.0
+     },
+     "compositions": {
+      "FCC_CU": 0.9
+     },
+     "total_gibbs": -1377.4220029576377
+    },
+    {
+     "T": 665.0,
+     "x": 0.99,
+     "phases": [
+      "FCC_CU"
+     ],
+     "fractions": {
+      "FCC_CU": 1.0
+     },
+     "compositions": {
+      "FCC_CU": 0.99
+     },
+     "total_gibbs": -267.63907152277415
+    },
+    {
+     "T": 665.0,
+     "x": 1.0,
+     "phases": [
+      "FCC_CU"
+     ],
+     "fractions": {
+      "FCC_CU": 1.0
+     },
+     "compositions": {
+      "FCC_CU": 1.0
+     },
+     "total_gibbs": 0.0
+    },
+    {
+     "T": 820.0,
+     "x": 0.0,
+     "phases": [
+      "FCC_AG"
+     ],
+     "fractions": {
+      "FCC_AG": 1.0
+     },
+     "compositions": {
+      "FCC_AG": 0.0
+     },
+     "total_gibbs": 0.0
+    },
+    {
+     "T": 820.0,
+     "x": 0.02,
+     "phases": [
+      "FCC_AG"
+     ],
+     "fractions": {
+      "FCC_AG": 1.0
+     },
+     "compositions": {
+      "FCC_AG": 0.02
+     },
+     "total_gibbs": -540.4168848222832
+    },
+    {
+     "T": 820.0,
+     "x": 0.15,
+     "phases": [
+      "FCC_AG"
+     ],
+     "fractions": {
+      "FCC_AG": 1.0
+     },
+     "compositions": {
+      "FCC_AG": 0.15
+     },
+     "total_gibbs": -1921.9711052584685
+    },
+    {
+     "T": 820.0,
+     "x": 0.3333333333333333,
+     "phases": [
+      "FCC_AG",
+      "FCC_CU"
+     ],
+     "fractions": {
+      "FCC_AG": 0.7034895125351793,
+      "FCC_CU": 0.29651048746482067
+     },
+     "compositions": {
+      "FCC_AG": 0.2280647703992409,
+      "FCC_CU": 0.5830895246133122
+     },
+     "total_gibbs": -2402.440482495098
+    },
+    {
+     "T": 820.0,
+     "x": 0.5,
+     "phases": [
+      "FCC_AG",
+      "FCC_CU"
+     ],
+     "fractions": {
+      "FCC_AG": 0.23403867935138756,
+      "FCC_CU": 0.7659613206486124
+     },
+     "compositions": {
+      "FCC_AG": 0.2280647703992409,
+      "FCC_CU": 0.5830895246133122
+     },
+     "total_gibbs": -2721.2434877691585
+    },
+    {
+     "T": 820.0,
+     "x": 0.71,
+     "phases": [
+      "FCC_CU"
+     ],
+     "fractions": {
+      "FCC_CU": 1.0
+     },
+     "compositions": {
+      "FCC_CU": 0.71
+     },
+     "total_gibbs": -2887.3854773317644
+    },
+    {
+     "T": 820.0,
+     "x": 0.9,
+     "phases": [
+      "FCC_CU"
+     ],
+     "fractions": {
+      "FCC_CU": 1.0
+     },
+     "compositions": {
+      "FCC_CU": 0.9
+     },
+     "total_gibbs": -1796.3699886094178
+    },
+    {
+     "T": 820.0,
+     "x": 0.99,
+     "phases": [
+      "FCC_CU"
+     ],
+     "fractions": {
+      "FCC_CU": 1.0
+     },
+     "compositions": {
+      "FCC_CU": 0.99
+     },
+     "total_gibbs": -339.81058443409745
+    },
+    {
+     "T": 820.0,
+     "x": 1.0,
+     "phases": [
+      "FCC_CU"
+     ],
+     "fractions": {
+      "FCC_CU": 1.0
+     },
+     "compositions": {
+      "FCC_CU": 1.0
+     },
+     "total_gibbs": 0.0
+    },
+    {
+     "T": 975.0,
+     "x": 0.0,
+     "phases": [
+      "FCC_AG"
+     ],
+     "fractions": {
+      "FCC_AG": 1.0
+     },
+     "compositions": {
+      "FCC_AG": 0.0
+     },
+     "total_gibbs": 0.0
+    },
+    {
+     "T": 975.0,
+     "x": 0.02,
+     "phases": [
+      "FCC_AG"
+     ],
+     "fractions": {
+      "FCC_AG": 1.0
+     },
+     "compositions": {
+      "FCC_AG": 0.02
+     },
+     "total_gibbs": -666.7639789045442
+    },
+    {
+     "T": 975.0,
+     "x": 0.15,
+     "phases": [
+      "FCC_AG"
+     ],
+     "fractions": {
+      "FCC_AG": 1.0
+     },
+     "compositions": {
+      "FCC_AG": 0.15
+     },
+     "total_gibbs": -2466.733936130496
+    },
+    {
+     "T": 975.0,
+     "x": 0.3333333333333333,
+     "phases": [
+      "FCC_AG",
+      "FCC_CU"
+     ],
+     "fractions": {
+      "FCC_AG": 0.7301400300000405,
+      "FCC_CU": 0.2698599699999595
+     },
+     "compositions": {
+      "FCC_AG": 0.25167880113604607,
+      "FCC_CU": 0.5542599219940211
+     },
+     "total_gibbs": -3161.486575071272
+    },
+    {
+     "T": 975.0,
+     "x": 0.5,
+     "phases": [
+      "FCC_AG",
+      "FCC_CU"
+     ],
+     "fractions": {
+      "FCC_AG": 0.17932355409407552,
+      "FCC_CU": 0.8206764459059245
+     },
+     "compositions": {
+      "FCC_AG": 0.25167880113604607,
+      "FCC_CU": 0.5542599219940211
+     },
+     "total_gibbs": -3567.0848833097116
+    },
+    {
+     "T": 975.0,
+     "x": 0.71,
+     "phases": [
+      "FCC_CU"
+     ],
+     "fractions": {
+      "FCC_CU": 1.0
+     },
+     "compositions": {
+      "FCC_CU": 0.71
+     },
+     "total_gibbs": -3663.403463900574
+    },
+    {
+     "T": 975.0,
+     "x": 0.9,
+     "phases": [
+      "FCC_CU"
+     ],
+     "fractions": {
+      "FCC_CU": 1.0
+     },
+     "compositions": {
+      "FCC_CU": 0.9
+     },
+     "total_gibbs": -2215.317974261198
+    },
+    {
+     "T": 975.0,
+     "x": 0.99,
+     "phases": [
+      "FCC_CU"
+     ],
+     "fractions": {
+      "FCC_CU": 1.0
+     },
+     "compositions": {
+      "FCC_CU": 0.99
+     },
+     "total_gibbs": -411.98209734542075
+    },
+    {
+     "T": 975.0,
+     "x": 1.0,
+     "phases": [
+      "FCC_CU"
+     ],
+     "fractions": {
+      "FCC_CU": 1.0
+     },
+     "compositions": {
+      "FCC_CU": 1.0
+     },
+     "total_gibbs": 0.0
+    },
+    {
+     "T": 1130.0,
+     "x": 0.0,
+     "phases": [
+      "FCC_AG"
+     ],
+     "fractions": {
+      "FCC_AG": 1.0
+     },
+     "compositions": {
+      "FCC_AG": 0.0
+     },
+     "total_gibbs": 0.0
+    },
+    {
+     "T": 1130.0,
+     "x": 0.02,
+     "phases": [
+      "FCC_AG"
+     ],
+     "fractions": {
+      "FCC_AG": 1.0
+     },
+     "compositions": {
+      "FCC_AG": 0.02
+     },
+     "total_gibbs": -793.1110729868051
+    },
+    {
+     "T": 1130.0,
+     "x": 0.15,
+     "phases": [
+      "FCC_AG",
+      "LIQUID"
+     ],
+     "fractions": {
+      "FCC_AG": 0.9313395854496161,
+      "LIQUID": 0.06866041455038384
+     },
+     "compositions": {
+      "FCC_AG": 0.14439391195939105,
+      "LIQUID": 0.22604340500891418
+     },
+     "total_gibbs": -3012.679196099963
+    },
+    {
+     "T": 1130.0,
+     "x": 0.3333333333333333,
+     "phases": [
+      "LIQUID"
+     ],
+     "fractions": {
+      "LIQUID": 1.0
+     },
+     "compositions": {
+      "LIQUID": 0.3333333333333333
+     },
+     "total_gibbs": -4622.343655153871
+    },
+    {
+     "T": 1130.0,
+     "x": 0.5,
+     "phases": [
+      "LIQUID"
+     ],
+     "fractions": {
+      "LIQUID": 1.0
+     },
+     "compositions": {
+      "LIQUID": 0.5
+     },
+     "total_gibbs": -4946.617313868893
+    },
+    {
+     "T": 1130.0,
+     "x": 0.71,
+     "phases": [
+      "FCC_CU"
+     ],
+     "fractions": {
+      "FCC_CU": 1.0
+     },
+     "compositions": {
+      "FCC_CU": 0.71
+     },
+     "total_gibbs": -4439.421450469383
+    },
+    {
+     "T": 1130.0,
+     "x": 0.9,
+     "phases": [
+      "FCC_CU"
+     ],
+     "fractions": {
+      "FCC_CU": 1.0
+     },
+     "compositions": {
+      "FCC_CU": 0.9
+     },
+     "total_gibbs": -2634.265959912978
+    },
+    {
+     "T": 1130.0,
+     "x": 0.99,
+     "phases": [
+      "FCC_CU"
+     ],
+     "fractions": {
+      "FCC_CU": 1.0
+     },
+     "compositions": {
+      "FCC_CU": 0.99
+     },
+     "total_gibbs": -484.1536102567441
+    },
+    {
+     "T": 1130.0,
+     "x": 1.0,
+     "phases": [
+      "FCC_CU"
+     ],
+     "fractions": {
+      "FCC_CU": 1.0
+     },
+     "compositions": {
+      "FCC_CU": 1.0
+     },
+     "total_gibbs": 0.0
+    },
+    {
+     "T": 1285.0,
+     "x": 0.0,
+     "phases": [
+      "LIQUID"
+     ],
+     "fractions": {
+      "LIQUID": 1.0
+     },
+     "compositions": {
+      "LIQUID": 0.0
+     },
+     "total_gibbs": -449.6419230239753
+    },
+    {
+     "T": 1285.0,
+     "x": 0.02,
+     "phases": [
+      "LIQUID"
+     ],
+     "fractions": {
+      "LIQUID": 1.0
+     },
+     "compositions": {
+      "LIQUID": 0.02
+     },
+     "total_gibbs": -1474.1188957254494
+    },
+    {
+     "T": 1285.0,
+     "x": 0.15,
+     "phases": [
+      "LIQUID"
+     ],
+     "fractions": {
+      "LIQUID": 1.0
+     },
+     "compositions": {
+      "LIQUID": 0.15
+     },
+     "total_gibbs": -4793.542563141587
+    },
+    {
+     "T": 1285.0,
+     "x": 0.3333333333333333,
+     "phases": [
+      "LIQUID"
+     ],
+     "fractions": {
+      "LIQUID": 1.0
+     },
+     "compositions": {
+      "LIQUID": 0.3333333333333333
+     },
+     "total_gibbs": -6867.193153574682
+    },
+    {
+     "T": 1285.0,
+     "x": 0.5,
+     "phases": [
+      "LIQUID"
+     ],
+     "fractions": {
+      "LIQUID": 1.0
+     },
+     "compositions": {
+      "LIQUID": 0.5
+     },
+     "total_gibbs": -7280.755087010201
+    },
+    {
+     "T": 1285.0,
+     "x": 0.71,
+     "phases": [
+      "LIQUID"
+     ],
+     "fractions": {
+      "LIQUID": 1.0
+     },
+     "compositions": {
+      "LIQUID": 0.71
+     },
+     "total_gibbs": -6067.248960012655
+    },
+    {
+     "T": 1285.0,
+     "x": 0.9,
+     "phases": [
+      "FCC_CU"
+     ],
+     "fractions": {
+      "FCC_CU": 1.0
+     },
+     "compositions": {
+      "FCC_CU": 0.9
+     },
+     "total_gibbs": -3053.2139455647584
+    },
+    {
+     "T": 1285.0,
+     "x": 0.99,
+     "phases": [
+      "FCC_CU"
+     ],
+     "fractions": {
+      "FCC_CU": 1.0
+     },
+     "compositions": {
+      "FCC_CU": 0.99
+     },
+     "total_gibbs": -556.3251231680674
+    },
+    {
+     "T": 1285.0,
+     "x": 1.0,
+     "phases": [
+      "FCC_CU"
+     ],
+     "fractions": {
+      "FCC_CU": 1.0
+     },
+     "compositions": {
+      "FCC_CU": 1.0
+     },
+     "total_gibbs": 0.0
+    },
+    {
+     "T": 1440.0,
+     "x": 0.0,
+     "phases": [
+      "LIQUID"
+     ],
+     "fractions": {
+      "LIQUID": 1.0
+     },
+     "compositions": {
+      "LIQUID": 0.0
+     },
+     "total_gibbs": -1841.5831666572176
+    },
+    {
+     "T": 1440.0,
+     "x": 0.02,
+     "phases": [
+      "LIQUID"
+     ],
+     "fractions": {
+      "LIQUID": 1.0
+     },
+     "compositions": {
+      "LIQUID": 0.02
+     },
+     "total_gibbs": -2994.3635874277406
+    },
+    {
+     "T": 1440.0,
+     "x": 0.15,
+     "phases": [
+      "LIQUID"
+     ],
+     "fractions": {
+      "LIQUID": 1.0
+     },
+     "compositions": {
+      "LIQUID": 0.15
+     },
+     "total_gibbs": -6744.919292547771
+    },
+    {
+     "T": 1440.0,
+     "x": 0.3333333333333333,
+     "phases": [
+      "LIQUID"
+     ],
+     "fractions": {
+      "LIQUID": 1.0
+     },
+     "compositions": {
+      "LIQUID": 0.3333333333333333
+     },
+     "total_gibbs": -9112.042651995493
+    },
+    {
+     "T": 1440.0,
+     "x": 0.5,
+     "phases": [
+      "LIQUID"
+     ],
+     "fractions": {
+      "LIQUID": 1.0
+     },
+     "compositions": {
+      "LIQUID": 0.5
+     },
+     "total_gibbs": -9614.89286015151
+    },
+    {
+     "T": 1440.0,
+     "x": 0.71,
+     "phases": [
+      "LIQUID"
+     ],
+     "fractions": {
+      "LIQUID": 1.0
+     },
+     "compositions": {
+      "LIQUID": 0.71
+     },
+     "total_gibbs": -8304.658756745699
+    },
+    {
+     "T": 1440.0,
+     "x": 0.9,
+     "phases": [
+      "LIQUID"
+     ],
+     "fractions": {
+      "LIQUID": 1.0
+     },
+     "compositions": {
+      "LIQUID": 0.9
+     },
+     "total_gibbs": -4787.6272807376035
+    },
+    {
+     "T": 1440.0,
+     "x": 0.99,
+     "phases": [
+      "LIQUID"
+     ],
+     "fractions": {
+      "LIQUID": 1.0
+     },
+     "compositions": {
+      "LIQUID": 0.99
+     },
+     "total_gibbs": -1471.35020388684
+    },
+    {
+     "T": 1440.0,
+     "x": 1.0,
+     "phases": [
+      "LIQUID"
+     ],
+     "fractions": {
+      "LIQUID": 1.0
+     },
+     "compositions": {
+      "LIQUID": 1.0
+     },
+     "total_gibbs": -790.3411476170477
+    }
+   ],
+   "invariants": [
+    {
+     "temperature": 1051.7390428094138,
+     "type": "eutectic",
+     "phases": [
+      "FCC_AG",
+      "LIQUID",
+      "FCC_CU"
+     ],
+     "composition": {
+      "FCC_AG": 0.26116446383182057,
+      "LIQUID": 0.3878677372609077,
+      "FCC_CU": 0.5429552055082147
+     }
+    }
+   ]
+  },
+  "data/systems/al_cu.json": {
+   "points": [
+    {
+     "T": 510.0,
+     "x": 0.0,
+     "phases": [
+      "FCC_AL"
+     ],
+     "fractions": {
+      "FCC_AL": 1.0
+     },
+     "compositions": {
+      "FCC_AL": 0.0
+     },
+     "total_gibbs": 0.0
+    },
+    {
+     "T": 510.0,
+     "x": 0.02,
+     "phases": [
+      "FCC_AL",
+      "AL2CU"
+     ],
+     "fractions": {
+      "FCC_AL": 0.9400083106866279,
+      "AL2CU": 0.05999168931337211
+     },
+     "compositions": {
+      "FCC_AL": 2.9470259405929662e-06,
+      "AL2CU": 0.3333333333333333
+     },
+     "total_gibbs": -720.0117467253153
+    },
+    {
+     "T": 510.0,
+     "x": 0.15,
+     "phases": [
+      "FCC_AL",
+      "AL2CU"
+     ],
+     "fractions": {
+      "FCC_AL": 0.5500048626357928,
+      "AL2CU": 0.44999513736420715
+     },
+     "compositions": {
+      "FCC_AL": 2.9470259405929662e-06,
+      "AL2CU": 0.3333333333333333
+     },
+     "total_gibbs": -5400.006873083962
+    },
+    {
+     "T": 510.0,
+     "x": 0.3333333333333333,
+     "phases": [
+      "AL2CU"
+     ],
+     "fractions": {
+      "AL2CU": 1.0
+     },
+     "compositions": {
+      "AL2CU": 0.3333333333333333
+     },
+     "total_gibbs": -12000.0
+    },
+    {
+     "T": 510.0,
+     "x": 0.5,
+     "phases": [
+      "AL2CU",
+      "LIQUID"
+     ],
+     "fractions": {
+      "AL2CU": 0.7493437264765136,
+      "LIQUID": 0.2506562735234864
+     },
+     "compositions": {
+      "AL2CU": 0.3333333333333333,
+      "LIQUID": 0.9982545193217226
+     },
+     "total_gibbs": -6964.798862788428
+    },
+    {
+     "T": 510.0,
+     "x": 0.71,
+     "phases": [
+      "AL2CU",
+      "LIQUID"
+     ],
+     "fractions": {
+      "AL2CU": 0.43351682183692075,
+      "LIQUID": 0.5664831781630792
+     },
+     "compositions": {
+      "AL2CU": 0.3333333333333333,
+      "LIQUID": 0.9982545193217226
+     },
+     "total_gibbs": -620.445429901848
+    },
+    {
+     "T": 510.0,
+     "x": 0.9,
+     "phases": [
+      "AL2CU",
+      "LIQUID"
+     ],
+     "fractions": {
+      "AL2CU": 0.14776867002014626,
+      "LIQUID": 0.8522313299798537
+     },
+     "compositions": {
+      "AL2CU": 0.3333333333333333,
+      "LIQUID": 0.9982545193217226
+     },
+     "total_gibbs": 5119.6838665193445
+    },
+    {
+     "T": 510.0,
+     "x": 0.99,
+     "phases": [
+      "AL2CU",
+      "LIQUID"
+     ],
+     "fractions": {
+      "AL2CU": 0.012414282317463443,
+      "LIQUID": 0.9875857176825366
+     },
+     "compositions": {
+      "AL2CU": 0.3333333333333333,
+      "LIQUID": 0.9982545193217226
+     },
+     "total_gibbs": 7838.692480613596
+    },
+    {
+     "T": 510.0,
+     "x": 1.0,
+     "phases": [
+      "LIQUID"
+     ],
+     "fractions": {
+      "LIQUID": 1.0
+     },
+     "compositions": {
+      "LIQUID": 1.0
+     },
+     "total_gibbs": 8148.212510218962
+    },
+    {
+     "T": 665.0,
+     "x": 0.0,
+     "phases": [
+      "FCC_AL"
+     ],
+     "fractions": {
+      "FCC_AL": 1.0
+     },
+     "compositions": {
+      "FCC_AL": 0.0
+     },
+     "total_gibbs": 0.0
+    },
+    {
+     "T": 665.0,
+     "x": 0.02,
+     "phases": [
+      "FCC_AL",
+      "AL2CU"
+     ],
+     "fractions": {
+      "FCC_AL": 0.9401617508604427,
+      "AL2CU": 0.05983824913955722
+     },
+     "compositions": {
+      "FCC_AL": 5.734859286881451e-05,
+      "AL2CU": 0.3333333333333333
+     },
+     "total_gibbs": -720.2980704365664
+    },
+    {
+     "T": 665.0,
+     "x": 0.15,
+     "phases": [
+      "FCC_AL",
+      "AL2CU"
+     ],
+     "fractions": {
+      "FCC_AL": 0.5500946414608974,
+      "AL2CU": 0.44990535853910263
+     },
+     "compositions": {
+      "FCC_AL": 5.734859286881451e-05,
+      "AL2CU": 0.3333333333333333
+     },
+     "total_gibbs": -5400.174402915012
+    },
+    {
+     "T": 665.0,
+     "x": 0.3333333333333333,
+     "phases": [
+      "AL2CU"
+     ],
+     "fractions": {
+      "AL2CU": 1.0
+     },
+     "compositions": {
+      "AL2CU": 0.3333333333333333
+     },
+     "total_gibbs": -12000.0
+    },
+    {
+     "T": 665.0,
+     "x": 0.5,
+     "phases": [
+      "AL2CU",
+      "LIQUID"
+     ],
+     "fractions": {
+      "AL2CU": 0.7453507300806972,
+      "LIQUID": 0.25464926991930287
+     },
+     "compositions": {
+      "AL2CU": 0.3333333333333333,
+      "LIQUID": 0.9878283048660715
+     },
+     "total_gibbs": -7352.314522738592
+    },
+    {
+     "T": 665.0,
+     "x": 0.71,
+     "phases": [
+      "AL2CU",
+      "LIQUID"
+     ],
+     "fractions": {
+      "AL2CU": 0.42449264998237557,
+      "LIQUID": 0.5755073500176244
+     },
+     "compositions": {
+      "AL2CU": 0.3333333333333333,
+      "LIQUID": 0.9878283048660715
+     },
+     "total_gibbs": -1496.230821389218
+    },
+    {
+     "T": 665.0,
+     "x": 0.9,
+     "phases": [
+      "AL2CU",
+      "LIQUID"
+     ],
+     "fractions": {
+      "AL2CU": 0.13419248227437042,
+      "LIQUID": 0.8658075177256296
+     },
+     "compositions": {
+      "AL2CU": 0.3333333333333333,
+      "LIQUID": 0.9878283048660715
+     },
+     "total_gibbs": 3802.130622688786
+    },
+    {
+     "T": 665.0,
+     "x": 0.99,
+     "phases": [
+      "LIQUID"
+     ],
+     "fractions": {
+      "LIQUID": 1.0
+     },
+     "compositions": {
+      "LIQUID": 0.99
+     },
+     "total_gibbs": 6313.035258239535
+    },
+    {
+     "T": 665.0,
+     "x": 1.0,
+     "phases": [
+      "LIQUID"
+     ],
+     "fractions": {
+      "LIQUID": 1.0
+     },
+     "compositions": {
+      "LIQUID": 1.0
+     },
+     "total_gibbs": 6658.4535672462935
+    },
+    {
+     "T": 820.0,
+     "x": 0.0,
+     "phases": [
+      "FCC_AL"
+     ],
+     "fractions": {
+      "FCC_AL": 1.0
+     },
+     "compositions": {
+      "FCC_AL": 0.0
+     },
+     "total_gibbs": 0.0
+    },
+    {
+     "T": 820.0,
+     "x": 0.02,
+     "phases": [
+      "FCC_AL",
+      "AL2CU"
+     ],
+     "fractions": {
+      "FCC_AL": 0.9410262752063965,
+      "AL2CU": 0.05897372479360356
+     },
+     "compositions": {
+      "FCC_AL": 0.0003635304820691108,
+      "AL2CU": 0.3333333333333333
+     },
+     "total_gibbs": -722.3302132907545
+    },
+    {
+     "T": 820.0,
+     "x": 0.15,
+     "phases": [
+      "FCC_AL",
+      "AL2CU"
+     ],
+     "fractions": {
+      "FCC_AL": 0.5506004801739554,
+      "AL2CU": 0.44939951982604465
+     },
+     "compositions": {
+      "FCC_AL": 0.0003635304820691108,
+      "AL2CU": 0.3333333333333333
+     },
+     "total_gibbs": -5401.363422670122
+    },
+    {
+     "T": 820.0,
+     "x": 0.3333333333333333,
+     "phases": [
+      "AL2CU"
+     ],
+     "fractions": {
+      "AL2CU": 1.0
+     },
+     "compositions": {
+      "AL2CU": 0.3333333333333333
+     },
+     "total_gibbs": -12000.0
+    },
+    {
+     "T": 820.0,
+     "x": 0.5,
+     "phases": [
+      "AL2CU",
+      "LIQUID"
+     ],
+     "fractions": {
+      "AL2CU": 0.7335286343412161,
+      "LIQUID": 0.26647136565878393
+     },
+     "compositions": {
+      "AL2CU": 0.3333333333333333,
+      "LIQUID": 0.9587914055529317
+     },
+     "total_gibbs": -7779.553190396155
+    },
+    {
+     "T": 820.0,
+     "x": 0.71,
+     "phases": [
+      "AL2CU",
+      "LIQUID"
+     ],
+     "fractions": {
+      "AL2CU": 0.39777471361114836,
+      "LIQUID": 0.6022252863888516
+     },
+     "compositions": {
+      "AL2CU": 0.3333333333333333,
+      "LIQUID": 0.9587914055529317
+     },
+     "total_gibbs": -2461.790210295309
+    },
+    {
+     "T": 820.0,
+     "x": 0.9,
+     "phases": [
+      "AL2CU",
+      "LIQUID"
+     ],
+     "fractions": {
+      "AL2CU": 0.09399735676013476,
+      "LIQUID": 0.9060026432398652
+     },
+     "compositions": {
+      "AL2CU": 0.3333333333333333,
+      "LIQUID": 0.9587914055529317
+     },
+     "total_gibbs": 2349.5191526530734
+    },
+    {
+     "T": 820.0,
+     "x": 0.99,
+     "phases": [
+      "LIQUID"
+     ],
+     "fractions": {
+      "LIQUID": 1.0
+     },
+     "compositions": {
+      "LIQUID": 0.99
+     },
+     "total_gibbs": 4748.217085348
+    },
+    {
+     "T": 820.0,
+     "x": 1.0,
+     "phases": [
+      "LIQUID"
+     ],
+     "fractions": {
+      "LIQUID": 1.0
+     },
+     "compositions": {
+      "LIQUID": 1.0
+     },
+     "total_gibbs": 5168.694624273626
+    },
+    {
+     "T": 975.0,
+     "x": 0.0,
+     "phases": [
+      "LIQUID"
+     ],
+     "fractions": {
+      "LIQUID": 1.0
+     },
+     "compositions": {
+      "LIQUID": 0.0
+     },
+     "total_gibbs": -476.53146860638117
+    },
+    {
+     "T": 975.0,
+     "x": 0.02,
+     "phases": [
+      "LIQUID",
+      "AL2CU"
+     ],
+     "fractions": {
+      "LIQUID": 0.964795362698474,
+      "AL2CU": 0.035204637301525975
+     },
+     "compositions": {
+      "LIQUID": 0.008566708774775101,
+      "AL2CU": 0.3333333333333333
+     },
+     "total_gibbs": -1233.500882409067
+    },
+    {
+     "T": 975.0,
+     "x": 0.15,
+     "phases": [
+      "LIQUID",
+      "AL2CU"
+     ],
+     "fractions": {
+      "LIQUID": 0.5645079249831497,
+      "AL2CU": 0.4354920750168503
+     },
+     "compositions": {
+      "LIQUID": 0.008566708774775101,
+      "AL2CU": 0.3333333333333333
+     },
+     "total_gibbs": -5700.452643962752
+    },
+    {
+     "T": 975.0,
+     "x": 0.3333333333333333,
+     "phases": [
+      "AL2CU"
+     ],
+     "fractions": {
+      "AL2CU": 1.0
+     },
+     "compositions": {
+      "AL2CU": 0.3333333333333333
+     },
+     "total_gibbs": -12000.0
+    },
+    {
+     "T": 975.0,
+     "x": 0.5,
+     "phases": [
+      "AL2CU",
+      "LIQUID"
+     ],
+     "fractions": {
+      "AL2CU": 0.7076662495153169,
+      "LIQUID": 0.29233375048468313
+     },
+     "compositions": {
+      "AL2CU": 0.3333333333333333,
+      "LIQUID": 0.9034579473757998
+     },
+     "total_gibbs": -8286.023195004718
+    },
+    {
+     "T": 975.0,
+     "x": 0.71,
+     "phases": [
+      "AL2CU",
+      "LIQUID"
+     ],
+     "fractions": {
+      "AL2CU": 0.33932572390461624,
+      "LIQUID": 0.6606742760953838
+     },
+     "compositions": {
+      "AL2CU": 0.3333333333333333,
+      "LIQUID": 0.9034579473757998
+     },
+     "total_gibbs": -3606.412420710665
+    },
+    {
+     "T": 975.0,
+     "x": 0.9,
+     "phases": [
+      "AL2CU",
+      "LIQUID"
+     ],
+     "fractions": {
+      "AL2CU": 0.006065248352077446,
+      "LIQUID": 0.9939347516479226
+     },
+     "compositions": {
+      "AL2CU": 0.3333333333333333,
+      "LIQUID": 0.9034579473757998
+     },
+     "total_gibbs": 627.5211369839559
+    },
+    {
+     "T": 975.0,
+     "x": 0.99,
+     "phases": [
+      "LIQUID"
+     ],
+     "fractions": {
+      "LIQUID": 1.0
+     },
+     "compositions": {
+      "LIQUID": 0.99
+     },
+     "total_gibbs": 3183.398912456462
+    },
+    {
+     "T": 975.0,
+     "x": 1.0,
+     "phases": [
+      "LIQUID"
+     ],
+     "fractions": {
+      "LIQUID": 1.0
+     },
+     "compositions": {
+      "LIQUID": 1.0
+     },
+     "total_gibbs": 3678.9356813009563
+    },
+    {
+     "T": 1130.0,
+     "x": 0.0,
+     "phases": [
+      "LIQUID"
+     ],
+     "fractions": {
+      "LIQUID": 1.0
+     },
+     "compositions": {
+      "LIQUID": 0.0
+     },
+     "total_gibbs": -2255.0621123335495
+    },
+    {
+     "T": 1130.0,
+     "x": 0.02,
+     "phases": [
+      "LIQUID"
+     ],
+     "fractions": {
+      "LIQUID": 1.0
+     },
+     "compositions": {
+      "LIQUID": 0.02
+     },
+     "total_gibbs": -3087.2884083071176
+    },
+    {
+     "T": 1130.0,
+     "x": 0.15,
+     "phases": [
+      "LIQUID",
+      "AL2CU"
+     ],
+     "fractions": {
+      "LIQUID": 0.6033136667220702,
+      "AL2CU": 0.3966863332779298
+     },
+     "compositions": {
+      "LIQUID": 0.029456024653386103,
+      "AL2CU": 0.3333333333333333
+     },
+     "total_gibbs": -6794.783159965662
+    },
+    {
+     "T": 1130.0,
+     "x": 0.3333333333333333,
+     "phases": [
+      "AL2CU"
+     ],
+     "fractions": {
+      "AL2CU": 1.0
+     },
+     "compositions": {
+      "AL2CU": 0.3333333333333333
+     },
+     "total_gibbs": -12000.0
+    },
+    {
+     "T": 1130.0,
+     "x": 0.5,
+     "phases": [
+      "AL2CU",
+      "LIQUID"
+     ],
+     "fractions": {
+      "AL2CU": 0.6543744715701978,
+      "LIQUID": 0.34562552842980215
+     },
+     "compositions": {
+      "AL2CU": 0.3333333333333333,
+      "LIQUID": 0.8155507998030224
+     },
+     "total_gibbs": -8931.6136025169
+    },
+    {
+     "T": 1130.0,
+     "x": 0.71,
+     "phases": [
+      "AL2CU",
+      "LIQUID"
+     ],
+     "fractions": {
+      "AL2CU": 0.2188863057486472,
+      "LIQUID": 0.7811136942513528
+     },
+     "compositions": {
+      "AL2CU": 0.3333333333333333,
+      "LIQUID": 0.8155507998030224
+     },
+     "total_gibbs": -5065.446741688197
+    },
+    {
+     "T": 1130.0,
+     "x": 0.9,
+     "phases": [
+      "LIQUID"
+     ],
+     "fractions": {
+      "LIQUID": 1.0
+     },
+     "compositions": {
+      "LIQUID": 0.9
+     },
+     "total_gibbs": -1309.5131066508723
+    },
+    {
+     "T": 1130.0,
+     "x": 0.99,
+     "phases": [
+      "LIQUID"
+     ],
+     "fractions": {
+      "LIQUID": 1.0
+     },
+     "compositions": {
+      "LIQUID": 0.99
+     },
+     "total_gibbs": 1618.5807395649267
+    },
+    {
+     "T": 1130.0,
+     "x": 1.0,
+     "phases": [
+      "LIQUID"
+     ],
+     "fractions": {
+      "LIQUID": 1.0
+     },
+     "compositions": {
+      "LIQUID": 1.0
+     },
+     "total_gibbs": 2189.1767383282895
+    },
+    {
+     "T": 1285.0,
+     "x": 0.0,
+     "phases": [
+      "LIQUID"
+     ],
+     "fractions": {
+      "LIQUID": 1.0
+     },
+     "compositions": {
+      "LIQUID": 0.0
+     },
+     "total_gibbs": -4033.592756060718
+    },
+    {
+     "T": 1285.0,
+     "x": 0.02,
+     "phases": [
+      "LIQUID"
+     ],
+     "fractions": {
+      "LIQUID": 1.0
+     },
+     "compositions": {
+      "LIQUID": 0.02
+     },
+     "total_gibbs": -4986.390712101457
+    },
+    {
+     "T": 1285.0,
+     "x": 0.15,
+     "phases": [
+      "LIQUID",
+      "AL2CU"
+     ],
+     "fractions": {
+      "LIQUID": 0.7272189695136044,
+      "AL2CU": 0.2727810304863955
+     },
+     "compositions": {
+      "LIQUID": 0.08123136539930846,
+      "AL2CU": 0.3333333333333333
+     },
+     "total_gibbs": -8116.317175053714
+    },
+    {
+     "T": 1285.0,
+     "x": 0.3333333333333333,
+     "phases": [
+      "AL2CU"
+     ],
+     "fractions": {
+      "AL2CU": 1.0
+     },
+     "compositions": {
+      "AL2CU": 0.3333333333333333
+     },
+     "total_gibbs": -12000.0
+    },
+    {
+     "T": 1285.0,
+     "x": 0.5,
+     "phases": [
+      "AL2CU",
+      "LIQUID"
+     ],
+     "fractions": {
+      "AL2CU": 0.523616494709658,
+      "LIQUID": 0.47638350529034196
+     },
+     "compositions": {
+      "AL2CU": 0.3333333333333333,
+      "LIQUID": 0.6831915144327989
+     },
+     "total_gibbs": -9842.751327959266
+    },
+    {
+     "T": 1285.0,
+     "x": 0.71,
+     "phases": [
+      "LIQUID"
+     ],
+     "fractions": {
+      "LIQUID": 1.0
+     },
+     "compositions": {
+      "LIQUID": 0.71
+     },
+     "total_gibbs": -7106.59470159331
+    },
+    {
+     "T": 1285.0,
+     "x": 0.9,
+     "phases": [
+      "LIQUID"
+     ],
+     "fractions": {
+      "LIQUID": 1.0
+     },
+     "compositions": {
+      "LIQUID": 0.9
+     },
+     "total_gibbs": -3247.097205350771
+    },
+    {
+     "T": 1285.0,
+     "x": 0.99,
+     "phases": [
+      "LIQUID"
+     ],
+     "fractions": {
+      "LIQUID": 1.0
+     },
+     "compositions": {
+      "LIQUID": 0.99
+     },
+     "total_gibbs": 53.76256667338998
+    },
+    {
+     "T": 1285.0,
+     "x": 1.0,
+     "phases": [
+      "LIQUID"
+     ],
+     "fractions": {
+      "LIQUID": 1.0
+     },
+     "compositions": {
+      "LIQUID": 1.0
+     },
+     "total_gibbs": 699.4177953556209
+    },
+    {
+     "T": 1440.0,
+     "x": 0.0,
+     "phases": [
+      "LIQUID"
+     ],
+     "fractions": {
+      "LIQUID": 1.0
+     },
+     "compositions": {
+      "LIQUID": 0.0
+     },
+     "total_gibbs": -5812.123399787888
+    },
+    {
+     "T": 1440.0,
+     "x": 0.02,
+     "phases": [
+      "LIQUID"
+     ],
+     "fractions": {
+      "LIQUID": 1.0
+     },
+     "compositions": {
+      "LIQUID": 0.02
+     },
+     "total_gibbs": -6885.493015895798
+    },
+    {
+     "T": 1440.0,
+     "x": 0.15,
+     "phases": [
+      "LIQUID"
+     ],
+     "fractions": {
+      "LIQUID": 1.0
+     },
+     "compositions": {
+      "LIQUID": 0.15
+     },
+     "total_gibbs": -10119.878490708841
+    },
+    {
+     "T": 1440.0,
+     "x": 0.3333333333333333,
+     "phases": [
+      "AL2CU"
+     ],
+     "fractions": {
+      "AL2CU": 1.0
+     },
+     "compositions": {
+      "AL2CU": 0.3333333333333333
+     },
+     "total_gibbs": -12000.0
+    },
+    {
+     "T": 1440.0,
+     "x": 0.5,
+     "phases": [
+      "LIQUID"
+     ],
+     "fractions": {
+      "LIQUID": 1.0
+     },
+     "compositions": {
+      "LIQUID": 0.5
+     },
+     "total_gibbs": -11600.162976716845
+    },
+    {
+     "T": 1440.0,
+     "x": 0.71,
+     "phases": [
+      "LIQUID"
+     ],
+     "fractions": {
+      "LIQUID": 1.0
+     },
+     "compositions": {
+      "LIQUID": 0.71
+     },
+     "total_gibbs": -9456.115424353593
+    },
+    {
+     "T": 1440.0,
+     "x": 0.9,
+     "phases": [
+      "LIQUID"
+     ],
+     "fractions": {
+      "LIQUID": 1.0
+     },
+     "compositions": {
+      "LIQUID": 0.9
+     },
+     "total_gibbs": -5184.68130405067
+    },
+    {
+     "T": 1440.0,
+     "x": 0.99,
+     "phases": [
+      "LIQUID"
+     ],
+     "fractions": {
+      "LIQUID": 1.0
+     },
+     "compositions": {
+      "LIQUID": 0.99
+     },
+     "total_gibbs": -1511.0556062181467
+    },
+    {
+     "T": 1440.0,
+     "x": 1.0,
+     "phases": [
+      "LIQUID"
+     ],
+     "fractions": {
+      "LIQUID": 1.0
+     },
+     "compositions": {
+      "LIQUID": 1.0
+     },
+     "total_gibbs": -790.3411476170477
+    }
+   ],
+   "invariants": [
+    {
+     "temperature": 930.306388892618,
+     "type": "eutectic",
+     "phases": [
+      "FCC_AL",
+      "LIQUID",
+      "AL2CU"
+     ],
+     "composition": {
+      "FCC_AL": 0.0009308675851905089,
+      "LIQUID": 0.005608535857305871,
+      "AL2CU": 0.3333333333333333
+     }
+    }
+   ]
+  },
+  "tests/fixtures/regular_solution.json": {
+   "points": [
+    {
+     "T": 610.0,
+     "x": 0.0,
+     "phases": [
+      "ALPHA#1"
+     ],
+     "fractions": {
+      "ALPHA#1": 1.0
+     },
+     "compositions": {
+      "ALPHA#1": 0.0
+     },
+     "total_gibbs": 0.0
+    },
+    {
+     "T": 610.0,
+     "x": 0.02,
+     "phases": [
+      "ALPHA#1"
+     ],
+     "fractions": {
+      "ALPHA#1": 1.0
+     },
+     "compositions": {
+      "ALPHA#1": 0.02
+     },
+     "total_gibbs": -105.2369509043815
+    },
+    {
+     "T": 610.0,
+     "x": 0.15,
+     "phases": [
+      "ALPHA#1",
+      "ALPHA#2"
+     ],
+     "fractions": {
+      "ALPHA#1": 0.8666065510678383,
+      "ALPHA#2": 0.13339344893216165
+     },
+     "compositions": {
+      "ALPHA#1": 0.02264901025290925,
+      "ALPHA#2": 0.9773509897470908
+     },
+     "total_gibbs": -105.93304742072714
+    },
+    {
+     "T": 610.0,
+     "x": 0.3333333333333333,
+     "phases": [
+      "ALPHA#1",
+      "ALPHA#2"
+     ],
+     "fractions": {
+      "ALPHA#1": 0.6745745481275421,
+      "ALPHA#2": 0.32542545187245786
+     },
+     "compositions": {
+      "ALPHA#1": 0.02264901025290925,
+      "ALPHA#2": 0.9773509897470908
+     },
+     "total_gibbs": -105.93304742072718
+    },
+    {
+     "T": 610.0,
+     "x": 0.5,
+     "phases": [
+      "ALPHA#1",
+      "ALPHA#2"
+     ],
+     "fractions": {
+      "ALPHA#1": 0.5,
+      "ALPHA#2": 0.49999999999999994
+     },
+     "compositions": {
+      "ALPHA#1": 0.02264901025290925,
+      "ALPHA#2": 0.9773509897470908
+     },
+     "total_gibbs": -105.9330474207272
+    },
+    {
+     "T": 610.0,
+     "x": 0.71,
+     "phases": [
+      "ALPHA#1",
+      "ALPHA#2"
+     ],
+     "fractions": {
+      "ALPHA#1": 0.28003606935929704,
+      "ALPHA#2": 0.719963930640703
+     },
+     "compositions": {
+      "ALPHA#1": 0.02264901025290925,
+      "ALPHA#2": 0.9773509897470908
+     },
+     "total_gibbs": -105.93304742072725
+    },
+    {
+     "T": 610.0,
+     "x": 0.9,
+     "phases": [
+      "ALPHA#1",
+      "ALPHA#2"
+     ],
+     "fractions": {
+      "ALPHA#1": 0.081021084493899,
+      "ALPHA#2": 0.918978915506101
+     },
+     "compositions": {
+      "ALPHA#1": 0.02264901025290925,
+      "ALPHA#2": 0.9773509897470908
+     },
+     "total_gibbs": -105.93304742072728
+    },
+    {
+     "T": 610.0,
+     "x": 0.99,
+     "phases": [
+      "ALPHA#2"
+     ],
+     "fractions": {
+      "ALPHA#2": 1.0
+     },
+     "compositions": {
+      "ALPHA#2": 0.99
+     },
+     "total_gibbs": -86.02982500585287
+    },
+    {
+     "T": 610.0,
+     "x": 1.0,
+     "phases": [
+      "ALPHA#2"
+     ],
+     "fractions": {
+      "ALPHA#2": 1.0
+     },
+     "compositions": {
+      "ALPHA#2": 1.0
+     },
+     "total_gibbs": 0.0
+    },
+    {
+     "T": 740.0,
+     "x": 0.0,
+     "phases": [
+      "ALPHA#1"
+     ],
+     "fractions": {
+      "ALPHA#1": 1.0
+     },
+     "compositions": {
+      "ALPHA#1": 0.0
+     },
+     "total_gibbs": 0.0
+    },
+    {
+     "T": 740.0,
+     "x": 0.02,
+     "phases": [
+      "ALPHA#1"
+     ],
+     "fractions": {
+      "ALPHA#1": 1.0
+     },
+     "compositions": {
+      "ALPHA#1": 0.02
+     },
+     "total_gibbs": -211.20548142498728
+    },
+    {
+     "T": 740.0,
+     "x": 0.15,
+     "phases": [
+      "ALPHA#1",
+      "ALPHA#2"
+     ],
+     "fractions": {
+      "ALPHA#1": 0.8900347708316241,
+      "ALPHA#2": 0.10996522916837595
+     },
+     "compositions": {
+      "ALPHA#1": 0.05132205360340406,
+      "ALPHA#2": 0.9486779463965959
+     },
+     "total_gibbs": -271.4815900973573
+    },
+    {
+     "T": 740.0,
+     "x": 0.3333333333333333,
+     "phases": [
+      "ALPHA#1",
+      "ALPHA#2"
+     ],
+     "fractions": {
+      "ALPHA#1": 0.6857308432531544,
+      "ALPHA#2": 0.31426915674684563
+     },
+     "compositions": {
+      "ALPHA#1": 0.05132205360340406,
+      "ALPHA#2": 0.9486779463965959
+     },
+     "total_gibbs": -271.4815900973573
+    },
+    {
+     "T": 740.0,
+     "x": 0.5,
+     "phases": [
+      "ALPHA#1",
+      "ALPHA#2"
+     ],
+     "fractions": {
+      "ALPHA#1": 0.5,
+      "ALPHA#2": 0.5
+     },
+     "compositions": {
+      "ALPHA#1": 0.05132205360340406,
+      "ALPHA#2": 0.9486779463965959
+     },
+     "total_gibbs": -271.48159009735735
+    },
+    {
+     "T": 740.0,
+     "x": 0.71,
+     "phases": [
+      "ALPHA#1",
+      "ALPHA#2"
+     ],
+     "fractions": {
+      "ALPHA#1": 0.26597913750102553,
+      "ALPHA#2": 0.7340208624989745
+     },
+     "compositions": {
+      "ALPHA#1": 0.05132205360340406,
+      "ALPHA#2": 0.9486779463965959
+     },
+     "total_gibbs": -271.48159009735735
+    },
+    {
+     "T": 740.0,
+     "x": 0.9,
+     "phases": [
+      "ALPHA#1",
+      "ALPHA#2"
+     ],
+     "fractions": {
+      "ALPHA#1": 0.054245976192429546,
+      "ALPHA#2": 0.9457540238075705
+     },
+     "compositions": {
+      "ALPHA#1": 0.05132205360340406,
+      "ALPHA#2": 0.9486779463965959
+     },
+     "total_gibbs": -271.4815900973574
+    },
+    {
+     "T": 740.0,
+     "x": 0.99,
+     "phases": [
+      "ALPHA#2"
+     ],
+     "fractions": {
+      "ALPHA#2": 1.0
+     },
+     "compositions": {
+      "ALPHA#2": 0.99
+     },
+     "total_gibbs": -146.5607713185756
+    },
+    {
+     "T": 740.0,
+     "x": 1.0,
+     "phases": [
+      "ALPHA#2"
+     ],
+     "fractions": {
+      "ALPHA#2": 1.0
+     },
+     "compositions": {
+      "ALPHA#2": 1.0
+     },
+     "total_gibbs": 0.0
+    },
+    {
+     "T": 870.0,
+     "x": 0.0,
+     "phases": [
+      "ALPHA#1"
+     ],
+     "fractions": {
+      "ALPHA#1": 1.0
+     },
+     "compositions": {
+      "ALPHA#1": 0.0
+     },
+     "total_gibbs": 0.0
+    },
+    {
+     "T": 870.0,
+     "x": 0.02,
+     "phases": [
+      "ALPHA#1"
+     ],
+     "fractions": {
+      "ALPHA#1": 1.0
+     },
+     "compositions": {
+      "ALPHA#1": 0.02
+     },
+     "total_gibbs": -317.1740119455932
+    },
+    {
+     "T": 870.0,
+     "x": 0.15,
+     "phases": [
+      "ALPHA#1",
+      "ALPHA#2"
+     ],
+     "fractions": {
+      "ALPHA#1": 0.9347061213399906,
+      "ALPHA#2": 0.06529387866000935
+     },
+     "compositions": {
+      "ALPHA#1": 0.09742917937166638,
+      "ALPHA#2": 0.9025708206283337
+     },
+     "total_gibbs": -551.6520425504823
+    },
+    {
+     "T": 870.0,
+     "x": 0.3333333333333333,
+     "phases": [
+      "ALPHA#1",
+      "ALPHA#2"
+     ],
+     "fractions": {
+      "ALPHA#1": 0.7070029149238051,
+      "ALPHA#2": 0.2929970850761949
+     },
+     "compositions": {
+      "ALPHA#1": 0.09742917937166638,
+      "ALPHA#2": 0.9025708206283337
+     },
+     "total_gibbs": -551.6520425504822
+    },
+    {
+     "T": 870.0,
+     "x": 0.5,
+     "phases": [
+      "ALPHA#1",
+      "ALPHA#2"
+     ],
+     "fractions": {
+      "ALPHA#1": 0.5,
+      "ALPHA#2": 0.49999999999999994
+     },
+     "compositions": {
+      "ALPHA#1": 0.09742917937166638,
+      "ALPHA#2": 0.9025708206283337
+     },
+     "total_gibbs": -551.6520425504821
+    },
+    {
+     "T": 870.0,
+     "x": 0.71,
+     "phases": [
+      "ALPHA#1",
+      "ALPHA#2"
+     ],
+     "fractions": {
+      "ALPHA#1": 0.2391763271960058,
+      "ALPHA#2": 0.7608236728039942
+     },
+     "compositions": {
+      "ALPHA#1": 0.09742917937166638,
+      "ALPHA#2": 0.9025708206283337
+     },
+     "total_gibbs": -551.652042550482
+    },
+    {
+     "T": 870.0,
+     "x": 0.9,
+     "phases": [
+      "ALPHA#1",
+      "ALPHA#2"
+     ],
+     "fractions": {
+      "ALPHA#1": 0.0031930041828679423,
+      "ALPHA#2": 0.9968069958171321
+     },
+     "compositions": {
+      "ALPHA#1": 0.09742917937166638,
+      "ALPHA#2": 0.9025708206283337
+     },
+     "total_gibbs": -551.6520425504818
+    },
+    {
+     "T": 870.0,
+     "x": 0.99,
+     "phases": [
+      "ALPHA#2"
+     ],
+     "fractions": {
+      "ALPHA#2": 1.0
+     },
+     "compositions": {
+      "ALPHA#2": 0.99
+     },
+     "total_gibbs": -207.0917176312984
+    },
+    {
+     "T": 870.0,
+     "x": 1.0,
+     "phases": [
+      "ALPHA#2"
+     ],
+     "fractions": {
+      "ALPHA#2": 1.0
+     },
+     "compositions": {
+      "ALPHA#2": 1.0
+     },
+     "total_gibbs": 0.0
+    },
+    {
+     "T": 1000.0,
+     "x": 0.0,
+     "phases": [
+      "ALPHA#1"
+     ],
+     "fractions": {
+      "ALPHA#1": 1.0
+     },
+     "compositions": {
+      "ALPHA#1": 0.0
+     },
+     "total_gibbs": 0.0
+    },
+    {
+     "T": 1000.0,
+     "x": 0.02,
+     "phases": [
+      "ALPHA#1"
+     ],
+     "fractions": {
+      "ALPHA#1": 1.0
+     },
+     "compositions": {
+      "ALPHA#1": 0.02
+     },
+     "total_gibbs": -423.1425424661991
+    },
+    {
+     "T": 1000.0,
+     "x": 0.15,
+     "phases": [
+      "ALPHA#1"
+     ],
+     "fractions": {
+      "ALPHA#1": 1.0
+     },
+     "compositions": {
+      "ALPHA#1": 0.15
+     },
+     "total_gibbs": -964.5989088517904
+    },
+    {
+     "T": 1000.0,
+     "x": 0.3333333333333333,
+     "phases": [
+      "ALPHA#1",
+      "ALPHA#2"
+     ],
+     "fractions": {
+      "ALPHA#1": 0.7518695536267717,
+      "ALPHA#2": 0.24813044637322834
+     },
+     "compositions": {
+      "ALPHA#1": 0.1691409019733312,
+      "ALPHA#2": 0.8308590980266689
+     },
+     "total_gibbs": -968.4559189378001
+    },
+    {
+     "T": 1000.0,
+     "x": 0.5,
+     "phases": [
+      "ALPHA#1",
+      "ALPHA#2"
+     ],
+     "fractions": {
+      "ALPHA#1": 0.5000000000000001,
+      "ALPHA#2": 0.4999999999999999
+     },
+     "compositions": {
+      "ALPHA#1": 0.1691409019733312,
+      "ALPHA#2": 0.8308590980266689
+     },
+     "total_gibbs": -968.4559189377999
+    },
+    {
+     "T": 1000.0,
+     "x": 0.71,
+     "phases": [
+      "ALPHA#1",
+      "ALPHA#2"
+     ],
+     "fractions": {
+      "ALPHA#1": 0.18264436243026805,
+      "ALPHA#2": 0.817355637569732
+     },
+     "compositions": {
+      "ALPHA#1": 0.1691409019733312,
+      "ALPHA#2": 0.8308590980266689
+     },
+     "total_gibbs": -968.4559189377998
+    },
+    {
+     "T": 1000.0,
+     "x": 0.9,
+     "phases": [
+      "ALPHA#2"
+     ],
+     "fractions": {
+      "ALPHA#2": 1.0
+     },
+     "compositions": {
+      "ALPHA#2": 0.9
+     },
+     "total_gibbs": -902.8902300114851
+    },
+    {
+     "T": 1000.0,
+     "x": 0.99,
+     "phases": [
+      "ALPHA#2"
+     ],
+     "fractions": {
+      "ALPHA#2": 1.0
+     },
+     "compositions": {
+      "ALPHA#2": 0.99
+     },
+     "total_gibbs": -267.62266394402116
+    },
+    {
+     "T": 1000.0,
+     "x": 1.0,
+     "phases": [
+      "ALPHA#2"
+     ],
+     "fractions": {
+      "ALPHA#2": 1.0
+     },
+     "compositions": {
+      "ALPHA#2": 1.0
+     },
+     "total_gibbs": 0.0
+    },
+    {
+     "T": 1130.0,
+     "x": 0.0,
+     "phases": [
+      "ALPHA#1"
+     ],
+     "fractions": {
+      "ALPHA#1": 1.0
+     },
+     "compositions": {
+      "ALPHA#1": 0.0
+     },
+     "total_gibbs": 0.0
+    },
+    {
+     "T": 1130.0,
+     "x": 0.02,
+     "phases": [
+      "ALPHA#1"
+     ],
+     "fractions": {
+      "ALPHA#1": 1.0
+     },
+     "compositions": {
+      "ALPHA#1": 0.02
+     },
+     "total_gibbs": -529.1110729868051
+    },
+    {
+     "T": 1130.0,
+     "x": 0.15,
+     "phases": [
+      "ALPHA#1"
+     ],
+     "fractions": {
+      "ALPHA#1": 1.0
+     },
+     "compositions": {
+      "ALPHA#1": 0.15
+     },
+     "total_gibbs": -1421.496767002524
+    },
+    {
+     "T": 1130.0,
+     "x": 0.3333333333333333,
+     "phases": [
+      "ALPHA#1",
+      "ALPHA#2"
+     ],
+     "fractions": {
+      "ALPHA#1": 0.9011249957682812,
+      "ALPHA#2": 0.09887500423171874
+     },
+     "compositions": {
+      "ALPHA#1": 0.2922509586476313,
+      "ALPHA#2": 0.7077490413523696
+     },
+     "total_gibbs": -1539.4353638673638
+    },
+    {
+     "T": 1130.0,
+     "x": 0.5,
+     "phases": [
+      "ALPHA#1",
+      "ALPHA#2"
+     ],
+     "fractions": {
+      "ALPHA#1": 0.5000000000000011,
+      "ALPHA#2": 0.49999999999999895
+     },
+     "compositions": {
+      "ALPHA#1": 0.2922509586476313,
+      "ALPHA#2": 0.7077490413523696
+     },
+     "total_gibbs": -1539.4353638673638
+    },
+    {
+     "T": 1130.0,
+     "x": 0.71,
+     "phases": [
+      "ALPHA#2"
+     ],
+     "fractions": {
+      "ALPHA#2": 1.0
+     },
+     "compositions": {
+      "ALPHA#2": 0.71
+     },
+     "total_gibbs": -1539.4214504693819
+    },
+    {
+     "T": 1130.0,
+     "x": 0.9,
+     "phases": [
+      "ALPHA#2"
+     ],
+     "fractions": {
+      "ALPHA#2": 1.0
+     },
+     "compositions": {
+      "ALPHA#2": 0.9
+     },
+     "total_gibbs": -1254.2659599129784
+    },
+    {
+     "T": 1130.0,
+     "x": 0.99,
+     "phases": [
+      "ALPHA#2"
+     ],
+     "fractions": {
+      "ALPHA#2": 1.0
+     },
+     "compositions": {
+      "ALPHA#2": 0.99
+     },
+     "total_gibbs": -328.15361025674395
+    },
+    {
+     "T": 1130.0,
+     "x": 1.0,
+     "phases": [
+      "ALPHA#2"
+     ],
+     "fractions": {
+      "ALPHA#2": 1.0
+     },
+     "compositions": {
+      "ALPHA#2": 1.0
+     },
+     "total_gibbs": 0.0
+    },
+    {
+     "T": 1260.0,
+     "x": 0.0,
+     "phases": [
+      "ALPHA"
+     ],
+     "fractions": {
+      "ALPHA": 1.0
+     },
+     "compositions": {
+      "ALPHA": 0.0
+     },
+     "total_gibbs": 0.0
+    },
+    {
+     "T": 1260.0,
+     "x": 0.02,
+     "phases": [
+      "ALPHA"
+     ],
+     "fractions": {
+      "ALPHA": 1.0
+     },
+     "compositions": {
+      "ALPHA": 0.02
+     },
+     "total_gibbs": -635.0796035074109
+    },
+    {
+     "T": 1260.0,
+     "x": 0.15,
+     "phases": [
+      "ALPHA"
+     ],
+     "fractions": {
+      "ALPHA": 1.0
+     },
+     "compositions": {
+      "ALPHA": 0.15
+     },
+     "total_gibbs": -1878.3946251532561
+    },
+    {
+     "T": 1260.0,
+     "x": 0.3333333333333333,
+     "phases": [
+      "ALPHA"
+     ],
+     "fractions": {
+      "ALPHA": 1.0
+     },
+     "compositions": {
+      "ALPHA": 0.3333333333333333
+     },
+     "total_gibbs": -2223.8198607799286
+    },
+    {
+     "T": 1260.0,
+     "x": 0.5,
+     "phases": [
+      "ALPHA"
+     ],
+     "fractions": {
+      "ALPHA": 1.0
+     },
+     "compositions": {
+      "ALPHA": 0.5
+     },
+     "total_gibbs": -2261.5643651375794
+    },
+    {
+     "T": 1260.0,
+     "x": 0.71,
+     "phases": [
+      "ALPHA"
+     ],
+     "fractions": {
+      "ALPHA": 1.0
+     },
+     "compositions": {
+      "ALPHA": 0.71
+     },
+     "total_gibbs": -2190.2752456561248
+    },
+    {
+     "T": 1260.0,
+     "x": 0.9,
+     "phases": [
+      "ALPHA"
+     ],
+     "fractions": {
+      "ALPHA": 1.0
+     },
+     "compositions": {
+      "ALPHA": 0.9
+     },
+     "total_gibbs": -1605.6416898144712
+    },
+    {
+     "T": 1260.0,
+     "x": 0.99,
+     "phases": [
+      "ALPHA"
+     ],
+     "fractions": {
+      "ALPHA": 1.0
+     },
+     "compositions": {
+      "ALPHA": 0.99
+     },
+     "total_gibbs": -388.6845565694666
+    },
+    {
+     "T": 1260.0,
+     "x": 1.0,
+     "phases": [
+      "ALPHA"
+     ],
+     "fractions": {
+      "ALPHA": 1.0
+     },
+     "compositions": {
+      "ALPHA": 1.0
+     },
+     "total_gibbs": 0.0
+    },
+    {
+     "T": 1390.0,
+     "x": 0.0,
+     "phases": [
+      "ALPHA"
+     ],
+     "fractions": {
+      "ALPHA": 1.0
+     },
+     "compositions": {
+      "ALPHA": 0.0
+     },
+     "total_gibbs": 0.0
+    },
+    {
+     "T": 1390.0,
+     "x": 0.02,
+     "phases": [
+      "ALPHA"
+     ],
+     "fractions": {
+      "ALPHA": 1.0
+     },
+     "compositions": {
+      "ALPHA": 0.02
+     },
+     "total_gibbs": -741.0481340280169
+    },
+    {
+     "T": 1390.0,
+     "x": 0.15,
+     "phases": [
+      "ALPHA"
+     ],
+     "fractions": {
+      "ALPHA": 1.0
+     },
+     "compositions": {
+      "ALPHA": 0.15
+     },
+     "total_gibbs": -2335.2924833039897
+    },
+    {
+     "T": 1390.0,
+     "x": 0.3333333333333333,
+     "phases": [
+      "ALPHA"
+     ],
+     "fractions": {
+      "ALPHA": 1.0
+     },
+     "compositions": {
+      "ALPHA": 0.3333333333333333
+     },
+     "total_gibbs": -2911.8153843348246
+    },
+    {
+     "T": 1390.0,
+     "x": 0.5,
+     "phases": [
+      "ALPHA"
+     ],
+     "fractions": {
+      "ALPHA": 1.0
+     },
+     "compositions": {
+      "ALPHA": 0.5
+     },
+     "total_gibbs": -3010.773386937489
+    },
+    {
+     "T": 1390.0,
+     "x": 0.71,
+     "phases": [
+      "ALPHA"
+     ],
+     "fractions": {
+      "ALPHA": 1.0
+     },
+     "compositions": {
+      "ALPHA": 0.71
+     },
+     "total_gibbs": -2841.1290408428686
+    },
+    {
+     "T": 1390.0,
+     "x": 0.9,
+     "phases": [
+      "ALPHA"
+     ],
+     "fractions": {
+      "ALPHA": 1.0
+     },
+     "compositions": {
+      "ALPHA": 0.9
+     },
+     "total_gibbs": -1957.0174197159645
+    },
+    {
+     "T": 1390.0,
+     "x": 0.99,
+     "phases": [
+      "ALPHA"
+     ],
+     "fractions": {
+      "ALPHA": 1.0
+     },
+     "compositions": {
+      "ALPHA": 0.99
+     },
+     "total_gibbs": -449.2155028821895
+    },
+    {
+     "T": 1390.0,
+     "x": 1.0,
+     "phases": [
+      "ALPHA"
+     ],
+     "fractions": {
+      "ALPHA": 1.0
+     },
+     "compositions": {
+      "ALPHA": 1.0
+     },
+     "total_gibbs": 0.0
+    }
+   ],
+   "invariants": []
+  },
+  "tests/fixtures/gap_eutectic.json": {
+   "points": [
+    {
+     "T": 610.0,
+     "x": 0.0,
+     "phases": [
+      "ALPHA#1"
+     ],
+     "fractions": {
+      "ALPHA#1": 1.0
+     },
+     "compositions": {
+      "ALPHA#1": 0.0
+     },
+     "total_gibbs": 0.0
+    },
+    {
+     "T": 610.0,
+     "x": 0.02,
+     "phases": [
+      "ALPHA#1"
+     ],
+     "fractions": {
+      "ALPHA#1": 1.0
+     },
+     "compositions": {
+      "ALPHA#1": 0.02
+     },
+     "total_gibbs": -105.2369509043815
+    },
+    {
+     "T": 610.0,
+     "x": 0.15,
+     "phases": [
+      "ALPHA#1",
+      "ALPHA#2"
+     ],
+     "fractions": {
+      "ALPHA#1": 0.8666065510678383,
+      "ALPHA#2": 0.13339344893216165
+     },
+     "compositions": {
+      "ALPHA#1": 0.02264901025290925,
+      "ALPHA#2": 0.9773509897470908
+     },
+     "total_gibbs": -105.93304742072714
+    },
+    {
+     "T": 610.0,
+     "x": 0.3333333333333333,
+     "phases": [
+      "ALPHA#1",
+      "ALPHA#2"
+     ],
+     "fractions": {
+      "ALPHA#1": 0.6745745481275421,
+      "ALPHA#2": 0.32542545187245786
+     },
+     "compositions": {
+      "ALPHA#1": 0.02264901025290925,
+      "ALPHA#2": 0.9773509897470908
+     },
+     "total_gibbs": -105.93304742072718
+    },
+    {
+     "T": 610.0,
+     "x": 0.5,
+     "phases": [
+      "ALPHA#1",
+      "ALPHA#2"
+     ],
+     "fractions": {
+      "ALPHA#1": 0.5,
+      "ALPHA#2": 0.49999999999999994
+     },
+     "compositions": {
+      "ALPHA#1": 0.02264901025290925,
+      "ALPHA#2": 0.9773509897470908
+     },
+     "total_gibbs": -105.9330474207272
+    },
+    {
+     "T": 610.0,
+     "x": 0.71,
+     "phases": [
+      "ALPHA#1",
+      "ALPHA#2"
+     ],
+     "fractions": {
+      "ALPHA#1": 0.28003606935929704,
+      "ALPHA#2": 0.719963930640703
+     },
+     "compositions": {
+      "ALPHA#1": 0.02264901025290925,
+      "ALPHA#2": 0.9773509897470908
+     },
+     "total_gibbs": -105.93304742072725
+    },
+    {
+     "T": 610.0,
+     "x": 0.9,
+     "phases": [
+      "ALPHA#1",
+      "ALPHA#2"
+     ],
+     "fractions": {
+      "ALPHA#1": 0.081021084493899,
+      "ALPHA#2": 0.918978915506101
+     },
+     "compositions": {
+      "ALPHA#1": 0.02264901025290925,
+      "ALPHA#2": 0.9773509897470908
+     },
+     "total_gibbs": -105.93304742072728
+    },
+    {
+     "T": 610.0,
+     "x": 0.99,
+     "phases": [
+      "ALPHA#2"
+     ],
+     "fractions": {
+      "ALPHA#2": 1.0
+     },
+     "compositions": {
+      "ALPHA#2": 0.99
+     },
+     "total_gibbs": -86.02982500585287
+    },
+    {
+     "T": 610.0,
+     "x": 1.0,
+     "phases": [
+      "ALPHA#2"
+     ],
+     "fractions": {
+      "ALPHA#2": 1.0
+     },
+     "compositions": {
+      "ALPHA#2": 1.0
+     },
+     "total_gibbs": 0.0
+    },
+    {
+     "T": 690.0,
+     "x": 0.0,
+     "phases": [
+      "ALPHA"
+     ],
+     "fractions": {
+      "ALPHA": 1.0
+     },
+     "compositions": {
+      "ALPHA": 0.0
+     },
+     "total_gibbs": 0.0
+    },
+    {
+     "T": 690.0,
+     "x": 0.02,
+     "phases": [
+      "ALPHA"
+     ],
+     "fractions": {
+      "ALPHA": 1.0
+     },
+     "compositions": {
+      "ALPHA": 0.02
+     },
+     "total_gibbs": -170.44835430167734
+    },
+    {
+     "T": 690.0,
+     "x": 0.15,
+     "phases": [
+      "ALPHA",
+      "LIQUID"
+     ],
+     "fractions": {
+      "ALPHA": 0.6969616547930054,
+      "LIQUID": 0.3030383452069946
+     },
+     "compositions": {
+      "ALPHA": 0.02741239755142883,
+      "LIQUID": 0.431940749779712
+     },
+     "total_gibbs": -380.16717044097106
+    },
+    {
+     "T": 690.0,
+     "x": 0.3333333333333333,
+     "phases": [
+      "ALPHA",
+      "LIQUID"
+     ],
+     "fractions": {
+      "ALPHA": 0.24375897487336706,
+      "LIQUID": 0.7562410251266329
+     },
+     "compositions": {
+      "ALPHA": 0.02741239755142883,
+      "LIQUID": 0.431940749779712
+     },
+     "total_gibbs": -668.2888142440321
+    },
+    {
+     "T": 690.0,
+     "x": 0.5,
+     "phases": [
+      "LIQUID"
+     ],
+     "fractions": {
+      "LIQUID": 1.0
+     },
+     "compositions": {
+      "LIQUID": 0.5
+     },
+     "total_gibbs": -876.5709618610554
+    },
+    {
+     "T": 690.0,
+     "x": 0.71,
+     "phases": [
+      "LIQUID",
+      "ALPHA"
+     ],
+     "fractions": {
+      "LIQUID": 0.6491203916910822,
+      "ALPHA": 0.3508796083089179
+     },
+     "compositions": {
+      "LIQUID": 0.568059250220288,
+      "ALPHA": 0.9725876024485711
+     },
+     "total_gibbs": -600.1873347996723
+    },
+    {
+     "T": 690.0,
+     "x": 0.9,
+     "phases": [
+      "LIQUID",
+      "ALPHA"
+     ],
+     "fractions": {
+      "LIQUID": 0.1794376143198203,
+      "ALPHA": 0.8205623856801797
+     },
+     "compositions": {
+      "LIQUID": 0.568059250220288,
+      "ALPHA": 0.9725876024485711
+     },
+     "total_gibbs": -301.58854031286324
+    },
+    {
+     "T": 690.0,
+     "x": 0.99,
+     "phases": [
+      "ALPHA"
+     ],
+     "fractions": {
+      "ALPHA": 1.0
+     },
+     "compositions": {
+      "ALPHA": 0.99
+     },
+     "total_gibbs": -123.27963812137452
+    },
+    {
+     "T": 690.0,
+     "x": 1.0,
+     "phases": [
+      "ALPHA"
+     ],
+     "fractions": {
+      "ALPHA": 1.0
+     },
+     "compositions": {
+      "ALPHA": 1.0
+     },
+     "total_gibbs": 0.0
+    },
+    {
+     "T": 770.0,
+     "x": 0.0,
+     "phases": [
+      "ALPHA"
+     ],
+     "fractions": {
+      "ALPHA": 1.0
+     },
+     "compositions": {
+      "ALPHA": 0.0
+     },
+     "total_gibbs": 0.0
+    },
+    {
+     "T": 770.0,
+     "x": 0.02,
+     "phases": [
+      "ALPHA"
+     ],
+     "fractions": {
+      "ALPHA": 1.0
+     },
+     "compositions": {
+      "ALPHA": 0.02
+     },
+     "total_gibbs": -235.6597576989733
+    },
+    {
+     "T": 770.0,
+     "x": 0.15,
+     "phases": [
+      "ALPHA",
+      "LIQUID"
+     ],
+     "fractions": {
+      "ALPHA": 0.5676294246234028,
+      "LIQUID": 0.4323705753765972
+     },
+     "compositions": {
+      "ALPHA": 0.02299762065977295,
+      "LIQUID": 0.31673264004588003
+     },
+     "total_gibbs": -876.6969664458777
+    },
+    {
+     "T": 770.0,
+     "x": 0.3333333333333333,
+     "phases": [
+      "LIQUID"
+     ],
+     "fractions": {
+      "LIQUID": 1.0
+     },
+     "compositions": {
+      "LIQUID": 0.3333333333333333
+     },
+     "total_gibbs": -1775.0504087482282
+    },
+    {
+     "T": 770.0,
+     "x": 0.5,
+     "phases": [
+      "LIQUID"
+     ],
+     "fractions": {
+      "LIQUID": 1.0
+     },
+     "compositions": {
+      "LIQUID": 0.5
+     },
+     "total_gibbs": -2137.622667584076
+    },
+    {
+     "T": 770.0,
+     "x": 0.71,
+     "phases": [
+      "LIQUID",
+      "ALPHA"
+     ],
+     "fractions": {
+      "LIQUID": 0.9089906266479565,
+      "ALPHA": 0.09100937335204347
+     },
+     "compositions": {
+      "LIQUID": 0.68326735995412,
+      "ALPHA": 0.977002379340227
+     },
+     "total_gibbs": -1565.7969862491684
+    },
+    {
+     "T": 770.0,
+     "x": 0.9,
+     "phases": [
+      "LIQUID",
+      "ALPHA"
+     ],
+     "fractions": {
+      "LIQUID": 0.2621491284939689,
+      "ALPHA": 0.7378508715060311
+     },
+     "compositions": {
+      "LIQUID": 0.68326735995412,
+      "ALPHA": 0.977002379340227
+     },
+     "total_gibbs": -630.5898165161308
+    },
+    {
+     "T": 770.0,
+     "x": 0.99,
+     "phases": [
+      "ALPHA"
+     ],
+     "fractions": {
+      "ALPHA": 1.0
+     },
+     "compositions": {
+      "ALPHA": 0.99
+     },
+     "total_gibbs": -160.52945123689628
+    },
+    {
+     "T": 770.0,
+     "x": 1.0,
+     "phases": [
+      "ALPHA"
+     ],
+     "fractions": {
+      "ALPHA": 1.0
+     },
+     "compositions": {
+      "ALPHA": 1.0
+     },
+     "total_gibbs": 0.0
+    },
+    {
+     "T": 850.0,
+     "x": 0.0,
+     "phases": [
+      "ALPHA"
+     ],
+     "fractions": {
+      "ALPHA": 1.0
+     },
+     "compositions": {
+      "ALPHA": 0.0
+     },
+     "total_gibbs": 0.0
+    },
+    {
+     "T": 850.0,
+     "x": 0.02,
+     "phases": [
+      "ALPHA",
+      "LIQUID"
+     ],
+     "fractions": {
+      "ALPHA": 0.98025588106305,
+      "LIQUID": 0.019744118936950064
+     },
+     "compositions": {
+      "ALPHA": 0.01629760547109473,
+      "LIQUID": 0.2038164580837802
+     },
+     "total_gibbs": -303.41589011097824
+    },
+    {
+     "T": 850.0,
+     "x": 0.15,
+     "phases": [
+      "ALPHA",
+      "LIQUID"
+     ],
+     "fractions": {
+      "ALPHA": 0.286992253493234,
+      "LIQUID": 0.713007746506766
+     },
+     "compositions": {
+      "ALPHA": 0.01629760547109473,
+      "LIQUID": 0.2038164580837802
+     },
+     "total_gibbs": -1555.3111418044496
+    },
+    {
+     "T": 850.0,
+     "x": 0.3333333333333333,
+     "phases": [
+      "LIQUID"
+     ],
+     "fractions": {
+      "LIQUID": 1.0
+     },
+     "compositions": {
+      "LIQUID": 0.3333333333333333
+     },
+     "total_gibbs": -2998.4322693973945
+    },
+    {
+     "T": 850.0,
+     "x": 0.5,
+     "phases": [
+      "LIQUID"
+     ],
+     "fractions": {
+      "LIQUID": 1.0
+     },
+     "compositions": {
+      "LIQUID": 0.5
+     },
+     "total_gibbs": -3398.674373307097
+    },
+    {
+     "T": 850.0,
+     "x": 0.71,
+     "phases": [
+      "LIQUID"
+     ],
+     "fractions": {
+      "LIQUID": 1.0
+     },
+     "compositions": {
+      "LIQUID": 0.71
+     },
+     "total_gibbs": -2755.582506990244
+    },
+    {
+     "T": 850.0,
+     "x": 0.9,
+     "phases": [
+      "LIQUID",
+      "ALPHA"
+     ],
+     "fractions": {
+      "LIQUID": 0.4463678897491449,
+      "ALPHA": 0.5536321102508551
+     },
+     "compositions": {
+      "LIQUID": 0.79618354191622,
+      "ALPHA": 0.9837023945289053
+     },
+     "total_gibbs": -1073.8129680761908
+    },
+    {
+     "T": 850.0,
+     "x": 0.99,
+     "phases": [
+      "ALPHA"
+     ],
+     "fractions": {
+      "ALPHA": 1.0
+     },
+     "compositions": {
+      "ALPHA": 0.99
+     },
+     "total_gibbs": -197.77926435241793
+    },
+    {
+     "T": 850.0,
+     "x": 1.0,
+     "phases": [
+      "ALPHA"
+     ],
+     "fractions": {
+      "ALPHA": 1.0
+     },
+     "compositions": {
+      "ALPHA": 1.0
+     },
+     "total_gibbs": 0.0
+    },
+    {
+     "T": 930.0,
+     "x": 0.0,
+     "phases": [
+      "ALPHA"
+     ],
+     "fractions": {
+      "ALPHA": 1.0
+     },
+     "compositions": {
+      "ALPHA": 0.0
+     },
+     "total_gibbs": 0.0
+    },
+    {
+     "T": 930.0,
+     "x": 0.02,
+     "phases": [
+      "ALPHA",
+      "LIQUID"
+     ],
+     "fractions": {
+      "ALPHA": 0.8606143032880007,
+      "LIQUID": 0.13938569671199924
+     },
+     "compositions": {
+      "ALPHA": 0.00805441001800919,
+      "LIQUID": 0.09375610153857435
+     },
+     "total_gibbs": -412.07357053752776
+    },
+    {
+     "T": 930.0,
+     "x": 0.15,
+     "phases": [
+      "LIQUID"
+     ],
+     "fractions": {
+      "LIQUID": 1.0
+     },
+     "compositions": {
+      "LIQUID": 0.15
+     },
+     "total_gibbs": -2568.5769852321655
+    },
+    {
+     "T": 930.0,
+     "x": 0.3333333333333333,
+     "phases": [
+      "LIQUID"
+     ],
+     "fractions": {
+      "LIQUID": 1.0
+     },
+     "compositions": {
+      "LIQUID": 0.3333333333333333
+     },
+     "total_gibbs": -4221.814130046561
+    },
+    {
+     "T": 930.0,
+     "x": 0.5,
+     "phases": [
+      "LIQUID"
+     ],
+     "fractions": {
+      "LIQUID": 1.0
+     },
+     "compositions": {
+      "LIQUID": 0.5
+     },
+     "total_gibbs": -4659.726079030118
+    },
+    {
+     "T": 930.0,
+     "x": 0.71,
+     "phases": [
+      "LIQUID"
+     ],
+     "fractions": {
+      "LIQUID": 1.0
+     },
+     "compositions": {
+      "LIQUID": 0.71
+     },
+     "total_gibbs": -3956.107919412855
+    },
+    {
+     "T": 930.0,
+     "x": 0.9,
+     "phases": [
+      "LIQUID"
+     ],
+     "fractions": {
+      "LIQUID": 1.0
+     },
+     "compositions": {
+      "LIQUID": 0.9
+     },
+     "total_gibbs": -1813.687913910681
+    },
+    {
+     "T": 930.0,
+     "x": 0.99,
+     "phases": [
+      "LIQUID",
+      "ALPHA"
+     ],
+     "fractions": {
+      "LIQUID": 0.022701885429226576,
+      "ALPHA": 0.9772981145707734
+     },
+     "compositions": {
+      "LIQUID": 0.9062438984614256,
+      "ALPHA": 0.9919455899819908
+     },
+     "total_gibbs": -236.65429768113754
+    },
+    {
+     "T": 930.0,
+     "x": 1.0,
+     "phases": [
+      "ALPHA"
+     ],
+     "fractions": {
+      "ALPHA": 1.0
+     },
+     "compositions": {
+      "ALPHA": 1.0
+     },
+     "total_gibbs": 0.0
+    },
+    {
+     "T": 1010.0,
+     "x": 0.0,
+     "phases": [
+      "LIQUID"
+     ],
+     "fractions": {
+      "LIQUID": 1.0
+     },
+     "compositions": {
+      "LIQUID": 0.0
+     },
+     "total_gibbs": -100.0
+    },
+    {
+     "T": 1010.0,
+     "x": 0.02,
+     "phases": [
+      "LIQUID"
+     ],
+     "fractions": {
+      "LIQUID": 1.0
+     },
+     "compositions": {
+      "LIQUID": 0.02
+     },
+     "total_gibbs": -923.2939678908612
+    },
+    {
+     "T": 1010.0,
+     "x": 0.15,
+     "phases": [
+      "LIQUID"
+     ],
+     "fractions": {
+      "LIQUID": 1.0
+     },
+     "compositions": {
+      "LIQUID": 0.15
+     },
+     "total_gibbs": -3649.744897940309
+    },
+    {
+     "T": 1010.0,
+     "x": 0.3333333333333333,
+     "phases": [
+      "LIQUID"
+     ],
+     "fractions": {
+      "LIQUID": 1.0
+     },
+     "compositions": {
+      "LIQUID": 0.3333333333333333
+     },
+     "total_gibbs": -5445.195990695728
+    },
+    {
+     "T": 1010.0,
+     "x": 0.5,
+     "phases": [
+      "LIQUID"
+     ],
+     "fractions": {
+      "LIQUID": 1.0
+     },
+     "compositions": {
+      "LIQUID": 0.5
+     },
+     "total_gibbs": -5920.77778475314
+    },
+    {
+     "T": 1010.0,
+     "x": 0.71,
+     "phases": [
+      "LIQUID"
+     ],
+     "fractions": {
+      "LIQUID": 1.0
+     },
+     "compositions": {
+      "LIQUID": 0.71
+     },
+     "total_gibbs": -5156.633331835466
+    },
+    {
+     "T": 1010.0,
+     "x": 0.9,
+     "phases": [
+      "LIQUID"
+     ],
+     "fractions": {
+      "LIQUID": 1.0
+     },
+     "compositions": {
+      "LIQUID": 0.9
+     },
+     "total_gibbs": -2829.9191323115997
+    },
+    {
+     "T": 1010.0,
+     "x": 0.99,
+     "phases": [
+      "LIQUID"
+     ],
+     "fractions": {
+      "LIQUID": 1.0
+     },
+     "compositions": {
+      "LIQUID": 0.99
+     },
+     "total_gibbs": -570.2788905834616
+    },
+    {
+     "T": 1010.0,
+     "x": 1.0,
+     "phases": [
+      "LIQUID"
+     ],
+     "fractions": {
+      "LIQUID": 1.0
+     },
+     "compositions": {
+      "LIQUID": 1.0
+     },
+     "total_gibbs": -100.0
+    },
+    {
+     "T": 1090.0,
+     "x": 0.0,
+     "phases": [
+      "LIQUID"
+     ],
+     "fractions": {
+      "LIQUID": 1.0
+     },
+     "compositions": {
+      "LIQUID": 0.0
+     },
+     "total_gibbs": -900.0
+    },
+    {
+     "T": 1090.0,
+     "x": 0.02,
+     "phases": [
+      "LIQUID"
+     ],
+     "fractions": {
+      "LIQUID": 1.0
+     },
+     "compositions": {
+      "LIQUID": 0.02
+     },
+     "total_gibbs": -1788.505371288157
+    },
+    {
+     "T": 1090.0,
+     "x": 0.15,
+     "phases": [
+      "LIQUID"
+     ],
+     "fractions": {
+      "LIQUID": 1.0
+     },
+     "compositions": {
+      "LIQUID": 0.15
+     },
+     "total_gibbs": -4730.912810648451
+    },
+    {
+     "T": 1090.0,
+     "x": 0.3333333333333333,
+     "phases": [
+      "LIQUID"
+     ],
+     "fractions": {
+      "LIQUID": 1.0
+     },
+     "compositions": {
+      "LIQUID": 0.3333333333333333
+     },
+     "total_gibbs": -6668.577851344894
+    },
+    {
+     "T": 1090.0,
+     "x": 0.5,
+     "phases": [
+      "LIQUID"
+     ],
+     "fractions": {
+      "LIQUID": 1.0
+     },
+     "compositions": {
+      "LIQUID": 0.5
+     },
+     "total_gibbs": -7181.82949047616
+    },
+    {
+     "T": 1090.0,
+     "x": 0.71,
+     "phases": [
+      "LIQUID"
+     ],
+     "fractions": {
+      "LIQUID": 1.0
+     },
+     "compositions": {
+      "LIQUID": 0.71
+     },
+     "total_gibbs": -6357.158744258077
+    },
+    {
+     "T": 1090.0,
+     "x": 0.9,
+     "phases": [
+      "LIQUID"
+     ],
+     "fractions": {
+      "LIQUID": 1.0
+     },
+     "compositions": {
+      "LIQUID": 0.9
+     },
+     "total_gibbs": -3846.1503507125185
+    },
+    {
+     "T": 1090.0,
+     "x": 0.99,
+     "phases": [
+      "LIQUID"
+     ],
+     "fractions": {
+      "LIQUID": 1.0
+     },
+     "compositions": {
+      "LIQUID": 0.99
+     },
+     "total_gibbs": -1407.5287036989832
+    },
+    {
+     "T": 1090.0,
+     "x": 1.0,
+     "phases": [
+      "LIQUID"
+     ],
+     "fractions": {
+      "LIQUID": 1.0
+     },
+     "compositions": {
+      "LIQUID": 1.0
+     },
+     "total_gibbs": -900.0
+    }
+   ],
+   "invariants": [
+    {
+     "temperature": 643.1916664393392,
+     "type": "eutectic",
+     "phases": [
+      "ALPHA#1",
+      "LIQUID",
+      "ALPHA#2"
+     ],
+     "composition": {
+      "ALPHA#1": 0.028578657377538383,
+      "LIQUID": 0.5,
+      "ALPHA#2": 0.9714213426224616
+     }
+    }
+   ]
+  },
+  "tests/fixtures/ag_cu_provisional.tdb": {
+   "points": [
+    {
+     "T": 510.0,
+     "x": 0.0,
+     "phases": [
+      "FCC_AG"
+     ],
+     "fractions": {
+      "FCC_AG": 1.0
+     },
+     "compositions": {
+      "FCC_AG": 0.0
+     },
+     "total_gibbs": 0.0
+    },
+    {
+     "T": 510.0,
+     "x": 0.02,
+     "phases": [
+      "FCC_AG"
+     ],
+     "fractions": {
+      "FCC_AG": 1.0
+     },
+     "compositions": {
+      "FCC_AG": 0.02
+     },
+     "total_gibbs": -287.7226966577615
+    },
+    {
+     "T": 510.0,
+     "x": 0.15,
+     "phases": [
+      "FCC_AG"
+     ],
+     "fractions": {
+      "FCC_AG": 1.0
+     },
+     "compositions": {
+      "FCC_AG": 0.15
+     },
+     "total_gibbs": -832.4454435144132
+    },
+    {
+     "T": 510.0,
+     "x": 0.3333333333333333,
+     "phases": [
+      "FCC_AG",
+      "FCC_CU"
+     ],
+     "fractions": {
+      "FCC_AG": 0.6589242650841873,
+      "FCC_CU": 0.34107573491581267
+     },
+     "compositions": {
+      "FCC_AG": 0.15139113989176417,
+      "FCC_CU": 0.6848274850087153
+     },
+     "total_gibbs": -999.1769268190694
+    },
+    {
+     "T": 510.0,
+     "x": 0.5,
+     "phases": [
+      "FCC_AG",
+      "FCC_CU"
+     ],
+     "fractions": {
+      "FCC_AG": 0.34648461189533963,
+      "FCC_CU": 0.6535153881046604
+     },
+     "compositions": {
+      "FCC_AG": 0.15139113989176417,
+      "FCC_CU": 0.6848274850087153
+     },
+     "total_gibbs": -1150.7218945709749
+    },
+    {
+     "T": 510.0,
+     "x": 0.71,
+     "phases": [
+      "FCC_CU"
+     ],
+     "fractions": {
+      "FCC_CU": 1.0
+     },
+     "compositions": {
+      "FCC_CU": 0.71
+     },
+     "total_gibbs": -1335.3495041941458
+    },
+    {
+     "T": 510.0,
+     "x": 0.9,
+     "phases": [
+      "FCC_CU"
+     ],
+     "fractions": {
+      "FCC_CU": 1.0
+     },
+     "compositions": {
+      "FCC_CU": 0.9
+     },
+     "total_gibbs": -958.4740173058573
+    },
+    {
+     "T": 510.0,
+     "x": 0.99,
+     "phases": [
+      "FCC_CU"
+     ],
+     "fractions": {
+      "FCC_CU": 1.0
+     },
+     "compositions": {
+      "FCC_CU": 0.99
+     },
+     "total_gibbs": -195.46755861145084
+    },
+    {
+     "T": 510.0,
+     "x": 1.0,
+     "phases": [
+      "FCC_CU"
+     ],
+     "fractions": {
+      "FCC_CU": 1.0
+     },
+     "compositions": {
+      "FCC_CU": 1.0
+     },
+     "total_gibbs": 0.0
+    },
+    {
+     "T": 665.0,
+     "x": 0.0,
+     "phases": [
+      "FCC_AG"
+     ],
+     "fractions": {
+      "FCC_AG": 1.0
+     },
+     "compositions": {
+      "FCC_AG": 0.0
+     },
+     "total_gibbs": 0.0
+    },
+    {
+     "T": 665.0,
+     "x": 0.02,
+     "phases": [
+      "FCC_AG"
+     ],
+     "fractions": {
+      "FCC_AG": 1.0
+     },
+     "compositions": {
+      "FCC_AG": 0.02
+     },
+     "total_gibbs": -414.0697907400224
+    },
+    {
+     "T": 665.0,
+     "x": 0.15,
+     "phases": [
+      "FCC_AG"
+     ],
+     "fractions": {
+      "FCC_AG": 1.0
+     },
+     "compositions": {
+      "FCC_AG": 0.15
+     },
+     "total_gibbs": -1377.2082743864407
+    },
+    {
+     "T": 665.0,
+     "x": 0.3333333333333333,
+     "phases": [
+      "FCC_AG",
+      "FCC_CU"
+     ],
+     "fractions": {
+      "FCC_AG": 0.6791450179846472,
+      "FCC_CU": 0.32085498201535273
+     },
+     "compositions": {
+      "FCC_AG": 0.1960664381358149,
+      "FCC_CU": 0.6238824387954222
+     },
+     "total_gibbs": -1673.9783750928514
+    },
+    {
+     "T": 665.0,
+     "x": 0.5,
+     "phases": [
+      "FCC_AG",
+      "FCC_CU"
+     ],
+     "fractions": {
+      "FCC_AG": 0.2895694378060195,
+      "FCC_CU": 0.7104305621939805
+     },
+     "compositions": {
+      "FCC_AG": 0.1960664381358149,
+      "FCC_CU": 0.6238824387954222
+     },
+     "total_gibbs": -1907.633984128412
+    },
+    {
+     "T": 665.0,
+     "x": 0.71,
+     "phases": [
+      "FCC_CU"
+     ],
+     "fractions": {
+      "FCC_CU": 1.0
+     },
+     "compositions": {
+      "FCC_CU": 0.71
+     },
+     "total_gibbs": -2111.3674907629547
+    },
+    {
+     "T": 665.0,
+     "x": 0.9,
+     "phases": [
+      "FCC_CU"
+     ],
+     "fractions": {
+      "FCC_CU": 1.0
+     },
+     "compositions": {
+      "FCC_CU": 0.9
+     },
+     "total_gibbs": -1377.4220029576377
+    },
+    {
+     "T": 665.0,
+     "x": 0.99,
+     "phases": [
+      "FCC_CU"
+     ],
+     "fractions": {
+      "FCC_CU": 1.0
+     },
+     "compositions": {
+      "FCC_CU": 0.99
+     },
+     "total_gibbs": -267.63907152277415
+    },
+    {
+     "T": 665.0,
+     "x": 1.0,
+     "phases": [
+      "FCC_CU"
+     ],
+     "fractions": {
+      "FCC_CU": 1.0
+     },
+     "compositions": {
+      "FCC_CU": 1.0
+     },
+     "total_gibbs": 0.0
+    },
+    {
+     "T": 820.0,
+     "x": 0.0,
+     "phases": [
+      "FCC_AG"
+     ],
+     "fractions": {
+      "FCC_AG": 1.0
+     },
+     "compositions": {
+      "FCC_AG": 0.0
+     },
+     "total_gibbs": 0.0
+    },
+    {
+     "T": 820.0,
+     "x": 0.02,
+     "phases": [
+      "FCC_AG"
+     ],
+     "fractions": {
+      "FCC_AG": 1.0
+     },
+     "compositions": {
+      "FCC_AG": 0.02
+     },
+     "total_gibbs": -540.4168848222832
+    },
+    {
+     "T": 820.0,
+     "x": 0.15,
+     "phases": [
+      "FCC_AG"
+     ],
+     "fractions": {
+      "FCC_AG": 1.0
+     },
+     "compositions": {
+      "FCC_AG": 0.15
+     },
+     "total_gibbs": -1921.9711052584685
+    },
+    {
+     "T": 820.0,
+     "x": 0.3333333333333333,
+     "phases": [
+      "FCC_AG",
+      "FCC_CU"
+     ],
+     "fractions": {
+      "FCC_AG": 0.7034895125351793,
+      "FCC_CU": 0.29651048746482067
+     },
+     "compositions": {
+      "FCC_AG": 0.2280647703992409,
+      "FCC_CU": 0.5830895246133122
+     },
+     "total_gibbs": -2402.440482495098
+    },
+    {
+     "T": 820.0,
+     "x": 0.5,
+     "phases": [
+      "FCC_AG",
+      "FCC_CU"
+     ],
+     "fractions": {
+      "FCC_AG": 0.23403867935138756,
+      "FCC_CU": 0.7659613206486124
+     },
+     "compositions": {
+      "FCC_AG": 0.2280647703992409,
+      "FCC_CU": 0.5830895246133122
+     },
+     "total_gibbs": -2721.2434877691585
+    },
+    {
+     "T": 820.0,
+     "x": 0.71,
+     "phases": [
+      "FCC_CU"
+     ],
+     "fractions": {
+      "FCC_CU": 1.0
+     },
+     "compositions": {
+      "FCC_CU": 0.71
+     },
+     "total_gibbs": -2887.3854773317644
+    },
+    {
+     "T": 820.0,
+     "x": 0.9,
+     "phases": [
+      "FCC_CU"
+     ],
+     "fractions": {
+      "FCC_CU": 1.0
+     },
+     "compositions": {
+      "FCC_CU": 0.9
+     },
+     "total_gibbs": -1796.3699886094178
+    },
+    {
+     "T": 820.0,
+     "x": 0.99,
+     "phases": [
+      "FCC_CU"
+     ],
+     "fractions": {
+      "FCC_CU": 1.0
+     },
+     "compositions": {
+      "FCC_CU": 0.99
+     },
+     "total_gibbs": -339.81058443409745
+    },
+    {
+     "T": 820.0,
+     "x": 1.0,
+     "phases": [
+      "FCC_CU"
+     ],
+     "fractions": {
+      "FCC_CU": 1.0
+     },
+     "compositions": {
+      "FCC_CU": 1.0
+     },
+     "total_gibbs": 0.0
+    },
+    {
+     "T": 975.0,
+     "x": 0.0,
+     "phases": [
+      "FCC_AG"
+     ],
+     "fractions": {
+      "FCC_AG": 1.0
+     },
+     "compositions": {
+      "FCC_AG": 0.0
+     },
+     "total_gibbs": 0.0
+    },
+    {
+     "T": 975.0,
+     "x": 0.02,
+     "phases": [
+      "FCC_AG"
+     ],
+     "fractions": {
+      "FCC_AG": 1.0
+     },
+     "compositions": {
+      "FCC_AG": 0.02
+     },
+     "total_gibbs": -666.7639789045442
+    },
+    {
+     "T": 975.0,
+     "x": 0.15,
+     "phases": [
+      "FCC_AG"
+     ],
+     "fractions": {
+      "FCC_AG": 1.0
+     },
+     "compositions": {
+      "FCC_AG": 0.15
+     },
+     "total_gibbs": -2466.733936130496
+    },
+    {
+     "T": 975.0,
+     "x": 0.3333333333333333,
+     "phases": [
+      "FCC_AG",
+      "FCC_CU"
+     ],
+     "fractions": {
+      "FCC_AG": 0.7301400300000405,
+      "FCC_CU": 0.2698599699999595
+     },
+     "compositions": {
+      "FCC_AG": 0.25167880113604607,
+      "FCC_CU": 0.5542599219940211
+     },
+     "total_gibbs": -3161.486575071272
+    },
+    {
+     "T": 975.0,
+     "x": 0.5,
+     "phases": [
+      "FCC_AG",
+      "FCC_CU"
+     ],
+     "fractions": {
+      "FCC_AG": 0.17932355409407552,
+      "FCC_CU": 0.8206764459059245
+     },
+     "compositions": {
+      "FCC_AG": 0.25167880113604607,
+      "FCC_CU": 0.5542599219940211
+     },
+     "total_gibbs": -3567.0848833097116
+    },
+    {
+     "T": 975.0,
+     "x": 0.71,
+     "phases": [
+      "FCC_CU"
+     ],
+     "fractions": {
+      "FCC_CU": 1.0
+     },
+     "compositions": {
+      "FCC_CU": 0.71
+     },
+     "total_gibbs": -3663.403463900574
+    },
+    {
+     "T": 975.0,
+     "x": 0.9,
+     "phases": [
+      "FCC_CU"
+     ],
+     "fractions": {
+      "FCC_CU": 1.0
+     },
+     "compositions": {
+      "FCC_CU": 0.9
+     },
+     "total_gibbs": -2215.317974261198
+    },
+    {
+     "T": 975.0,
+     "x": 0.99,
+     "phases": [
+      "FCC_CU"
+     ],
+     "fractions": {
+      "FCC_CU": 1.0
+     },
+     "compositions": {
+      "FCC_CU": 0.99
+     },
+     "total_gibbs": -411.98209734542075
+    },
+    {
+     "T": 975.0,
+     "x": 1.0,
+     "phases": [
+      "FCC_CU"
+     ],
+     "fractions": {
+      "FCC_CU": 1.0
+     },
+     "compositions": {
+      "FCC_CU": 1.0
+     },
+     "total_gibbs": 0.0
+    },
+    {
+     "T": 1130.0,
+     "x": 0.0,
+     "phases": [
+      "FCC_AG"
+     ],
+     "fractions": {
+      "FCC_AG": 1.0
+     },
+     "compositions": {
+      "FCC_AG": 0.0
+     },
+     "total_gibbs": 0.0
+    },
+    {
+     "T": 1130.0,
+     "x": 0.02,
+     "phases": [
+      "FCC_AG"
+     ],
+     "fractions": {
+      "FCC_AG": 1.0
+     },
+     "compositions": {
+      "FCC_AG": 0.02
+     },
+     "total_gibbs": -793.1110729868051
+    },
+    {
+     "T": 1130.0,
+     "x": 0.15,
+     "phases": [
+      "FCC_AG",
+      "LIQUID"
+     ],
+     "fractions": {
+      "FCC_AG": 0.9313395854496161,
+      "LIQUID": 0.06866041455038384
+     },
+     "compositions": {
+      "FCC_AG": 0.14439391195939105,
+      "LIQUID": 0.22604340500891418
+     },
+     "total_gibbs": -3012.679196099963
+    },
+    {
+     "T": 1130.0,
+     "x": 0.3333333333333333,
+     "phases": [
+      "LIQUID"
+     ],
+     "fractions": {
+      "LIQUID": 1.0
+     },
+     "compositions": {
+      "LIQUID": 0.3333333333333333
+     },
+     "total_gibbs": -4622.343655153871
+    },
+    {
+     "T": 1130.0,
+     "x": 0.5,
+     "phases": [
+      "LIQUID"
+     ],
+     "fractions": {
+      "LIQUID": 1.0
+     },
+     "compositions": {
+      "LIQUID": 0.5
+     },
+     "total_gibbs": -4946.617313868893
+    },
+    {
+     "T": 1130.0,
+     "x": 0.71,
+     "phases": [
+      "FCC_CU"
+     ],
+     "fractions": {
+      "FCC_CU": 1.0
+     },
+     "compositions": {
+      "FCC_CU": 0.71
+     },
+     "total_gibbs": -4439.421450469383
+    },
+    {
+     "T": 1130.0,
+     "x": 0.9,
+     "phases": [
+      "FCC_CU"
+     ],
+     "fractions": {
+      "FCC_CU": 1.0
+     },
+     "compositions": {
+      "FCC_CU": 0.9
+     },
+     "total_gibbs": -2634.265959912978
+    },
+    {
+     "T": 1130.0,
+     "x": 0.99,
+     "phases": [
+      "FCC_CU"
+     ],
+     "fractions": {
+      "FCC_CU": 1.0
+     },
+     "compositions": {
+      "FCC_CU": 0.99
+     },
+     "total_gibbs": -484.1536102567441
+    },
+    {
+     "T": 1130.0,
+     "x": 1.0,
+     "phases": [
+      "FCC_CU"
+     ],
+     "fractions": {
+      "FCC_CU": 1.0
+     },
+     "compositions": {
+      "FCC_CU": 1.0
+     },
+     "total_gibbs": 0.0
+    },
+    {
+     "T": 1285.0,
+     "x": 0.0,
+     "phases": [
+      "LIQUID"
+     ],
+     "fractions": {
+      "LIQUID": 1.0
+     },
+     "compositions": {
+      "LIQUID": 0.0
+     },
+     "total_gibbs": -449.6419230239753
+    },
+    {
+     "T": 1285.0,
+     "x": 0.02,
+     "phases": [
+      "LIQUID"
+     ],
+     "fractions": {
+      "LIQUID": 1.0
+     },
+     "compositions": {
+      "LIQUID": 0.02
+     },
+     "total_gibbs": -1474.1188957254494
+    },
+    {
+     "T": 1285.0,
+     "x": 0.15,
+     "phases": [
+      "LIQUID"
+     ],
+     "fractions": {
+      "LIQUID": 1.0
+     },
+     "compositions": {
+      "LIQUID": 0.15
+     },
+     "total_gibbs": -4793.542563141587
+    },
+    {
+     "T": 1285.0,
+     "x": 0.3333333333333333,
+     "phases": [
+      "LIQUID"
+     ],
+     "fractions": {
+      "LIQUID": 1.0
+     },
+     "compositions": {
+      "LIQUID": 0.3333333333333333
+     },
+     "total_gibbs": -6867.193153574682
+    },
+    {
+     "T": 1285.0,
+     "x": 0.5,
+     "phases": [
+      "LIQUID"
+     ],
+     "fractions": {
+      "LIQUID": 1.0
+     },
+     "compositions": {
+      "LIQUID": 0.5
+     },
+     "total_gibbs": -7280.755087010201
+    },
+    {
+     "T": 1285.0,
+     "x": 0.71,
+     "phases": [
+      "LIQUID"
+     ],
+     "fractions": {
+      "LIQUID": 1.0
+     },
+     "compositions": {
+      "LIQUID": 0.71
+     },
+     "total_gibbs": -6067.248960012655
+    },
+    {
+     "T": 1285.0,
+     "x": 0.9,
+     "phases": [
+      "FCC_CU"
+     ],
+     "fractions": {
+      "FCC_CU": 1.0
+     },
+     "compositions": {
+      "FCC_CU": 0.9
+     },
+     "total_gibbs": -3053.2139455647584
+    },
+    {
+     "T": 1285.0,
+     "x": 0.99,
+     "phases": [
+      "FCC_CU"
+     ],
+     "fractions": {
+      "FCC_CU": 1.0
+     },
+     "compositions": {
+      "FCC_CU": 0.99
+     },
+     "total_gibbs": -556.3251231680674
+    },
+    {
+     "T": 1285.0,
+     "x": 1.0,
+     "phases": [
+      "FCC_CU"
+     ],
+     "fractions": {
+      "FCC_CU": 1.0
+     },
+     "compositions": {
+      "FCC_CU": 1.0
+     },
+     "total_gibbs": 0.0
+    },
+    {
+     "T": 1440.0,
+     "x": 0.0,
+     "phases": [
+      "LIQUID"
+     ],
+     "fractions": {
+      "LIQUID": 1.0
+     },
+     "compositions": {
+      "LIQUID": 0.0
+     },
+     "total_gibbs": -1841.5831666572176
+    },
+    {
+     "T": 1440.0,
+     "x": 0.02,
+     "phases": [
+      "LIQUID"
+     ],
+     "fractions": {
+      "LIQUID": 1.0
+     },
+     "compositions": {
+      "LIQUID": 0.02
+     },
+     "total_gibbs": -2994.3635874277406
+    },
+    {
+     "T": 1440.0,
+     "x": 0.15,
+     "phases": [
+      "LIQUID"
+     ],
+     "fractions": {
+      "LIQUID": 1.0
+     },
+     "compositions": {
+      "LIQUID": 0.15
+     },
+     "total_gibbs": -6744.919292547771
+    },
+    {
+     "T": 1440.0,
+     "x": 0.3333333333333333,
+     "phases": [
+      "LIQUID"
+     ],
+     "fractions": {
+      "LIQUID": 1.0
+     },
+     "compositions": {
+      "LIQUID": 0.3333333333333333
+     },
+     "total_gibbs": -9112.042651995493
+    },
+    {
+     "T": 1440.0,
+     "x": 0.5,
+     "phases": [
+      "LIQUID"
+     ],
+     "fractions": {
+      "LIQUID": 1.0
+     },
+     "compositions": {
+      "LIQUID": 0.5
+     },
+     "total_gibbs": -9614.89286015151
+    },
+    {
+     "T": 1440.0,
+     "x": 0.71,
+     "phases": [
+      "LIQUID"
+     ],
+     "fractions": {
+      "LIQUID": 1.0
+     },
+     "compositions": {
+      "LIQUID": 0.71
+     },
+     "total_gibbs": -8304.658756745699
+    },
+    {
+     "T": 1440.0,
+     "x": 0.9,
+     "phases": [
+      "LIQUID"
+     ],
+     "fractions": {
+      "LIQUID": 1.0
+     },
+     "compositions": {
+      "LIQUID": 0.9
+     },
+     "total_gibbs": -4787.6272807376035
+    },
+    {
+     "T": 1440.0,
+     "x": 0.99,
+     "phases": [
+      "LIQUID"
+     ],
+     "fractions": {
+      "LIQUID": 1.0
+     },
+     "compositions": {
+      "LIQUID": 0.99
+     },
+     "total_gibbs": -1471.35020388684
+    },
+    {
+     "T": 1440.0,
+     "x": 1.0,
+     "phases": [
+      "LIQUID"
+     ],
+     "fractions": {
+      "LIQUID": 1.0
+     },
+     "compositions": {
+      "LIQUID": 1.0
+     },
+     "total_gibbs": -790.3411476170477
+    }
+   ],
+   "invariants": [
+    {
+     "temperature": 1051.7390428094138,
+     "type": "eutectic",
+     "phases": [
+      "FCC_AG",
+      "LIQUID",
+      "FCC_CU"
+     ],
+     "composition": {
+      "FCC_AG": 0.26116446383182057,
+      "LIQUID": 0.3878677372609077,
+      "FCC_CU": 0.5429552055082147
+     }
+    }
+   ]
+  },
+  "tests/fixtures/al_cu_provisional.tdb": {
+   "points": [
+    {
+     "T": 510.0,
+     "x": 0.0,
+     "phases": [
+      "FCC_AL"
+     ],
+     "fractions": {
+      "FCC_AL": 1.0
+     },
+     "compositions": {
+      "FCC_AL": 0.0
+     },
+     "total_gibbs": 0.0
+    },
+    {
+     "T": 510.0,
+     "x": 0.02,
+     "phases": [
+      "FCC_AL",
+      "AL2CU"
+     ],
+     "fractions": {
+      "FCC_AL": 0.9400083106866279,
+      "AL2CU": 0.05999168931337211
+     },
+     "compositions": {
+      "FCC_AL": 2.9470259405929662e-06,
+      "AL2CU": 0.3333333333333333
+     },
+     "total_gibbs": -720.0117467253153
+    },
+    {
+     "T": 510.0,
+     "x": 0.15,
+     "phases": [
+      "FCC_AL",
+      "AL2CU"
+     ],
+     "fractions": {
+      "FCC_AL": 0.5500048626357928,
+      "AL2CU": 0.44999513736420715
+     },
+     "compositions": {
+      "FCC_AL": 2.9470259405929662e-06,
+      "AL2CU": 0.3333333333333333
+     },
+     "total_gibbs": -5400.006873083962
+    },
+    {
+     "T": 510.0,
+     "x": 0.3333333333333333,
+     "phases": [
+      "AL2CU"
+     ],
+     "fractions": {
+      "AL2CU": 1.0
+     },
+     "compositions": {
+      "AL2CU": 0.3333333333333333
+     },
+     "total_gibbs": -12000.0
+    },
+    {
+     "T": 510.0,
+     "x": 0.5,
+     "phases": [
+      "AL2CU",
+      "LIQUID"
+     ],
+     "fractions": {
+      "AL2CU": 0.7493437264765136,
+      "LIQUID": 0.2506562735234864
+     },
+     "compositions": {
+      "AL2CU": 0.3333333333333333,
+      "LIQUID": 0.9982545193217226
+     },
+     "total_gibbs": -6964.798862788428
+    },
+    {
+     "T": 510.0,
+     "x": 0.71,
+     "phases": [
+      "AL2CU",
+      "LIQUID"
+     ],
+     "fractions": {
+      "AL2CU": 0.43351682183692075,
+      "LIQUID": 0.5664831781630792
+     },
+     "compositions": {
+      "AL2CU": 0.3333333333333333,
+      "LIQUID": 0.9982545193217226
+     },
+     "total_gibbs": -620.445429901848
+    },
+    {
+     "T": 510.0,
+     "x": 0.9,
+     "phases": [
+      "AL2CU",
+      "LIQUID"
+     ],
+     "fractions": {
+      "AL2CU": 0.14776867002014626,
+      "LIQUID": 0.8522313299798537
+     },
+     "compositions": {
+      "AL2CU": 0.3333333333333333,
+      "LIQUID": 0.9982545193217226
+     },
+     "total_gibbs": 5119.6838665193445
+    },
+    {
+     "T": 510.0,
+     "x": 0.99,
+     "phases": [
+      "AL2CU",
+      "LIQUID"
+     ],
+     "fractions": {
+      "AL2CU": 0.012414282317463443,
+      "LIQUID": 0.9875857176825366
+     },
+     "compositions": {
+      "AL2CU": 0.3333333333333333,
+      "LIQUID": 0.9982545193217226
+     },
+     "total_gibbs": 7838.692480613596
+    },
+    {
+     "T": 510.0,
+     "x": 1.0,
+     "phases": [
+      "LIQUID"
+     ],
+     "fractions": {
+      "LIQUID": 1.0
+     },
+     "compositions": {
+      "LIQUID": 1.0
+     },
+     "total_gibbs": 8148.212510218962
+    },
+    {
+     "T": 665.0,
+     "x": 0.0,
+     "phases": [
+      "FCC_AL"
+     ],
+     "fractions": {
+      "FCC_AL": 1.0
+     },
+     "compositions": {
+      "FCC_AL": 0.0
+     },
+     "total_gibbs": 0.0
+    },
+    {
+     "T": 665.0,
+     "x": 0.02,
+     "phases": [
+      "FCC_AL",
+      "AL2CU"
+     ],
+     "fractions": {
+      "FCC_AL": 0.9401617508604427,
+      "AL2CU": 0.05983824913955722
+     },
+     "compositions": {
+      "FCC_AL": 5.734859286881451e-05,
+      "AL2CU": 0.3333333333333333
+     },
+     "total_gibbs": -720.2980704365664
+    },
+    {
+     "T": 665.0,
+     "x": 0.15,
+     "phases": [
+      "FCC_AL",
+      "AL2CU"
+     ],
+     "fractions": {
+      "FCC_AL": 0.5500946414608974,
+      "AL2CU": 0.44990535853910263
+     },
+     "compositions": {
+      "FCC_AL": 5.734859286881451e-05,
+      "AL2CU": 0.3333333333333333
+     },
+     "total_gibbs": -5400.174402915012
+    },
+    {
+     "T": 665.0,
+     "x": 0.3333333333333333,
+     "phases": [
+      "AL2CU"
+     ],
+     "fractions": {
+      "AL2CU": 1.0
+     },
+     "compositions": {
+      "AL2CU": 0.3333333333333333
+     },
+     "total_gibbs": -12000.0
+    },
+    {
+     "T": 665.0,
+     "x": 0.5,
+     "phases": [
+      "AL2CU",
+      "LIQUID"
+     ],
+     "fractions": {
+      "AL2CU": 0.7453507300806972,
+      "LIQUID": 0.25464926991930287
+     },
+     "compositions": {
+      "AL2CU": 0.3333333333333333,
+      "LIQUID": 0.9878283048660715
+     },
+     "total_gibbs": -7352.314522738592
+    },
+    {
+     "T": 665.0,
+     "x": 0.71,
+     "phases": [
+      "AL2CU",
+      "LIQUID"
+     ],
+     "fractions": {
+      "AL2CU": 0.42449264998237557,
+      "LIQUID": 0.5755073500176244
+     },
+     "compositions": {
+      "AL2CU": 0.3333333333333333,
+      "LIQUID": 0.9878283048660715
+     },
+     "total_gibbs": -1496.230821389218
+    },
+    {
+     "T": 665.0,
+     "x": 0.9,
+     "phases": [
+      "AL2CU",
+      "LIQUID"
+     ],
+     "fractions": {
+      "AL2CU": 0.13419248227437042,
+      "LIQUID": 0.8658075177256296
+     },
+     "compositions": {
+      "AL2CU": 0.3333333333333333,
+      "LIQUID": 0.9878283048660715
+     },
+     "total_gibbs": 3802.130622688786
+    },
+    {
+     "T": 665.0,
+     "x": 0.99,
+     "phases": [
+      "LIQUID"
+     ],
+     "fractions": {
+      "LIQUID": 1.0
+     },
+     "compositions": {
+      "LIQUID": 0.99
+     },
+     "total_gibbs": 6313.035258239535
+    },
+    {
+     "T": 665.0,
+     "x": 1.0,
+     "phases": [
+      "LIQUID"
+     ],
+     "fractions": {
+      "LIQUID": 1.0
+     },
+     "compositions": {
+      "LIQUID": 1.0
+     },
+     "total_gibbs": 6658.4535672462935
+    },
+    {
+     "T": 820.0,
+     "x": 0.0,
+     "phases": [
+      "FCC_AL"
+     ],
+     "fractions": {
+      "FCC_AL": 1.0
+     },
+     "compositions": {
+      "FCC_AL": 0.0
+     },
+     "total_gibbs": 0.0
+    },
+    {
+     "T": 820.0,
+     "x": 0.02,
+     "phases": [
+      "FCC_AL",
+      "AL2CU"
+     ],
+     "fractions": {
+      "FCC_AL": 0.9410262752063965,
+      "AL2CU": 0.05897372479360356
+     },
+     "compositions": {
+      "FCC_AL": 0.0003635304820691108,
+      "AL2CU": 0.3333333333333333
+     },
+     "total_gibbs": -722.3302132907545
+    },
+    {
+     "T": 820.0,
+     "x": 0.15,
+     "phases": [
+      "FCC_AL",
+      "AL2CU"
+     ],
+     "fractions": {
+      "FCC_AL": 0.5506004801739554,
+      "AL2CU": 0.44939951982604465
+     },
+     "compositions": {
+      "FCC_AL": 0.0003635304820691108,
+      "AL2CU": 0.3333333333333333
+     },
+     "total_gibbs": -5401.363422670122
+    },
+    {
+     "T": 820.0,
+     "x": 0.3333333333333333,
+     "phases": [
+      "AL2CU"
+     ],
+     "fractions": {
+      "AL2CU": 1.0
+     },
+     "compositions": {
+      "AL2CU": 0.3333333333333333
+     },
+     "total_gibbs": -12000.0
+    },
+    {
+     "T": 820.0,
+     "x": 0.5,
+     "phases": [
+      "AL2CU",
+      "LIQUID"
+     ],
+     "fractions": {
+      "AL2CU": 0.7335286343412161,
+      "LIQUID": 0.26647136565878393
+     },
+     "compositions": {
+      "AL2CU": 0.3333333333333333,
+      "LIQUID": 0.9587914055529317
+     },
+     "total_gibbs": -7779.553190396155
+    },
+    {
+     "T": 820.0,
+     "x": 0.71,
+     "phases": [
+      "AL2CU",
+      "LIQUID"
+     ],
+     "fractions": {
+      "AL2CU": 0.39777471361114836,
+      "LIQUID": 0.6022252863888516
+     },
+     "compositions": {
+      "AL2CU": 0.3333333333333333,
+      "LIQUID": 0.9587914055529317
+     },
+     "total_gibbs": -2461.790210295309
+    },
+    {
+     "T": 820.0,
+     "x": 0.9,
+     "phases": [
+      "AL2CU",
+      "LIQUID"
+     ],
+     "fractions": {
+      "AL2CU": 0.09399735676013476,
+      "LIQUID": 0.9060026432398652
+     },
+     "compositions": {
+      "AL2CU": 0.3333333333333333,
+      "LIQUID": 0.9587914055529317
+     },
+     "total_gibbs": 2349.5191526530734
+    },
+    {
+     "T": 820.0,
+     "x": 0.99,
+     "phases": [
+      "LIQUID"
+     ],
+     "fractions": {
+      "LIQUID": 1.0
+     },
+     "compositions": {
+      "LIQUID": 0.99
+     },
+     "total_gibbs": 4748.217085348
+    },
+    {
+     "T": 820.0,
+     "x": 1.0,
+     "phases": [
+      "LIQUID"
+     ],
+     "fractions": {
+      "LIQUID": 1.0
+     },
+     "compositions": {
+      "LIQUID": 1.0
+     },
+     "total_gibbs": 5168.694624273626
+    },
+    {
+     "T": 975.0,
+     "x": 0.0,
+     "phases": [
+      "LIQUID"
+     ],
+     "fractions": {
+      "LIQUID": 1.0
+     },
+     "compositions": {
+      "LIQUID": 0.0
+     },
+     "total_gibbs": -476.53146860638117
+    },
+    {
+     "T": 975.0,
+     "x": 0.02,
+     "phases": [
+      "LIQUID",
+      "AL2CU"
+     ],
+     "fractions": {
+      "LIQUID": 0.964795362698474,
+      "AL2CU": 0.035204637301525975
+     },
+     "compositions": {
+      "LIQUID": 0.008566708774775101,
+      "AL2CU": 0.3333333333333333
+     },
+     "total_gibbs": -1233.500882409067
+    },
+    {
+     "T": 975.0,
+     "x": 0.15,
+     "phases": [
+      "LIQUID",
+      "AL2CU"
+     ],
+     "fractions": {
+      "LIQUID": 0.5645079249831497,
+      "AL2CU": 0.4354920750168503
+     },
+     "compositions": {
+      "LIQUID": 0.008566708774775101,
+      "AL2CU": 0.3333333333333333
+     },
+     "total_gibbs": -5700.452643962752
+    },
+    {
+     "T": 975.0,
+     "x": 0.3333333333333333,
+     "phases": [
+      "AL2CU"
+     ],
+     "fractions": {
+      "AL2CU": 1.0
+     },
+     "compositions": {
+      "AL2CU": 0.3333333333333333
+     },
+     "total_gibbs": -12000.0
+    },
+    {
+     "T": 975.0,
+     "x": 0.5,
+     "phases": [
+      "AL2CU",
+      "LIQUID"
+     ],
+     "fractions": {
+      "AL2CU": 0.7076662495153169,
+      "LIQUID": 0.29233375048468313
+     },
+     "compositions": {
+      "AL2CU": 0.3333333333333333,
+      "LIQUID": 0.9034579473757998
+     },
+     "total_gibbs": -8286.023195004718
+    },
+    {
+     "T": 975.0,
+     "x": 0.71,
+     "phases": [
+      "AL2CU",
+      "LIQUID"
+     ],
+     "fractions": {
+      "AL2CU": 0.33932572390461624,
+      "LIQUID": 0.6606742760953838
+     },
+     "compositions": {
+      "AL2CU": 0.3333333333333333,
+      "LIQUID": 0.9034579473757998
+     },
+     "total_gibbs": -3606.412420710665
+    },
+    {
+     "T": 975.0,
+     "x": 0.9,
+     "phases": [
+      "AL2CU",
+      "LIQUID"
+     ],
+     "fractions": {
+      "AL2CU": 0.006065248352077446,
+      "LIQUID": 0.9939347516479226
+     },
+     "compositions": {
+      "AL2CU": 0.3333333333333333,
+      "LIQUID": 0.9034579473757998
+     },
+     "total_gibbs": 627.5211369839559
+    },
+    {
+     "T": 975.0,
+     "x": 0.99,
+     "phases": [
+      "LIQUID"
+     ],
+     "fractions": {
+      "LIQUID": 1.0
+     },
+     "compositions": {
+      "LIQUID": 0.99
+     },
+     "total_gibbs": 3183.398912456462
+    },
+    {
+     "T": 975.0,
+     "x": 1.0,
+     "phases": [
+      "LIQUID"
+     ],
+     "fractions": {
+      "LIQUID": 1.0
+     },
+     "compositions": {
+      "LIQUID": 1.0
+     },
+     "total_gibbs": 3678.9356813009563
+    },
+    {
+     "T": 1130.0,
+     "x": 0.0,
+     "phases": [
+      "LIQUID"
+     ],
+     "fractions": {
+      "LIQUID": 1.0
+     },
+     "compositions": {
+      "LIQUID": 0.0
+     },
+     "total_gibbs": -2255.0621123335495
+    },
+    {
+     "T": 1130.0,
+     "x": 0.02,
+     "phases": [
+      "LIQUID"
+     ],
+     "fractions": {
+      "LIQUID": 1.0
+     },
+     "compositions": {
+      "LIQUID": 0.02
+     },
+     "total_gibbs": -3087.2884083071176
+    },
+    {
+     "T": 1130.0,
+     "x": 0.15,
+     "phases": [
+      "LIQUID",
+      "AL2CU"
+     ],
+     "fractions": {
+      "LIQUID": 0.6033136667220702,
+      "AL2CU": 0.3966863332779298
+     },
+     "compositions": {
+      "LIQUID": 0.029456024653386103,
+      "AL2CU": 0.3333333333333333
+     },
+     "total_gibbs": -6794.783159965662
+    },
+    {
+     "T": 1130.0,
+     "x": 0.3333333333333333,
+     "phases": [
+      "AL2CU"
+     ],
+     "fractions": {
+      "AL2CU": 1.0
+     },
+     "compositions": {
+      "AL2CU": 0.3333333333333333
+     },
+     "total_gibbs": -12000.0
+    },
+    {
+     "T": 1130.0,
+     "x": 0.5,
+     "phases": [
+      "AL2CU",
+      "LIQUID"
+     ],
+     "fractions": {
+      "AL2CU": 0.6543744715701978,
+      "LIQUID": 0.34562552842980215
+     },
+     "compositions": {
+      "AL2CU": 0.3333333333333333,
+      "LIQUID": 0.8155507998030224
+     },
+     "total_gibbs": -8931.6136025169
+    },
+    {
+     "T": 1130.0,
+     "x": 0.71,
+     "phases": [
+      "AL2CU",
+      "LIQUID"
+     ],
+     "fractions": {
+      "AL2CU": 0.2188863057486472,
+      "LIQUID": 0.7811136942513528
+     },
+     "compositions": {
+      "AL2CU": 0.3333333333333333,
+      "LIQUID": 0.8155507998030224
+     },
+     "total_gibbs": -5065.446741688197
+    },
+    {
+     "T": 1130.0,
+     "x": 0.9,
+     "phases": [
+      "LIQUID"
+     ],
+     "fractions": {
+      "LIQUID": 1.0
+     },
+     "compositions": {
+      "LIQUID": 0.9
+     },
+     "total_gibbs": -1309.5131066508723
+    },
+    {
+     "T": 1130.0,
+     "x": 0.99,
+     "phases": [
+      "LIQUID"
+     ],
+     "fractions": {
+      "LIQUID": 1.0
+     },
+     "compositions": {
+      "LIQUID": 0.99
+     },
+     "total_gibbs": 1618.5807395649267
+    },
+    {
+     "T": 1130.0,
+     "x": 1.0,
+     "phases": [
+      "LIQUID"
+     ],
+     "fractions": {
+      "LIQUID": 1.0
+     },
+     "compositions": {
+      "LIQUID": 1.0
+     },
+     "total_gibbs": 2189.1767383282895
+    },
+    {
+     "T": 1285.0,
+     "x": 0.0,
+     "phases": [
+      "LIQUID"
+     ],
+     "fractions": {
+      "LIQUID": 1.0
+     },
+     "compositions": {
+      "LIQUID": 0.0
+     },
+     "total_gibbs": -4033.592756060718
+    },
+    {
+     "T": 1285.0,
+     "x": 0.02,
+     "phases": [
+      "LIQUID"
+     ],
+     "fractions": {
+      "LIQUID": 1.0
+     },
+     "compositions": {
+      "LIQUID": 0.02
+     },
+     "total_gibbs": -4986.390712101457
+    },
+    {
+     "T": 1285.0,
+     "x": 0.15,
+     "phases": [
+      "LIQUID",
+      "AL2CU"
+     ],
+     "fractions": {
+      "LIQUID": 0.7272189695136044,
+      "AL2CU": 0.2727810304863955
+     },
+     "compositions": {
+      "LIQUID": 0.08123136539930846,
+      "AL2CU": 0.3333333333333333
+     },
+     "total_gibbs": -8116.317175053714
+    },
+    {
+     "T": 1285.0,
+     "x": 0.3333333333333333,
+     "phases": [
+      "AL2CU"
+     ],
+     "fractions": {
+      "AL2CU": 1.0
+     },
+     "compositions": {
+      "AL2CU": 0.3333333333333333
+     },
+     "total_gibbs": -12000.0
+    },
+    {
+     "T": 1285.0,
+     "x": 0.5,
+     "phases": [
+      "AL2CU",
+      "LIQUID"
+     ],
+     "fractions": {
+      "AL2CU": 0.523616494709658,
+      "LIQUID": 0.47638350529034196
+     },
+     "compositions": {
+      "AL2CU": 0.3333333333333333,
+      "LIQUID": 0.6831915144327989
+     },
+     "total_gibbs": -9842.751327959266
+    },
+    {
+     "T": 1285.0,
+     "x": 0.71,
+     "phases": [
+      "LIQUID"
+     ],
+     "fractions": {
+      "LIQUID": 1.0
+     },
+     "compositions": {
+      "LIQUID": 0.71
+     },
+     "total_gibbs": -7106.59470159331
+    },
+    {
+     "T": 1285.0,
+     "x": 0.9,
+     "phases": [
+      "LIQUID"
+     ],
+     "fractions": {
+      "LIQUID": 1.0
+     },
+     "compositions": {
+      "LIQUID": 0.9
+     },
+     "total_gibbs": -3247.097205350771
+    },
+    {
+     "T": 1285.0,
+     "x": 0.99,
+     "phases": [
+      "LIQUID"
+     ],
+     "fractions": {
+      "LIQUID": 1.0
+     },
+     "compositions": {
+      "LIQUID": 0.99
+     },
+     "total_gibbs": 53.76256667338998
+    },
+    {
+     "T": 1285.0,
+     "x": 1.0,
+     "phases": [
+      "LIQUID"
+     ],
+     "fractions": {
+      "LIQUID": 1.0
+     },
+     "compositions": {
+      "LIQUID": 1.0
+     },
+     "total_gibbs": 699.4177953556209
+    },
+    {
+     "T": 1440.0,
+     "x": 0.0,
+     "phases": [
+      "LIQUID"
+     ],
+     "fractions": {
+      "LIQUID": 1.0
+     },
+     "compositions": {
+      "LIQUID": 0.0
+     },
+     "total_gibbs": -5812.123399787888
+    },
+    {
+     "T": 1440.0,
+     "x": 0.02,
+     "phases": [
+      "LIQUID"
+     ],
+     "fractions": {
+      "LIQUID": 1.0
+     },
+     "compositions": {
+      "LIQUID": 0.02
+     },
+     "total_gibbs": -6885.493015895798
+    },
+    {
+     "T": 1440.0,
+     "x": 0.15,
+     "phases": [
+      "LIQUID"
+     ],
+     "fractions": {
+      "LIQUID": 1.0
+     },
+     "compositions": {
+      "LIQUID": 0.15
+     },
+     "total_gibbs": -10119.878490708841
+    },
+    {
+     "T": 1440.0,
+     "x": 0.3333333333333333,
+     "phases": [
+      "AL2CU"
+     ],
+     "fractions": {
+      "AL2CU": 1.0
+     },
+     "compositions": {
+      "AL2CU": 0.3333333333333333
+     },
+     "total_gibbs": -12000.0
+    },
+    {
+     "T": 1440.0,
+     "x": 0.5,
+     "phases": [
+      "LIQUID"
+     ],
+     "fractions": {
+      "LIQUID": 1.0
+     },
+     "compositions": {
+      "LIQUID": 0.5
+     },
+     "total_gibbs": -11600.162976716845
+    },
+    {
+     "T": 1440.0,
+     "x": 0.71,
+     "phases": [
+      "LIQUID"
+     ],
+     "fractions": {
+      "LIQUID": 1.0
+     },
+     "compositions": {
+      "LIQUID": 0.71
+     },
+     "total_gibbs": -9456.115424353593
+    },
+    {
+     "T": 1440.0,
+     "x": 0.9,
+     "phases": [
+      "LIQUID"
+     ],
+     "fractions": {
+      "LIQUID": 1.0
+     },
+     "compositions": {
+      "LIQUID": 0.9
+     },
+     "total_gibbs": -5184.68130405067
+    },
+    {
+     "T": 1440.0,
+     "x": 0.99,
+     "phases": [
+      "LIQUID"
+     ],
+     "fractions": {
+      "LIQUID": 1.0
+     },
+     "compositions": {
+      "LIQUID": 0.99
+     },
+     "total_gibbs": -1511.0556062181467
+    },
+    {
+     "T": 1440.0,
+     "x": 1.0,
+     "phases": [
+      "LIQUID"
+     ],
+     "fractions": {
+      "LIQUID": 1.0
+     },
+     "compositions": {
+      "LIQUID": 1.0
+     },
+     "total_gibbs": -790.3411476170477
+    }
+   ],
+   "invariants": [
+    {
+     "temperature": 930.306388892618,
+     "type": "eutectic",
+     "phases": [
+      "FCC_AL",
+      "LIQUID",
+      "AL2CU"
+     ],
+     "composition": {
+      "FCC_AL": 0.0009308675851905089,
+      "LIQUID": 0.005608535857305871,
+      "AL2CU": 0.3333333333333333
+     }
+    }
+   ]
+  },
+  "tests/fixtures/regular_solution.tdb": {
+   "points": [
+    {
+     "T": 610.0,
+     "x": 0.0,
+     "phases": [
+      "ALPHA#1"
+     ],
+     "fractions": {
+      "ALPHA#1": 1.0
+     },
+     "compositions": {
+      "ALPHA#1": 0.0
+     },
+     "total_gibbs": 0.0
+    },
+    {
+     "T": 610.0,
+     "x": 0.02,
+     "phases": [
+      "ALPHA#1"
+     ],
+     "fractions": {
+      "ALPHA#1": 1.0
+     },
+     "compositions": {
+      "ALPHA#1": 0.02
+     },
+     "total_gibbs": -105.2369509043815
+    },
+    {
+     "T": 610.0,
+     "x": 0.15,
+     "phases": [
+      "ALPHA#1",
+      "ALPHA#2"
+     ],
+     "fractions": {
+      "ALPHA#1": 0.8666065510678383,
+      "ALPHA#2": 0.13339344893216165
+     },
+     "compositions": {
+      "ALPHA#1": 0.02264901025290925,
+      "ALPHA#2": 0.9773509897470908
+     },
+     "total_gibbs": -105.93304742072714
+    },
+    {
+     "T": 610.0,
+     "x": 0.3333333333333333,
+     "phases": [
+      "ALPHA#1",
+      "ALPHA#2"
+     ],
+     "fractions": {
+      "ALPHA#1": 0.6745745481275421,
+      "ALPHA#2": 0.32542545187245786
+     },
+     "compositions": {
+      "ALPHA#1": 0.02264901025290925,
+      "ALPHA#2": 0.9773509897470908
+     },
+     "total_gibbs": -105.93304742072718
+    },
+    {
+     "T": 610.0,
+     "x": 0.5,
+     "phases": [
+      "ALPHA#1",
+      "ALPHA#2"
+     ],
+     "fractions": {
+      "ALPHA#1": 0.5,
+      "ALPHA#2": 0.49999999999999994
+     },
+     "compositions": {
+      "ALPHA#1": 0.02264901025290925,
+      "ALPHA#2": 0.9773509897470908
+     },
+     "total_gibbs": -105.9330474207272
+    },
+    {
+     "T": 610.0,
+     "x": 0.71,
+     "phases": [
+      "ALPHA#1",
+      "ALPHA#2"
+     ],
+     "fractions": {
+      "ALPHA#1": 0.28003606935929704,
+      "ALPHA#2": 0.719963930640703
+     },
+     "compositions": {
+      "ALPHA#1": 0.02264901025290925,
+      "ALPHA#2": 0.9773509897470908
+     },
+     "total_gibbs": -105.93304742072725
+    },
+    {
+     "T": 610.0,
+     "x": 0.9,
+     "phases": [
+      "ALPHA#1",
+      "ALPHA#2"
+     ],
+     "fractions": {
+      "ALPHA#1": 0.081021084493899,
+      "ALPHA#2": 0.918978915506101
+     },
+     "compositions": {
+      "ALPHA#1": 0.02264901025290925,
+      "ALPHA#2": 0.9773509897470908
+     },
+     "total_gibbs": -105.93304742072728
+    },
+    {
+     "T": 610.0,
+     "x": 0.99,
+     "phases": [
+      "ALPHA#2"
+     ],
+     "fractions": {
+      "ALPHA#2": 1.0
+     },
+     "compositions": {
+      "ALPHA#2": 0.99
+     },
+     "total_gibbs": -86.02982500585287
+    },
+    {
+     "T": 610.0,
+     "x": 1.0,
+     "phases": [
+      "ALPHA#2"
+     ],
+     "fractions": {
+      "ALPHA#2": 1.0
+     },
+     "compositions": {
+      "ALPHA#2": 1.0
+     },
+     "total_gibbs": 0.0
+    },
+    {
+     "T": 740.0,
+     "x": 0.0,
+     "phases": [
+      "ALPHA#1"
+     ],
+     "fractions": {
+      "ALPHA#1": 1.0
+     },
+     "compositions": {
+      "ALPHA#1": 0.0
+     },
+     "total_gibbs": 0.0
+    },
+    {
+     "T": 740.0,
+     "x": 0.02,
+     "phases": [
+      "ALPHA#1"
+     ],
+     "fractions": {
+      "ALPHA#1": 1.0
+     },
+     "compositions": {
+      "ALPHA#1": 0.02
+     },
+     "total_gibbs": -211.20548142498728
+    },
+    {
+     "T": 740.0,
+     "x": 0.15,
+     "phases": [
+      "ALPHA#1",
+      "ALPHA#2"
+     ],
+     "fractions": {
+      "ALPHA#1": 0.8900347708316241,
+      "ALPHA#2": 0.10996522916837595
+     },
+     "compositions": {
+      "ALPHA#1": 0.05132205360340406,
+      "ALPHA#2": 0.9486779463965959
+     },
+     "total_gibbs": -271.4815900973573
+    },
+    {
+     "T": 740.0,
+     "x": 0.3333333333333333,
+     "phases": [
+      "ALPHA#1",
+      "ALPHA#2"
+     ],
+     "fractions": {
+      "ALPHA#1": 0.6857308432531544,
+      "ALPHA#2": 0.31426915674684563
+     },
+     "compositions": {
+      "ALPHA#1": 0.05132205360340406,
+      "ALPHA#2": 0.9486779463965959
+     },
+     "total_gibbs": -271.4815900973573
+    },
+    {
+     "T": 740.0,
+     "x": 0.5,
+     "phases": [
+      "ALPHA#1",
+      "ALPHA#2"
+     ],
+     "fractions": {
+      "ALPHA#1": 0.5,
+      "ALPHA#2": 0.5
+     },
+     "compositions": {
+      "ALPHA#1": 0.05132205360340406,
+      "ALPHA#2": 0.9486779463965959
+     },
+     "total_gibbs": -271.48159009735735
+    },
+    {
+     "T": 740.0,
+     "x": 0.71,
+     "phases": [
+      "ALPHA#1",
+      "ALPHA#2"
+     ],
+     "fractions": {
+      "ALPHA#1": 0.26597913750102553,
+      "ALPHA#2": 0.7340208624989745
+     },
+     "compositions": {
+      "ALPHA#1": 0.05132205360340406,
+      "ALPHA#2": 0.9486779463965959
+     },
+     "total_gibbs": -271.48159009735735
+    },
+    {
+     "T": 740.0,
+     "x": 0.9,
+     "phases": [
+      "ALPHA#1",
+      "ALPHA#2"
+     ],
+     "fractions": {
+      "ALPHA#1": 0.054245976192429546,
+      "ALPHA#2": 0.9457540238075705
+     },
+     "compositions": {
+      "ALPHA#1": 0.05132205360340406,
+      "ALPHA#2": 0.9486779463965959
+     },
+     "total_gibbs": -271.4815900973574
+    },
+    {
+     "T": 740.0,
+     "x": 0.99,
+     "phases": [
+      "ALPHA#2"
+     ],
+     "fractions": {
+      "ALPHA#2": 1.0
+     },
+     "compositions": {
+      "ALPHA#2": 0.99
+     },
+     "total_gibbs": -146.5607713185756
+    },
+    {
+     "T": 740.0,
+     "x": 1.0,
+     "phases": [
+      "ALPHA#2"
+     ],
+     "fractions": {
+      "ALPHA#2": 1.0
+     },
+     "compositions": {
+      "ALPHA#2": 1.0
+     },
+     "total_gibbs": 0.0
+    },
+    {
+     "T": 870.0,
+     "x": 0.0,
+     "phases": [
+      "ALPHA#1"
+     ],
+     "fractions": {
+      "ALPHA#1": 1.0
+     },
+     "compositions": {
+      "ALPHA#1": 0.0
+     },
+     "total_gibbs": 0.0
+    },
+    {
+     "T": 870.0,
+     "x": 0.02,
+     "phases": [
+      "ALPHA#1"
+     ],
+     "fractions": {
+      "ALPHA#1": 1.0
+     },
+     "compositions": {
+      "ALPHA#1": 0.02
+     },
+     "total_gibbs": -317.1740119455932
+    },
+    {
+     "T": 870.0,
+     "x": 0.15,
+     "phases": [
+      "ALPHA#1",
+      "ALPHA#2"
+     ],
+     "fractions": {
+      "ALPHA#1": 0.9347061213399906,
+      "ALPHA#2": 0.06529387866000935
+     },
+     "compositions": {
+      "ALPHA#1": 0.09742917937166638,
+      "ALPHA#2": 0.9025708206283337
+     },
+     "total_gibbs": -551.6520425504823
+    },
+    {
+     "T": 870.0,
+     "x": 0.3333333333333333,
+     "phases": [
+      "ALPHA#1",
+      "ALPHA#2"
+     ],
+     "fractions": {
+      "ALPHA#1": 0.7070029149238051,
+      "ALPHA#2": 0.2929970850761949
+     },
+     "compositions": {
+      "ALPHA#1": 0.09742917937166638,
+      "ALPHA#2": 0.9025708206283337
+     },
+     "total_gibbs": -551.6520425504822
+    },
+    {
+     "T": 870.0,
+     "x": 0.5,
+     "phases": [
+      "ALPHA#1",
+      "ALPHA#2"
+     ],
+     "fractions": {
+      "ALPHA#1": 0.5,
+      "ALPHA#2": 0.49999999999999994
+     },
+     "compositions": {
+      "ALPHA#1": 0.09742917937166638,
+      "ALPHA#2": 0.9025708206283337
+     },
+     "total_gibbs": -551.6520425504821
+    },
+    {
+     "T": 870.0,
+     "x": 0.71,
+     "phases": [
+      "ALPHA#1",
+      "ALPHA#2"
+     ],
+     "fractions": {
+      "ALPHA#1": 0.2391763271960058,
+      "ALPHA#2": 0.7608236728039942
+     },
+     "compositions": {
+      "ALPHA#1": 0.09742917937166638,
+      "ALPHA#2": 0.9025708206283337
+     },
+     "total_gibbs": -551.652042550482
+    },
+    {
+     "T": 870.0,
+     "x": 0.9,
+     "phases": [
+      "ALPHA#1",
+      "ALPHA#2"
+     ],
+     "fractions": {
+      "ALPHA#1": 0.0031930041828679423,
+      "ALPHA#2": 0.9968069958171321
+     },
+     "compositions": {
+      "ALPHA#1": 0.09742917937166638,
+      "ALPHA#2": 0.9025708206283337
+     },
+     "total_gibbs": -551.6520425504818
+    },
+    {
+     "T": 870.0,
+     "x": 0.99,
+     "phases": [
+      "ALPHA#2"
+     ],
+     "fractions": {
+      "ALPHA#2": 1.0
+     },
+     "compositions": {
+      "ALPHA#2": 0.99
+     },
+     "total_gibbs": -207.0917176312984
+    },
+    {
+     "T": 870.0,
+     "x": 1.0,
+     "phases": [
+      "ALPHA#2"
+     ],
+     "fractions": {
+      "ALPHA#2": 1.0
+     },
+     "compositions": {
+      "ALPHA#2": 1.0
+     },
+     "total_gibbs": 0.0
+    },
+    {
+     "T": 1000.0,
+     "x": 0.0,
+     "phases": [
+      "ALPHA#1"
+     ],
+     "fractions": {
+      "ALPHA#1": 1.0
+     },
+     "compositions": {
+      "ALPHA#1": 0.0
+     },
+     "total_gibbs": 0.0
+    },
+    {
+     "T": 1000.0,
+     "x": 0.02,
+     "phases": [
+      "ALPHA#1"
+     ],
+     "fractions": {
+      "ALPHA#1": 1.0
+     },
+     "compositions": {
+      "ALPHA#1": 0.02
+     },
+     "total_gibbs": -423.1425424661991
+    },
+    {
+     "T": 1000.0,
+     "x": 0.15,
+     "phases": [
+      "ALPHA#1"
+     ],
+     "fractions": {
+      "ALPHA#1": 1.0
+     },
+     "compositions": {
+      "ALPHA#1": 0.15
+     },
+     "total_gibbs": -964.5989088517904
+    },
+    {
+     "T": 1000.0,
+     "x": 0.3333333333333333,
+     "phases": [
+      "ALPHA#1",
+      "ALPHA#2"
+     ],
+     "fractions": {
+      "ALPHA#1": 0.7518695536267717,
+      "ALPHA#2": 0.24813044637322834
+     },
+     "compositions": {
+      "ALPHA#1": 0.1691409019733312,
+      "ALPHA#2": 0.8308590980266689
+     },
+     "total_gibbs": -968.4559189378001
+    },
+    {
+     "T": 1000.0,
+     "x": 0.5,
+     "phases": [
+      "ALPHA#1",
+      "ALPHA#2"
+     ],
+     "fractions": {
+      "ALPHA#1": 0.5000000000000001,
+      "ALPHA#2": 0.4999999999999999
+     },
+     "compositions": {
+      "ALPHA#1": 0.1691409019733312,
+      "ALPHA#2": 0.8308590980266689
+     },
+     "total_gibbs": -968.4559189377999
+    },
+    {
+     "T": 1000.0,
+     "x": 0.71,
+     "phases": [
+      "ALPHA#1",
+      "ALPHA#2"
+     ],
+     "fractions": {
+      "ALPHA#1": 0.18264436243026805,
+      "ALPHA#2": 0.817355637569732
+     },
+     "compositions": {
+      "ALPHA#1": 0.1691409019733312,
+      "ALPHA#2": 0.8308590980266689
+     },
+     "total_gibbs": -968.4559189377998
+    },
+    {
+     "T": 1000.0,
+     "x": 0.9,
+     "phases": [
+      "ALPHA#2"
+     ],
+     "fractions": {
+      "ALPHA#2": 1.0
+     },
+     "compositions": {
+      "ALPHA#2": 0.9
+     },
+     "total_gibbs": -902.8902300114851
+    },
+    {
+     "T": 1000.0,
+     "x": 0.99,
+     "phases": [
+      "ALPHA#2"
+     ],
+     "fractions": {
+      "ALPHA#2": 1.0
+     },
+     "compositions": {
+      "ALPHA#2": 0.99
+     },
+     "total_gibbs": -267.62266394402116
+    },
+    {
+     "T": 1000.0,
+     "x": 1.0,
+     "phases": [
+      "ALPHA#2"
+     ],
+     "fractions": {
+      "ALPHA#2": 1.0
+     },
+     "compositions": {
+      "ALPHA#2": 1.0
+     },
+     "total_gibbs": 0.0
+    },
+    {
+     "T": 1130.0,
+     "x": 0.0,
+     "phases": [
+      "ALPHA#1"
+     ],
+     "fractions": {
+      "ALPHA#1": 1.0
+     },
+     "compositions": {
+      "ALPHA#1": 0.0
+     },
+     "total_gibbs": 0.0
+    },
+    {
+     "T": 1130.0,
+     "x": 0.02,
+     "phases": [
+      "ALPHA#1"
+     ],
+     "fractions": {
+      "ALPHA#1": 1.0
+     },
+     "compositions": {
+      "ALPHA#1": 0.02
+     },
+     "total_gibbs": -529.1110729868051
+    },
+    {
+     "T": 1130.0,
+     "x": 0.15,
+     "phases": [
+      "ALPHA#1"
+     ],
+     "fractions": {
+      "ALPHA#1": 1.0
+     },
+     "compositions": {
+      "ALPHA#1": 0.15
+     },
+     "total_gibbs": -1421.496767002524
+    },
+    {
+     "T": 1130.0,
+     "x": 0.3333333333333333,
+     "phases": [
+      "ALPHA#1",
+      "ALPHA#2"
+     ],
+     "fractions": {
+      "ALPHA#1": 0.9011249957682812,
+      "ALPHA#2": 0.09887500423171874
+     },
+     "compositions": {
+      "ALPHA#1": 0.2922509586476313,
+      "ALPHA#2": 0.7077490413523696
+     },
+     "total_gibbs": -1539.4353638673638
+    },
+    {
+     "T": 1130.0,
+     "x": 0.5,
+     "phases": [
+      "ALPHA#1",
+      "ALPHA#2"
+     ],
+     "fractions": {
+      "ALPHA#1": 0.5000000000000011,
+      "ALPHA#2": 0.49999999999999895
+     },
+     "compositions": {
+      "ALPHA#1": 0.2922509586476313,
+      "ALPHA#2": 0.7077490413523696
+     },
+     "total_gibbs": -1539.4353638673638
+    },
+    {
+     "T": 1130.0,
+     "x": 0.71,
+     "phases": [
+      "ALPHA#2"
+     ],
+     "fractions": {
+      "ALPHA#2": 1.0
+     },
+     "compositions": {
+      "ALPHA#2": 0.71
+     },
+     "total_gibbs": -1539.4214504693819
+    },
+    {
+     "T": 1130.0,
+     "x": 0.9,
+     "phases": [
+      "ALPHA#2"
+     ],
+     "fractions": {
+      "ALPHA#2": 1.0
+     },
+     "compositions": {
+      "ALPHA#2": 0.9
+     },
+     "total_gibbs": -1254.2659599129784
+    },
+    {
+     "T": 1130.0,
+     "x": 0.99,
+     "phases": [
+      "ALPHA#2"
+     ],
+     "fractions": {
+      "ALPHA#2": 1.0
+     },
+     "compositions": {
+      "ALPHA#2": 0.99
+     },
+     "total_gibbs": -328.15361025674395
+    },
+    {
+     "T": 1130.0,
+     "x": 1.0,
+     "phases": [
+      "ALPHA#2"
+     ],
+     "fractions": {
+      "ALPHA#2": 1.0
+     },
+     "compositions": {
+      "ALPHA#2": 1.0
+     },
+     "total_gibbs": 0.0
+    },
+    {
+     "T": 1260.0,
+     "x": 0.0,
+     "phases": [
+      "ALPHA"
+     ],
+     "fractions": {
+      "ALPHA": 1.0
+     },
+     "compositions": {
+      "ALPHA": 0.0
+     },
+     "total_gibbs": 0.0
+    },
+    {
+     "T": 1260.0,
+     "x": 0.02,
+     "phases": [
+      "ALPHA"
+     ],
+     "fractions": {
+      "ALPHA": 1.0
+     },
+     "compositions": {
+      "ALPHA": 0.02
+     },
+     "total_gibbs": -635.0796035074109
+    },
+    {
+     "T": 1260.0,
+     "x": 0.15,
+     "phases": [
+      "ALPHA"
+     ],
+     "fractions": {
+      "ALPHA": 1.0
+     },
+     "compositions": {
+      "ALPHA": 0.15
+     },
+     "total_gibbs": -1878.3946251532561
+    },
+    {
+     "T": 1260.0,
+     "x": 0.3333333333333333,
+     "phases": [
+      "ALPHA"
+     ],
+     "fractions": {
+      "ALPHA": 1.0
+     },
+     "compositions": {
+      "ALPHA": 0.3333333333333333
+     },
+     "total_gibbs": -2223.8198607799286
+    },
+    {
+     "T": 1260.0,
+     "x": 0.5,
+     "phases": [
+      "ALPHA"
+     ],
+     "fractions": {
+      "ALPHA": 1.0
+     },
+     "compositions": {
+      "ALPHA": 0.5
+     },
+     "total_gibbs": -2261.5643651375794
+    },
+    {
+     "T": 1260.0,
+     "x": 0.71,
+     "phases": [
+      "ALPHA"
+     ],
+     "fractions": {
+      "ALPHA": 1.0
+     },
+     "compositions": {
+      "ALPHA": 0.71
+     },
+     "total_gibbs": -2190.2752456561248
+    },
+    {
+     "T": 1260.0,
+     "x": 0.9,
+     "phases": [
+      "ALPHA"
+     ],
+     "fractions": {
+      "ALPHA": 1.0
+     },
+     "compositions": {
+      "ALPHA": 0.9
+     },
+     "total_gibbs": -1605.6416898144712
+    },
+    {
+     "T": 1260.0,
+     "x": 0.99,
+     "phases": [
+      "ALPHA"
+     ],
+     "fractions": {
+      "ALPHA": 1.0
+     },
+     "compositions": {
+      "ALPHA": 0.99
+     },
+     "total_gibbs": -388.6845565694666
+    },
+    {
+     "T": 1260.0,
+     "x": 1.0,
+     "phases": [
+      "ALPHA"
+     ],
+     "fractions": {
+      "ALPHA": 1.0
+     },
+     "compositions": {
+      "ALPHA": 1.0
+     },
+     "total_gibbs": 0.0
+    },
+    {
+     "T": 1390.0,
+     "x": 0.0,
+     "phases": [
+      "ALPHA"
+     ],
+     "fractions": {
+      "ALPHA": 1.0
+     },
+     "compositions": {
+      "ALPHA": 0.0
+     },
+     "total_gibbs": 0.0
+    },
+    {
+     "T": 1390.0,
+     "x": 0.02,
+     "phases": [
+      "ALPHA"
+     ],
+     "fractions": {
+      "ALPHA": 1.0
+     },
+     "compositions": {
+      "ALPHA": 0.02
+     },
+     "total_gibbs": -741.0481340280169
+    },
+    {
+     "T": 1390.0,
+     "x": 0.15,
+     "phases": [
+      "ALPHA"
+     ],
+     "fractions": {
+      "ALPHA": 1.0
+     },
+     "compositions": {
+      "ALPHA": 0.15
+     },
+     "total_gibbs": -2335.2924833039897
+    },
+    {
+     "T": 1390.0,
+     "x": 0.3333333333333333,
+     "phases": [
+      "ALPHA"
+     ],
+     "fractions": {
+      "ALPHA": 1.0
+     },
+     "compositions": {
+      "ALPHA": 0.3333333333333333
+     },
+     "total_gibbs": -2911.8153843348246
+    },
+    {
+     "T": 1390.0,
+     "x": 0.5,
+     "phases": [
+      "ALPHA"
+     ],
+     "fractions": {
+      "ALPHA": 1.0
+     },
+     "compositions": {
+      "ALPHA": 0.5
+     },
+     "total_gibbs": -3010.773386937489
+    },
+    {
+     "T": 1390.0,
+     "x": 0.71,
+     "phases": [
+      "ALPHA"
+     ],
+     "fractions": {
+      "ALPHA": 1.0
+     },
+     "compositions": {
+      "ALPHA": 0.71
+     },
+     "total_gibbs": -2841.1290408428686
+    },
+    {
+     "T": 1390.0,
+     "x": 0.9,
+     "phases": [
+      "ALPHA"
+     ],
+     "fractions": {
+      "ALPHA": 1.0
+     },
+     "compositions": {
+      "ALPHA": 0.9
+     },
+     "total_gibbs": -1957.0174197159645
+    },
+    {
+     "T": 1390.0,
+     "x": 0.99,
+     "phases": [
+      "ALPHA"
+     ],
+     "fractions": {
+      "ALPHA": 1.0
+     },
+     "compositions": {
+      "ALPHA": 0.99
+     },
+     "total_gibbs": -449.2155028821895
+    },
+    {
+     "T": 1390.0,
+     "x": 1.0,
+     "phases": [
+      "ALPHA"
+     ],
+     "fractions": {
+      "ALPHA": 1.0
+     },
+     "compositions": {
+      "ALPHA": 1.0
+     },
+     "total_gibbs": 0.0
+    }
+   ],
+   "invariants": []
+  },
+  "tests/fixtures/gap_eutectic.tdb": {
+   "points": [
+    {
+     "T": 610.0,
+     "x": 0.0,
+     "phases": [
+      "ALPHA#1"
+     ],
+     "fractions": {
+      "ALPHA#1": 1.0
+     },
+     "compositions": {
+      "ALPHA#1": 0.0
+     },
+     "total_gibbs": 0.0
+    },
+    {
+     "T": 610.0,
+     "x": 0.02,
+     "phases": [
+      "ALPHA#1"
+     ],
+     "fractions": {
+      "ALPHA#1": 1.0
+     },
+     "compositions": {
+      "ALPHA#1": 0.02
+     },
+     "total_gibbs": -105.2369509043815
+    },
+    {
+     "T": 610.0,
+     "x": 0.15,
+     "phases": [
+      "ALPHA#1",
+      "ALPHA#2"
+     ],
+     "fractions": {
+      "ALPHA#1": 0.8666065510678383,
+      "ALPHA#2": 0.13339344893216165
+     },
+     "compositions": {
+      "ALPHA#1": 0.02264901025290925,
+      "ALPHA#2": 0.9773509897470908
+     },
+     "total_gibbs": -105.93304742072714
+    },
+    {
+     "T": 610.0,
+     "x": 0.3333333333333333,
+     "phases": [
+      "ALPHA#1",
+      "ALPHA#2"
+     ],
+     "fractions": {
+      "ALPHA#1": 0.6745745481275421,
+      "ALPHA#2": 0.32542545187245786
+     },
+     "compositions": {
+      "ALPHA#1": 0.02264901025290925,
+      "ALPHA#2": 0.9773509897470908
+     },
+     "total_gibbs": -105.93304742072718
+    },
+    {
+     "T": 610.0,
+     "x": 0.5,
+     "phases": [
+      "ALPHA#1",
+      "ALPHA#2"
+     ],
+     "fractions": {
+      "ALPHA#1": 0.5,
+      "ALPHA#2": 0.49999999999999994
+     },
+     "compositions": {
+      "ALPHA#1": 0.02264901025290925,
+      "ALPHA#2": 0.9773509897470908
+     },
+     "total_gibbs": -105.9330474207272
+    },
+    {
+     "T": 610.0,
+     "x": 0.71,
+     "phases": [
+      "ALPHA#1",
+      "ALPHA#2"
+     ],
+     "fractions": {
+      "ALPHA#1": 0.28003606935929704,
+      "ALPHA#2": 0.719963930640703
+     },
+     "compositions": {
+      "ALPHA#1": 0.02264901025290925,
+      "ALPHA#2": 0.9773509897470908
+     },
+     "total_gibbs": -105.93304742072725
+    },
+    {
+     "T": 610.0,
+     "x": 0.9,
+     "phases": [
+      "ALPHA#1",
+      "ALPHA#2"
+     ],
+     "fractions": {
+      "ALPHA#1": 0.081021084493899,
+      "ALPHA#2": 0.918978915506101
+     },
+     "compositions": {
+      "ALPHA#1": 0.02264901025290925,
+      "ALPHA#2": 0.9773509897470908
+     },
+     "total_gibbs": -105.93304742072728
+    },
+    {
+     "T": 610.0,
+     "x": 0.99,
+     "phases": [
+      "ALPHA#2"
+     ],
+     "fractions": {
+      "ALPHA#2": 1.0
+     },
+     "compositions": {
+      "ALPHA#2": 0.99
+     },
+     "total_gibbs": -86.02982500585287
+    },
+    {
+     "T": 610.0,
+     "x": 1.0,
+     "phases": [
+      "ALPHA#2"
+     ],
+     "fractions": {
+      "ALPHA#2": 1.0
+     },
+     "compositions": {
+      "ALPHA#2": 1.0
+     },
+     "total_gibbs": 0.0
+    },
+    {
+     "T": 690.0,
+     "x": 0.0,
+     "phases": [
+      "ALPHA"
+     ],
+     "fractions": {
+      "ALPHA": 1.0
+     },
+     "compositions": {
+      "ALPHA": 0.0
+     },
+     "total_gibbs": 0.0
+    },
+    {
+     "T": 690.0,
+     "x": 0.02,
+     "phases": [
+      "ALPHA"
+     ],
+     "fractions": {
+      "ALPHA": 1.0
+     },
+     "compositions": {
+      "ALPHA": 0.02
+     },
+     "total_gibbs": -170.44835430167734
+    },
+    {
+     "T": 690.0,
+     "x": 0.15,
+     "phases": [
+      "ALPHA",
+      "LIQUID"
+     ],
+     "fractions": {
+      "ALPHA": 0.6969616547930054,
+      "LIQUID": 0.3030383452069946
+     },
+     "compositions": {
+      "ALPHA": 0.02741239755142883,
+      "LIQUID": 0.431940749779712
+     },
+     "total_gibbs": -380.16717044097106
+    },
+    {
+     "T": 690.0,
+     "x": 0.3333333333333333,
+     "phases": [
+      "ALPHA",
+      "LIQUID"
+     ],
+     "fractions": {
+      "ALPHA": 0.24375897487336706,
+      "LIQUID": 0.7562410251266329
+     },
+     "compositions": {
+      "ALPHA": 0.02741239755142883,
+      "LIQUID": 0.431940749779712
+     },
+     "total_gibbs": -668.2888142440321
+    },
+    {
+     "T": 690.0,
+     "x": 0.5,
+     "phases": [
+      "LIQUID"
+     ],
+     "fractions": {
+      "LIQUID": 1.0
+     },
+     "compositions": {
+      "LIQUID": 0.5
+     },
+     "total_gibbs": -876.5709618610554
+    },
+    {
+     "T": 690.0,
+     "x": 0.71,
+     "phases": [
+      "LIQUID",
+      "ALPHA"
+     ],
+     "fractions": {
+      "LIQUID": 0.6491203916910822,
+      "ALPHA": 0.3508796083089179
+     },
+     "compositions": {
+      "LIQUID": 0.568059250220288,
+      "ALPHA": 0.9725876024485711
+     },
+     "total_gibbs": -600.1873347996723
+    },
+    {
+     "T": 690.0,
+     "x": 0.9,
+     "phases": [
+      "LIQUID",
+      "ALPHA"
+     ],
+     "fractions": {
+      "LIQUID": 0.1794376143198203,
+      "ALPHA": 0.8205623856801797
+     },
+     "compositions": {
+      "LIQUID": 0.568059250220288,
+      "ALPHA": 0.9725876024485711
+     },
+     "total_gibbs": -301.58854031286324
+    },
+    {
+     "T": 690.0,
+     "x": 0.99,
+     "phases": [
+      "ALPHA"
+     ],
+     "fractions": {
+      "ALPHA": 1.0
+     },
+     "compositions": {
+      "ALPHA": 0.99
+     },
+     "total_gibbs": -123.27963812137452
+    },
+    {
+     "T": 690.0,
+     "x": 1.0,
+     "phases": [
+      "ALPHA"
+     ],
+     "fractions": {
+      "ALPHA": 1.0
+     },
+     "compositions": {
+      "ALPHA": 1.0
+     },
+     "total_gibbs": 0.0
+    },
+    {
+     "T": 770.0,
+     "x": 0.0,
+     "phases": [
+      "ALPHA"
+     ],
+     "fractions": {
+      "ALPHA": 1.0
+     },
+     "compositions": {
+      "ALPHA": 0.0
+     },
+     "total_gibbs": 0.0
+    },
+    {
+     "T": 770.0,
+     "x": 0.02,
+     "phases": [
+      "ALPHA"
+     ],
+     "fractions": {
+      "ALPHA": 1.0
+     },
+     "compositions": {
+      "ALPHA": 0.02
+     },
+     "total_gibbs": -235.6597576989733
+    },
+    {
+     "T": 770.0,
+     "x": 0.15,
+     "phases": [
+      "ALPHA",
+      "LIQUID"
+     ],
+     "fractions": {
+      "ALPHA": 0.5676294246234028,
+      "LIQUID": 0.4323705753765972
+     },
+     "compositions": {
+      "ALPHA": 0.02299762065977295,
+      "LIQUID": 0.31673264004588003
+     },
+     "total_gibbs": -876.6969664458777
+    },
+    {
+     "T": 770.0,
+     "x": 0.3333333333333333,
+     "phases": [
+      "LIQUID"
+     ],
+     "fractions": {
+      "LIQUID": 1.0
+     },
+     "compositions": {
+      "LIQUID": 0.3333333333333333
+     },
+     "total_gibbs": -1775.0504087482282
+    },
+    {
+     "T": 770.0,
+     "x": 0.5,
+     "phases": [
+      "LIQUID"
+     ],
+     "fractions": {
+      "LIQUID": 1.0
+     },
+     "compositions": {
+      "LIQUID": 0.5
+     },
+     "total_gibbs": -2137.622667584076
+    },
+    {
+     "T": 770.0,
+     "x": 0.71,
+     "phases": [
+      "LIQUID",
+      "ALPHA"
+     ],
+     "fractions": {
+      "LIQUID": 0.9089906266479565,
+      "ALPHA": 0.09100937335204347
+     },
+     "compositions": {
+      "LIQUID": 0.68326735995412,
+      "ALPHA": 0.977002379340227
+     },
+     "total_gibbs": -1565.7969862491684
+    },
+    {
+     "T": 770.0,
+     "x": 0.9,
+     "phases": [
+      "LIQUID",
+      "ALPHA"
+     ],
+     "fractions": {
+      "LIQUID": 0.2621491284939689,
+      "ALPHA": 0.7378508715060311
+     },
+     "compositions": {
+      "LIQUID": 0.68326735995412,
+      "ALPHA": 0.977002379340227
+     },
+     "total_gibbs": -630.5898165161308
+    },
+    {
+     "T": 770.0,
+     "x": 0.99,
+     "phases": [
+      "ALPHA"
+     ],
+     "fractions": {
+      "ALPHA": 1.0
+     },
+     "compositions": {
+      "ALPHA": 0.99
+     },
+     "total_gibbs": -160.52945123689628
+    },
+    {
+     "T": 770.0,
+     "x": 1.0,
+     "phases": [
+      "ALPHA"
+     ],
+     "fractions": {
+      "ALPHA": 1.0
+     },
+     "compositions": {
+      "ALPHA": 1.0
+     },
+     "total_gibbs": 0.0
+    },
+    {
+     "T": 850.0,
+     "x": 0.0,
+     "phases": [
+      "ALPHA"
+     ],
+     "fractions": {
+      "ALPHA": 1.0
+     },
+     "compositions": {
+      "ALPHA": 0.0
+     },
+     "total_gibbs": 0.0
+    },
+    {
+     "T": 850.0,
+     "x": 0.02,
+     "phases": [
+      "ALPHA",
+      "LIQUID"
+     ],
+     "fractions": {
+      "ALPHA": 0.98025588106305,
+      "LIQUID": 0.019744118936950064
+     },
+     "compositions": {
+      "ALPHA": 0.01629760547109473,
+      "LIQUID": 0.2038164580837802
+     },
+     "total_gibbs": -303.41589011097824
+    },
+    {
+     "T": 850.0,
+     "x": 0.15,
+     "phases": [
+      "ALPHA",
+      "LIQUID"
+     ],
+     "fractions": {
+      "ALPHA": 0.286992253493234,
+      "LIQUID": 0.713007746506766
+     },
+     "compositions": {
+      "ALPHA": 0.01629760547109473,
+      "LIQUID": 0.2038164580837802
+     },
+     "total_gibbs": -1555.3111418044496
+    },
+    {
+     "T": 850.0,
+     "x": 0.3333333333333333,
+     "phases": [
+      "LIQUID"
+     ],
+     "fractions": {
+      "LIQUID": 1.0
+     },
+     "compositions": {
+      "LIQUID": 0.3333333333333333
+     },
+     "total_gibbs": -2998.4322693973945
+    },
+    {
+     "T": 850.0,
+     "x": 0.5,
+     "phases": [
+      "LIQUID"
+     ],
+     "fractions": {
+      "LIQUID": 1.0
+     },
+     "compositions": {
+      "LIQUID": 0.5
+     },
+     "total_gibbs": -3398.674373307097
+    },
+    {
+     "T": 850.0,
+     "x": 0.71,
+     "phases": [
+      "LIQUID"
+     ],
+     "fractions": {
+      "LIQUID": 1.0
+     },
+     "compositions": {
+      "LIQUID": 0.71
+     },
+     "total_gibbs": -2755.582506990244
+    },
+    {
+     "T": 850.0,
+     "x": 0.9,
+     "phases": [
+      "LIQUID",
+      "ALPHA"
+     ],
+     "fractions": {
+      "LIQUID": 0.4463678897491449,
+      "ALPHA": 0.5536321102508551
+     },
+     "compositions": {
+      "LIQUID": 0.79618354191622,
+      "ALPHA": 0.9837023945289053
+     },
+     "total_gibbs": -1073.8129680761908
+    },
+    {
+     "T": 850.0,
+     "x": 0.99,
+     "phases": [
+      "ALPHA"
+     ],
+     "fractions": {
+      "ALPHA": 1.0
+     },
+     "compositions": {
+      "ALPHA": 0.99
+     },
+     "total_gibbs": -197.77926435241793
+    },
+    {
+     "T": 850.0,
+     "x": 1.0,
+     "phases": [
+      "ALPHA"
+     ],
+     "fractions": {
+      "ALPHA": 1.0
+     },
+     "compositions": {
+      "ALPHA": 1.0
+     },
+     "total_gibbs": 0.0
+    },
+    {
+     "T": 930.0,
+     "x": 0.0,
+     "phases": [
+      "ALPHA"
+     ],
+     "fractions": {
+      "ALPHA": 1.0
+     },
+     "compositions": {
+      "ALPHA": 0.0
+     },
+     "total_gibbs": 0.0
+    },
+    {
+     "T": 930.0,
+     "x": 0.02,
+     "phases": [
+      "ALPHA",
+      "LIQUID"
+     ],
+     "fractions": {
+      "ALPHA": 0.8606143032880007,
+      "LIQUID": 0.13938569671199924
+     },
+     "compositions": {
+      "ALPHA": 0.00805441001800919,
+      "LIQUID": 0.09375610153857435
+     },
+     "total_gibbs": -412.07357053752776
+    },
+    {
+     "T": 930.0,
+     "x": 0.15,
+     "phases": [
+      "LIQUID"
+     ],
+     "fractions": {
+      "LIQUID": 1.0
+     },
+     "compositions": {
+      "LIQUID": 0.15
+     },
+     "total_gibbs": -2568.5769852321655
+    },
+    {
+     "T": 930.0,
+     "x": 0.3333333333333333,
+     "phases": [
+      "LIQUID"
+     ],
+     "fractions": {
+      "LIQUID": 1.0
+     },
+     "compositions": {
+      "LIQUID": 0.3333333333333333
+     },
+     "total_gibbs": -4221.814130046561
+    },
+    {
+     "T": 930.0,
+     "x": 0.5,
+     "phases": [
+      "LIQUID"
+     ],
+     "fractions": {
+      "LIQUID": 1.0
+     },
+     "compositions": {
+      "LIQUID": 0.5
+     },
+     "total_gibbs": -4659.726079030118
+    },
+    {
+     "T": 930.0,
+     "x": 0.71,
+     "phases": [
+      "LIQUID"
+     ],
+     "fractions": {
+      "LIQUID": 1.0
+     },
+     "compositions": {
+      "LIQUID": 0.71
+     },
+     "total_gibbs": -3956.107919412855
+    },
+    {
+     "T": 930.0,
+     "x": 0.9,
+     "phases": [
+      "LIQUID"
+     ],
+     "fractions": {
+      "LIQUID": 1.0
+     },
+     "compositions": {
+      "LIQUID": 0.9
+     },
+     "total_gibbs": -1813.687913910681
+    },
+    {
+     "T": 930.0,
+     "x": 0.99,
+     "phases": [
+      "LIQUID",
+      "ALPHA"
+     ],
+     "fractions": {
+      "LIQUID": 0.022701885429226576,
+      "ALPHA": 0.9772981145707734
+     },
+     "compositions": {
+      "LIQUID": 0.9062438984614256,
+      "ALPHA": 0.9919455899819908
+     },
+     "total_gibbs": -236.65429768113754
+    },
+    {
+     "T": 930.0,
+     "x": 1.0,
+     "phases": [
+      "ALPHA"
+     ],
+     "fractions": {
+      "ALPHA": 1.0
+     },
+     "compositions": {
+      "ALPHA": 1.0
+     },
+     "total_gibbs": 0.0
+    },
+    {
+     "T": 1010.0,
+     "x": 0.0,
+     "phases": [
+      "LIQUID"
+     ],
+     "fractions": {
+      "LIQUID": 1.0
+     },
+     "compositions": {
+      "LIQUID": 0.0
+     },
+     "total_gibbs": -100.0
+    },
+    {
+     "T": 1010.0,
+     "x": 0.02,
+     "phases": [
+      "LIQUID"
+     ],
+     "fractions": {
+      "LIQUID": 1.0
+     },
+     "compositions": {
+      "LIQUID": 0.02
+     },
+     "total_gibbs": -923.2939678908612
+    },
+    {
+     "T": 1010.0,
+     "x": 0.15,
+     "phases": [
+      "LIQUID"
+     ],
+     "fractions": {
+      "LIQUID": 1.0
+     },
+     "compositions": {
+      "LIQUID": 0.15
+     },
+     "total_gibbs": -3649.744897940309
+    },
+    {
+     "T": 1010.0,
+     "x": 0.3333333333333333,
+     "phases": [
+      "LIQUID"
+     ],
+     "fractions": {
+      "LIQUID": 1.0
+     },
+     "compositions": {
+      "LIQUID": 0.3333333333333333
+     },
+     "total_gibbs": -5445.195990695728
+    },
+    {
+     "T": 1010.0,
+     "x": 0.5,
+     "phases": [
+      "LIQUID"
+     ],
+     "fractions": {
+      "LIQUID": 1.0
+     },
+     "compositions": {
+      "LIQUID": 0.5
+     },
+     "total_gibbs": -5920.77778475314
+    },
+    {
+     "T": 1010.0,
+     "x": 0.71,
+     "phases": [
+      "LIQUID"
+     ],
+     "fractions": {
+      "LIQUID": 1.0
+     },
+     "compositions": {
+      "LIQUID": 0.71
+     },
+     "total_gibbs": -5156.633331835466
+    },
+    {
+     "T": 1010.0,
+     "x": 0.9,
+     "phases": [
+      "LIQUID"
+     ],
+     "fractions": {
+      "LIQUID": 1.0
+     },
+     "compositions": {
+      "LIQUID": 0.9
+     },
+     "total_gibbs": -2829.9191323115997
+    },
+    {
+     "T": 1010.0,
+     "x": 0.99,
+     "phases": [
+      "LIQUID"
+     ],
+     "fractions": {
+      "LIQUID": 1.0
+     },
+     "compositions": {
+      "LIQUID": 0.99
+     },
+     "total_gibbs": -570.2788905834616
+    },
+    {
+     "T": 1010.0,
+     "x": 1.0,
+     "phases": [
+      "LIQUID"
+     ],
+     "fractions": {
+      "LIQUID": 1.0
+     },
+     "compositions": {
+      "LIQUID": 1.0
+     },
+     "total_gibbs": -100.0
+    },
+    {
+     "T": 1090.0,
+     "x": 0.0,
+     "phases": [
+      "LIQUID"
+     ],
+     "fractions": {
+      "LIQUID": 1.0
+     },
+     "compositions": {
+      "LIQUID": 0.0
+     },
+     "total_gibbs": -900.0
+    },
+    {
+     "T": 1090.0,
+     "x": 0.02,
+     "phases": [
+      "LIQUID"
+     ],
+     "fractions": {
+      "LIQUID": 1.0
+     },
+     "compositions": {
+      "LIQUID": 0.02
+     },
+     "total_gibbs": -1788.505371288157
+    },
+    {
+     "T": 1090.0,
+     "x": 0.15,
+     "phases": [
+      "LIQUID"
+     ],
+     "fractions": {
+      "LIQUID": 1.0
+     },
+     "compositions": {
+      "LIQUID": 0.15
+     },
+     "total_gibbs": -4730.912810648451
+    },
+    {
+     "T": 1090.0,
+     "x": 0.3333333333333333,
+     "phases": [
+      "LIQUID"
+     ],
+     "fractions": {
+      "LIQUID": 1.0
+     },
+     "compositions": {
+      "LIQUID": 0.3333333333333333
+     },
+     "total_gibbs": -6668.577851344894
+    },
+    {
+     "T": 1090.0,
+     "x": 0.5,
+     "phases": [
+      "LIQUID"
+     ],
+     "fractions": {
+      "LIQUID": 1.0
+     },
+     "compositions": {
+      "LIQUID": 0.5
+     },
+     "total_gibbs": -7181.82949047616
+    },
+    {
+     "T": 1090.0,
+     "x": 0.71,
+     "phases": [
+      "LIQUID"
+     ],
+     "fractions": {
+      "LIQUID": 1.0
+     },
+     "compositions": {
+      "LIQUID": 0.71
+     },
+     "total_gibbs": -6357.158744258077
+    },
+    {
+     "T": 1090.0,
+     "x": 0.9,
+     "phases": [
+      "LIQUID"
+     ],
+     "fractions": {
+      "LIQUID": 1.0
+     },
+     "compositions": {
+      "LIQUID": 0.9
+     },
+     "total_gibbs": -3846.1503507125185
+    },
+    {
+     "T": 1090.0,
+     "x": 0.99,
+     "phases": [
+      "LIQUID"
+     ],
+     "fractions": {
+      "LIQUID": 1.0
+     },
+     "compositions": {
+      "LIQUID": 0.99
+     },
+     "total_gibbs": -1407.5287036989832
+    },
+    {
+     "T": 1090.0,
+     "x": 1.0,
+     "phases": [
+      "LIQUID"
+     ],
+     "fractions": {
+      "LIQUID": 1.0
+     },
+     "compositions": {
+      "LIQUID": 1.0
+     },
+     "total_gibbs": -900.0
+    }
+   ],
+   "invariants": [
+    {
+     "temperature": 643.1916664393392,
+     "type": "eutectic",
+     "phases": [
+      "ALPHA#1",
+      "LIQUID",
+      "ALPHA#2"
+     ],
+     "composition": {
+      "ALPHA#1": 0.028578657377538383,
+      "LIQUID": 0.5,
+      "ALPHA#2": 0.9714213426224616
+     }
+    }
+   ]
+  }
+ }
+}

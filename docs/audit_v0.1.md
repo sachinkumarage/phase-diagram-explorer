@@ -478,6 +478,29 @@ below are in the data, not in the engine. The full report is
 - Tables and labels round to 0.1 K and 0.1 at%.
 - The CLI `plot` command works and is smoke-tested.
 
+## Resolved in 0.2.1
+
+### Real assessed databases
+
+- The sublattice (CEF) and Inden-Hillert-Jarl magnetic models are
+  implemented, and TDB metadata keywords no longer block literature files.
+- Two pycalphad test databases now load and compute directly:
+  - Fe-C (Hallstedt et al. 2010): eutectoid 1011.17 K, eutectic 1426.58 K
+    and peritectic 1767.76 K;
+  - Cu-Mg (Liang et al. 1998): three eutectics, at 759.58, 824.48 and
+    992.01 K.
+- All of these agree with pycalphad within 0.005 K
+  (`docs/validation/engine_vs_pycalphad.md`).
+- The route to replacing the provisional Ag-Cu and Al-Cu data with assessed
+  parameters is open. The data themselves are unchanged in 0.2.1.
+
+### Gap detection
+
+A compound lying above a solution phase's Gibbs curve no longer counts as
+evidence of a miscibility gap in that phase. This removed a false
+LIQUID#1 + CUMG2 + LIQUID#2 reaction at the congruent melting point of
+CuMg2.
+
 ## Still open
 
 - **Ag-Cu solvus.** The simplified FCC_AG and FCC_CU parameters put the
@@ -498,9 +521,14 @@ below are in the data, not in the engine. The full report is
   Gibbs curves, so a gap narrower than the Gibbs-curve sampling step is
   missed. In practice this only matters within about 0.02 K of a critical
   temperature.
-- **Models not yet evaluated.** Magnetic contributions (TC, BMAGN) and
-  multi-sublattice phases from TDB files raise `NotImplementedError`. The
-  magnetic model is planned for 0.2.1.
+- **Models not yet evaluated.** Order-disorder descriptions with a
+  disordered part (`DIS_PART` type definitions, e.g. B2/BCC), and
+  non-element species as constituents, raise `NotImplementedError`.
+  Reciprocal and ternary interaction parameters are supported at order 0
+  only.
+- **Speed with internal ordering.** Phases with internal degrees of
+  freedom are minimised at every composition the solver visits. Cu-Mg takes
+  about 22 s for invariants plus tracing; Ag-Cu takes 1.2 s.
 - **Boundary drawing.** Between adaptive levels, boundary lines are
   straight segments. Points on the lines are exact equilibrium compositions,
   but between levels a line can deviate from the true curve by up to the

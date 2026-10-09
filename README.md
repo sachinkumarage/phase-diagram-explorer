@@ -27,7 +27,7 @@ phase-diagram-explorer list
 
 ## Data formats
 
-Systems are JSON files or TDB databases (binary subset: substitutional solutions and stoichiometric compounds; magnetic and multi-sublattice phases are read but not yet evaluated). See [docs/data_format.md](docs/data_format.md).
+Systems are JSON files or binary TDB databases. Phases use the Compound Energy Formalism: substitutional and interstitial solutions, ordered phases with internal degrees of freedom, compounds and pure-element phases. Magnetic phases use the Inden-Hillert-Jarl model. Literature databases such as Fe-C and Cu-Mg load directly, with their references available in `system.metadata["references"]`. See [docs/data_format.md](docs/data_format.md) for the formats and [docs/theory.md](docs/theory.md) for the models.
 
 ```python
 from phase_diagram_explorer.models import load_system
@@ -35,14 +35,15 @@ from phase_diagram_explorer.builder import build_system
 from phase_diagram_explorer.tdb.writer import write_tdb
 
 definition = load_system("tests/fixtures/ag_cu_provisional.tdb")   # element order from ag_cu_provisional.meta.json
-definition = load_system("other.tdb", elements=["Pb", "Sn"])       # or given explicitly
+definition = load_system("fe_c.tdb", elements=["Fe", "C"])          # or given explicitly (x = mole fraction of C)
+definition = load_system("fe_c.tdb", elements=["Fe", "C"], gas_constant=8.3145)  # R defaults to 8.31451 for TDB
 system = build_system(definition)
 write_tdb(load_system("data/systems/ag_cu.json"), "ag_cu.tdb")
 ```
 
 ## Validation against pycalphad
 
-The equilibrium engine is cross-validated against [pycalphad](https://pycalphad.org) on the same TDB files: stable phases, phase fractions and compositions at 30 points per system, eutectic temperatures and a miscibility-gap binodal. Results are in [docs/validation/engine_vs_pycalphad.md](docs/validation/engine_vs_pycalphad.md). pycalphad is an optional dependency:
+The equilibrium engine is cross-validated against [pycalphad](https://pycalphad.org) on the same TDB files. The comparison covers synthetic fixtures (interstitial, magnetic, miscibility gap) and literature databases (Pb-Sn, Cu-Mg, Fe-C). For each system it checks Gibbs energies at the same site fractions, stable phases, fractions and compositions at 30 points, every invariant temperature, and a miscibility-gap binodal. Results are in [docs/validation/engine_vs_pycalphad.md](docs/validation/engine_vs_pycalphad.md). pycalphad is an optional dependency:
 
 ```
 pip install -e ".[validation]"

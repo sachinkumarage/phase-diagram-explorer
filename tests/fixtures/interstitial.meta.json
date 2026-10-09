@@ -1,0 +1,7 @@
+{
+  "name": "A-C interstitial (synthetic)",
+  "elements": ["A", "C"],
+  "element_names": {"A": "Element A", "C": "Carbon-like element"},
+  "t_range_k": [700.0, 1700.0],
+  "_source": "Synthetic test fixture for the sublattice model: interstitial FCC (A)1(C,VA)1 and BCC (A)1(C,VA)3, pure GRAPHITE and a substitutional LIQUID. Not literature data."
+}

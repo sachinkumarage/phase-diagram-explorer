@@ -2,10 +2,8 @@ from dataclasses import dataclass, field
 
 import numpy as np
 
-from scipy.optimize import minimize_scalar
-
-from phase_diagram_explorer.equilibrium.curves import _cross, evaluate_phase_curves
-from phase_diagram_explorer.equilibrium.tangent import common_tangent, gibbs, tangent_line
+from phase_diagram_explorer.equilibrium.curves import _cross
+from phase_diagram_explorer.equilibrium.tangent import common_tangent, gibbs, lowest_point, tangent_line
 from phase_diagram_explorer.thermo.stoichiometric import StoichiometricPhase
 
 COMPOSITION_TOLERANCE = 1e-6
@@ -47,8 +45,9 @@ def _number_composition_sets(
     have a miscibility gap.
 
     A hull segment between two vertices of the same phase that bridges
-    envelope points lying above it is a tie line between two tangent points
-    on that one phase's Gibbs curve. Each such phase's disjoint stretches on
+    envelope points of that phase lying above it is a tie line between two
+    tangent points on that one phase's Gibbs curve. (Points of other phases
+    above it, such as an unstable compound, say nothing about a gap.) Each such phase's disjoint stretches on
     the hull are then labelled PHASE#1, PHASE#2, ... from left to right;
     phases without a gap keep their plain name.
     """
@@ -60,9 +59,12 @@ def _number_composition_sets(
         i, j = hull_idx[k], hull_idx[k + 1]
         if hull_labels[k] != hull_labels[k + 1] or j - i < 2:
             continue
-        bridged_x = env_x[i + 1:j]
+        same_phase = env_labels[i + 1:j] == hull_labels[k]
+        if not same_phase.any():
+            continue
+        bridged_x = env_x[i + 1:j][same_phase]
         tie_line = env_G[i] + (env_G[j] - env_G[i]) * (bridged_x - env_x[i]) / (env_x[j] - env_x[i])
-        if np.max(env_G[i + 1:j] - tie_line) > MISCIBILITY_GAP_TOLERANCE:
+        if np.max(env_G[i + 1:j][same_phase] - tie_line) > MISCIBILITY_GAP_TOLERANCE:
             gap_after[k] = True
             gapped_phases.add(hull_labels[k])
 
@@ -130,30 +132,31 @@ def _phase_composition(system: dict, label: str, grid_x: float) -> float:
 def _hull_for_temperature(system: dict, T: float, n_points: int = 500):
     """Evaluate every phase's Gibbs energy curve at T and build the labeled hull.
 
-    Solution phases contribute their curve on the shared composition grid;
-    stoichiometric phases contribute one point at their exact composition
-    (not the nearest grid point).
+    Other phases contribute their curve on the shared composition grid
+    (within their composition range, plus its exact ends); stoichiometric
+    phases contribute one point at their exact composition (not the nearest
+    grid point).
 
     This is the expensive step (one Gibbs energy evaluation per phase per grid
     point) and depends only on T, not on composition, so callers that need
     equilibrium at many compositions for the same T should compute this once
     and reuse it via _resolve_from_hull.
     """
-    x, curves = evaluate_phase_curves(system, T, n_points=n_points)
+    x = np.linspace(0.0, 1.0, n_points)
 
     all_x: list[np.ndarray] = []
     all_G: list[np.ndarray] = []
     all_labels: list[str] = []
-    for name, curve in curves.items():
-        phase = system[name]
+    for name, phase in system.items():
         if isinstance(phase, StoichiometricPhase):
             all_x.append(np.array([phase.composition]))
             all_G.append(np.array([phase.molar_gibbs(T)], dtype=float))
             all_labels.append(name)
             continue
-        finite = np.isfinite(curve)
-        all_x.append(x[finite])
-        all_G.append(curve[finite])
+        points_x, points_G = phase.hull_points(T, x)
+        finite = np.isfinite(points_G)
+        all_x.append(points_x[finite])
+        all_G.append(points_G[finite])
         all_labels.extend([name] * int(finite.sum()))
 
     return _labeled_lower_hull(
@@ -295,20 +298,12 @@ def _deepest_phase_below(system: dict, T: float, tie: PhaseField):
     for name, phase in system.items():
         if name in tie.base_phases:
             continue
-        if isinstance(phase, StoichiometricPhase):
-            if not tie.x_min < phase.composition < tie.x_max:
-                continue
-            x_q = phase.composition
-            depth = float(phase.molar_gibbs(T)) - (slope * x_q + intercept)
-        else:
-            distance = np.asarray(phase.molar_gibbs(T, x), dtype=float) - (slope * x + intercept)
-            k = int(np.argmin(distance))
-            lo, hi = x[max(k - 1, 0)], x[min(k + 1, len(x) - 1)]
-            refined = minimize_scalar(
-                lambda xi: float(phase.molar_gibbs(T, xi)) - (slope * xi + intercept),
-                bounds=(lo, hi), method="bounded", options={"xatol": 1e-12},
-            )
-            x_q, depth = (refined.x, refined.fun) if refined.fun < distance[k] else (x[k], distance[k])
+        if isinstance(phase, StoichiometricPhase) and not tie.x_min < phase.composition < tie.x_max:
+            continue
+        point = lowest_point(phase, T, slope, intercept, x)
+        if point is None:
+            continue
+        x_q, depth = point
         if depth < -STABILITY_TOLERANCE and (best is None or depth < best[2]):
             best = (name, float(x_q), float(depth))
     return best

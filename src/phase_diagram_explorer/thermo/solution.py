@@ -1,81 +1,47 @@
 import numpy as np
 
+from phase_diagram_explorer.thermo.cef import CEFModel, CEFParameter
+from phase_diagram_explorer.thermo.constants import CODATA_GAS_CONSTANT
 from phase_diagram_explorer.thermo.pure import PureElementGibbs
+from phase_diagram_explorer.thermo.sublattice import SublatticePhase
 
-GAS_CONSTANT = 8.314462618
-
-
-def _xlogx(x: np.ndarray) -> np.ndarray:
-    with np.errstate(divide="ignore", invalid="ignore"):
-        result = x * np.log(x)
-    return np.where(x > 0, result, 0.0)
+# Default gas constant of the JSON models (see constants.py).
+GAS_CONSTANT = CODATA_GAS_CONSTANT
+_A, _B = "A", "B"
 
 
-class SolutionPhase:
+class SolutionPhase(SublatticePhase):
     """Binary substitutional solution phase using a Redlich-Kister excess term.
 
     G_m = x_A*G_A(T) + x_B*G_B(T)
           + R*T*(x_A*ln(x_A) + x_B*ln(x_B))
           + x_A*x_B * sum_v L_v * (x_A - x_B)^v
+
+    This is the sublattice model (A,B)1 (see cef.py) with end members G_A,
+    G_B and interaction parameters L_v. Each L_v is a number or, if it
+    depends on temperature, an object with a G(T) method (like
+    PureElementGibbs).
     """
 
     def __init__(
         self,
         gibbs_a: PureElementGibbs,
         gibbs_b: PureElementGibbs,
-        L: list[float] | None = None,
+        L: list | None = None,
+        gas_constant: float = GAS_CONSTANT,
+        name: str = "solution",
     ):
         self.gibbs_a = gibbs_a
         self.gibbs_b = gibbs_b
         self.L = list(L) if L is not None else []
-
-    def _interaction_values(self, T) -> list:
-        return [L_v.G(T) if hasattr(L_v, "G") else L_v for L_v in self.L]
-
-    def _redlich_kister(self, T, x_a: np.ndarray, x_b: np.ndarray) -> np.ndarray:
-        diff = x_a - x_b
-        excess = np.zeros_like(diff, dtype=float)
-        for v, L_v in enumerate(self._interaction_values(T)):
-            excess = excess + L_v * diff**v
-        return excess
-
-    def molar_gibbs(self, T: float | np.ndarray, x: float | np.ndarray) -> float | np.ndarray:
-        x_b = np.asarray(x, dtype=float)
-        x_a = 1.0 - x_b
-
-        ideal = x_a * self.gibbs_a.G(T) + x_b * self.gibbs_b.G(T)
-        entropy = GAS_CONSTANT * np.asarray(T, dtype=float) * (_xlogx(x_a) + _xlogx(x_b))
-        excess = x_a * x_b * self._redlich_kister(T, x_a, x_b)
-
-        result = ideal + entropy + excess
-
-        if np.ndim(T) == 0 and np.ndim(x) == 0:
-            return float(result)
-        return result
-
-    def _redlich_kister_derivative(self, T, x_a: np.ndarray, x_b: np.ndarray) -> np.ndarray:
-        """d/dx_b of x_a*x_b*sum_v L_v*(x_a - x_b)^v, with x_a = 1 - x_b."""
-        diff = x_a - x_b
-        series = np.zeros_like(diff, dtype=float)
-        series_derivative = np.zeros_like(diff, dtype=float)
-        for v, L_v in enumerate(self._interaction_values(T)):
-            series = series + L_v * diff**v
-            if v > 0:
-                series_derivative = series_derivative + L_v * v * diff ** (v - 1)
-        return diff * series - 2.0 * x_a * x_b * series_derivative
-
-    def molar_gibbs_derivative(self, T: float, x: float | np.ndarray) -> float | np.ndarray:
-        """dG_m/dx_b at fixed T (analytic), for 0 < x < 1."""
-        x_b = np.asarray(x, dtype=float)
-        x_a = 1.0 - x_b
-        T_arr = np.asarray(T, dtype=float)
-
-        result = (
-            self.gibbs_b.G(T) - self.gibbs_a.G(T)
-            + GAS_CONSTANT * T_arr * np.log(x_b / x_a)
-            + self._redlich_kister_derivative(T, x_a, x_b)
+        parameters = [
+            CEFParameter(((_A,),), 0, gibbs_a),
+            CEFParameter(((_B,),), 0, gibbs_b),
+        ] + [CEFParameter(((_A, _B),), v, L_v) for v, L_v in enumerate(self.L) if not _is_zero(L_v)]
+        super().__init__(
+            CEFModel([1.0], [[_A, _B]], parameters, gas_constant=gas_constant, name=name), _A, _B
         )
-        if np.ndim(T) == 0 and np.ndim(x) == 0:
-            return float(result)
-        return result
 
+
+def _is_zero(value) -> bool:
+    return not hasattr(value, "G") and np.all(np.asarray(value) == 0.0)

@@ -1,5 +1,103 @@
 # Changelog
 
+## 0.2.1 - 2026-10-10
+
+### Added
+- Compound Energy Formalism (sublattice model), in `thermo/cef.py` and
+  `thermo/sublattice.py`. Phases may have any number of sublattices, site
+  ratios and vacancies, for example FCC_A1 (FE)1(C,VA)1 and BCC_A2
+  (FE)1(C,VA)3. The model includes:
+  - a surface of reference;
+  - ideal configurational entropy weighted by site ratios;
+  - Redlich-Kister excess on any sublattice (reciprocal and ternary
+    parameters at order 0, and wildcard `*` parameters);
+  - analytic gradients.
+- Compositions and Gibbs energies of sublattice phases are per mole of
+  atoms, with vacancies excluded (documented in `docs/theory.md` and
+  `docs/data_format.md`).
+- Phases with internal degrees of freedom are minimised over their site
+  fractions at fixed composition:
+  - site fractions stay within (1e-12, 1);
+  - one internal degree of freedom uses a vectorised search refined to
+    |dG/dw| < 1e-9;
+  - more than one uses SLSQP from several starts, with a convergence check.
+
+  Results are cached per (T, x). dG/dx comes from the Lagrange multiplier.
+- Inden-Hillert-Jarl magnetic model (`thermo/magnetic.py`):
+  - p = 0.28 for FCC/HCP and 0.40 for BCC;
+  - TC and BMAGN may depend on composition;
+  - the TDB antiferromagnetic convention (negative TC/BMAGN divided by -3
+    or -1) is handled;
+  - the TDB parameter alias `BM` is accepted.
+- More of the TDB format is read:
+  - `SPECIES` and `TEMPERATURE_LIMITS`;
+  - metadata keywords (`DATABASE_INFO`, `VERSION_DATE`, `ASSESSED_SYSTEMS`,
+    `REFERENCE_FILE`, `LIST_OF_REFERENCES`, `ADD_REFERENCES`). These never
+    raise; references are in `system.metadata["references"]`;
+  - other metadata-only keywords are stored with a logged warning;
+  - `P` in expressions;
+  - quoted reference texts that contain `!`.
+
+  Keywords that could affect the thermodynamics still raise
+  `NotImplementedError` with the keyword and line number.
+- Per-system gas constant (`gas_constant`) and pressure (`pressure_pa`),
+  including `load_system(..., gas_constant=...)`. TDB systems default to
+  R = 8.31451.
+- `write_tdb` also writes sublattice and magnetic phases, and references.
+- Synthetic TDB fixtures: `interstitial.tdb` ((A)1(C,VA)1 + (A)1(C,VA)3 +
+  graphite-like C + liquid) and `magnetic.tdb` (ferro- and
+  antiferromagnetic BCC/FCC with composition-dependent TC).
+- Cross-validation against pycalphad now covers these fixtures and two more
+  literature databases from pycalphad's test set:
+  - Cu-Mg (Liang et al. 1998: Laves phase with internal ordering, wildcard
+    parameters, pure-Mg HCP);
+  - Fe-C (Hallstedt et al. 2010 with the Brosh equation of state: magnetic
+    and interstitial phases, carbides, graphite).
+
+  Results across 9 systems:
+  - stable phases agree at 270/270 points;
+  - fractions and compositions agree within 2e-5;
+  - all 13 invariants agree within 0.005 K;
+  - Gibbs energies at the same R agree within 2e-7 J/mol.
+
+  Each comparison reports the gas constant it uses.
+- `docs/theory.md`: equations for the sublattice and magnetic models.
+- `tests/test_identical_to_0_2_0.py` checks every 0.2.0 system against
+  equilibria recorded with 0.2.0. All agree within 1e-10 (observed within
+  4e-15), and invariants agree to the root tolerance.
+
+### Changed
+- `SolutionPhase` and `StoichiometricPhase` are now special cases of the
+  sublattice model, and every TDB phase is a sublattice phase
+  (`model_type` "sublattice"). `build_system` no longer raises for magnetic
+  or multi-sublattice phases. Only non-magnetic GES type definitions (e.g.
+  `DIS_PART`) still raise `NotImplementedError`.
+- JSON systems keep R = 8.314462618 unless they set `gas_constant`, so their
+  results are unchanged. The exported TDB fixtures record this R in their
+  `.meta.json`, and `write_metadata` writes the system's R.
+- Phases may have a restricted composition range (for example
+  (FE)1(C,VA)3 is limited to x <= 0.75), and pure-element phases are
+  fixed-composition end points. The convex hull and the common-tangent
+  solver work within each phase's range.
+- Faster evaluation: parameters are evaluated once per temperature, and
+  single-point evaluations use plain Python. Ag-Cu diagram plus invariants
+  went from 1.92 s to 1.20 s (median of three runs).
+
+  | System | Invariants | Trace | Total |
+  |---|---|---|---|
+  | Ag-Cu | 0.64 s | 0.56 s | 1.20 s |
+  | Al-Cu | 0.76 s | 0.46 s | 1.22 s |
+  | Interstitial (synthetic) | 0.94 s | 0.44 s | 1.38 s |
+  | Magnetic (synthetic) | 1.86 s | 2.03 s | 3.89 s |
+  | Cu-Mg (Laves with internal ordering) | 12.6 s | 9.8 s | 22.5 s |
+  | Fe-C (Brosh EOS functions) | 7.6 s | 3.3 s | 10.9 s |
+
+### Fixed
+- A compound lying above a solution phase's curve was taken as evidence of
+  a miscibility gap in that phase. Only the phase's own points now count,
+  so a congruently melting compound no longer produces a false
+  "LIQUID#1 + compound + LIQUID#2" reaction.
+
 ## 0.2.0 - 2026-10-10
 
 ### Added

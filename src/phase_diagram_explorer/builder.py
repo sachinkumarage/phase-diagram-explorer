@@ -1,11 +1,18 @@
+import logging
+
 from phase_diagram_explorer.models import GibbsCoefficients, Phase, PiecewiseExpression, SystemDefinition
 from phase_diagram_explorer.tdb.expression import FunctionTable, PiecewiseGibbs
+from phase_diagram_explorer.thermo.cef import CEFModel, CEFParameter
+from phase_diagram_explorer.thermo.constants import CODATA_GAS_CONSTANT
+from phase_diagram_explorer.thermo.magnetic import MagneticModel
 from phase_diagram_explorer.thermo.pure import PureElementGibbs
 from phase_diagram_explorer.thermo.solution import SolutionPhase
 from phase_diagram_explorer.thermo.stoichiometric import StoichiometricPhase
+from phase_diagram_explorer.thermo.sublattice import FIXED, SublatticePhase
 
-ComputableSystem = dict[str, SolutionPhase | StoichiometricPhase]
-MAGNETIC_MODEL_MESSAGE = "magnetic model: added in 0.2.1"
+logger = logging.getLogger(__name__)
+
+ComputableSystem = dict[str, SublatticePhase]
 
 
 def _gibbs(value: GibbsCoefficients | PiecewiseExpression, functions: FunctionTable, context: str):
@@ -33,6 +40,8 @@ def _solution_phase(phase: Phase, symbol_a: str, symbol_b: str, functions: Funct
             _interaction(L_v, functions, f"phase {phase.name} L{v}")
             for v, L_v in enumerate(phase.interaction_parameters)
         ],
+        gas_constant=functions.gas_constant,
+        name=phase.name,
     )
 
 
@@ -51,7 +60,46 @@ def _stoichiometric_phase(phase: Phase, symbol_a: str, symbol_b: str, functions:
         m=phase.stoichiometry[symbol_a],
         n=phase.stoichiometry[symbol_b],
         g_form=g_form,
+        gas_constant=functions.gas_constant,
+        name=phase.name,
     )
+
+
+def _cef_parameters(parameters, functions: FunctionTable, phase: str) -> list[CEFParameter]:
+    return [
+        CEFParameter(
+            tuple(tuple(species) for species in p.constituents),
+            p.order,
+            PiecewiseGibbs(p.function, functions, f"phase {phase} {p.kind}({':'.join(','.join(s) for s in p.constituents)};{p.order})"),
+        )
+        for p in parameters
+    ]
+
+
+def _sublattice_phase(phase: Phase, symbol_a: str, symbol_b: str, functions: FunctionTable) -> SublatticePhase:
+    if not phase.sublattice_sites or not phase.constituents:
+        raise ValueError(f"sublattice phase {phase.name!r} has no sublattices")
+    curie = [p for p in phase.magnetic_parameters if p.kind == "TC"]
+    moment = [p for p in phase.magnetic_parameters if p.kind == "BMAGN"]
+    magnetic = None
+    if phase.magnetic is not None:
+        magnetic = MagneticModel(phase.magnetic.afm_factor, phase.magnetic.structure_factor)
+    elif phase.magnetic_parameters:
+        logger.warning("phase %s has TC/BMAGN parameters but no MAGNETIC type definition; they are ignored", phase.name)
+    model = CEFModel(
+        phase.sublattice_sites,
+        phase.constituents,
+        _cef_parameters(phase.raw_parameters, functions, phase.name),
+        magnetic=magnetic,
+        curie_temperature=_cef_parameters(curie, functions, phase.name),
+        magnetic_moment=_cef_parameters(moment, functions, phase.name),
+        gas_constant=functions.gas_constant,
+        name=phase.name,
+    )
+    result = SublatticePhase(model, symbol_a.upper(), symbol_b.upper())
+    if result.mode == FIXED:
+        return StoichiometricPhase.from_model(model, symbol_a.upper(), symbol_b.upper())
+    return result
 
 
 def build_system(definition: SystemDefinition) -> ComputableSystem:
@@ -64,14 +112,20 @@ def build_system(definition: SystemDefinition) -> ComputableSystem:
     so end member A is `base_element` and end member B is `dependent_element`;
     the order of the phase list has no effect on any phase.
 
+    "solution" and "stoichiometric" phases (JSON) and "sublattice" phases
+    (TDB) are all Compound Energy Formalism phases (thermo/cef.py); the
+    first two are its single-sublattice and fixed-composition special
+    cases. The gas constant is the definition's, or 8.314462618 for JSON
+    systems that do not set one.
+
     Raises ValueError if a phase lacks the data needed to evaluate it or an
     expression references an undefined FUNCTION, and NotImplementedError
-    for phases that need a model not implemented yet (magnetic or
-    multi-sublattice phases read from TDB files).
+    for models not implemented (e.g. a disordered-part type definition).
     """
     symbol_a = definition.base_element.symbol
     symbol_b = definition.dependent_element.symbol
-    functions = FunctionTable(definition.functions)
+    gas_constant = definition.gas_constant if definition.gas_constant is not None else CODATA_GAS_CONSTANT
+    functions = FunctionTable(definition.functions, gas_constant=gas_constant, pressure=definition.pressure_pa)
     system: ComputableSystem = {}
 
     for phase in definition.phases:
@@ -80,6 +134,8 @@ def build_system(definition: SystemDefinition) -> ComputableSystem:
             system[phase.name] = _solution_phase(phase, symbol_a, symbol_b, functions)
         elif phase.model_type == "stoichiometric":
             system[phase.name] = _stoichiometric_phase(phase, symbol_a, symbol_b, functions)
+        elif phase.model_type == "sublattice":
+            system[phase.name] = _sublattice_phase(phase, symbol_a, symbol_b, functions)
         else:
             raise ValueError(f"unsupported model_type {phase.model_type!r} for phase {phase.name!r}")
 
@@ -87,22 +143,9 @@ def build_system(definition: SystemDefinition) -> ComputableSystem:
 
 
 def _check_supported(phase: Phase) -> None:
-    if phase.is_magnetic:
-        raise NotImplementedError(f"{MAGNETIC_MODEL_MESSAGE} (phase {phase.name} has a magnetic contribution)")
-    other_models = [t for t in phase.type_definitions if "GES" in t.upper().split()]
-    if other_models:
-        raise NotImplementedError(f"phase {phase.name} uses a model this version cannot evaluate: {other_models[0]}")
-    if phase.model_type == "sublattice":
-        sublattices = [s for s in (phase.constituents or []) if s != ["VA"]]
-        if len(sublattices) > 1:
-            raise NotImplementedError(
-                f"sublattice model: phase {phase.name} mixes species on {len(sublattices)} sublattices, "
-                "which the substitutional and stoichiometric models cannot represent"
-            )
-        raise NotImplementedError(
-            f"phase {phase.name} (constituents {phase.constituents}) is neither a binary substitutional solution "
-            "nor a two-element compound"
-        )
+    unsupported = phase.unsupported_type_definitions
+    if unsupported:
+        raise NotImplementedError(f"phase {phase.name} uses a model this version cannot evaluate: {unsupported[0]}")
 
 
 def is_computable(definition: SystemDefinition) -> bool:

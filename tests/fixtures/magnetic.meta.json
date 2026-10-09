@@ -1,0 +1,7 @@
+{
+  "name": "A-B magnetic (synthetic)",
+  "elements": ["A", "B"],
+  "element_names": {"A": "Element A", "B": "Element B"},
+  "t_range_k": [500.0, 1500.0],
+  "_source": "Synthetic test fixture for the Inden-Hillert-Jarl magnetic model: ferro- and antiferromagnetic BCC with composition-dependent TC and BMAGN, antiferromagnetic FCC, non-magnetic LIQUID. Not literature data."
+}

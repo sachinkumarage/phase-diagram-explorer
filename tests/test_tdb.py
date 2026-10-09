@@ -6,12 +6,14 @@ from pathlib import Path
 import numpy as np
 import pytest
 
-from phase_diagram_explorer.builder import MAGNETIC_MODEL_MESSAGE, build_system, is_computable
+from phase_diagram_explorer.builder import build_system, is_computable
 from phase_diagram_explorer.models import load_system, system_files
 from phase_diagram_explorer.tdb.convert import definition_from_database
 from phase_diagram_explorer.tdb.parser import parse_tdb, read_tdb
 from phase_diagram_explorer.tdb.writer import to_tdb, write_metadata, write_tdb
-from phase_diagram_explorer.thermo.solution import GAS_CONSTANT
+from phase_diagram_explorer.thermo.constants import CODATA_GAS_CONSTANT, DATABASE_GAS_CONSTANT
+from phase_diagram_explorer.thermo.magnetic import magnetic_gibbs
+from phase_diagram_explorer.thermo.sublattice import MINIMISE
 from phase_diagram_explorer.thermo.stoichiometric import StoichiometricPhase
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -89,13 +91,76 @@ PARA G(LIQUID,AG;0) 298.15 +11025.076-8.89102*T+GHSERAG#;
 
 @pytest.mark.parametrize(
     ("command", "keyword"),
-    [("SPECIES AG2 AG2 !", "SPECIES"), ("DATABASE_INFO 'x' !", "DATABASE_INFO"), ("ASSESSED_SYSTEMS AG-CU !", "ASSESSED_SYSTEMS")],
+    [
+        ("ADD_CONSTITUENT LIQUID :AG: !", "ADD_CONSTITUENT"),
+        ("TABLE GX 298.15 1 !", "TABLE"),
+        ("FTP_FILE X !", "FTP_FILE"),
+    ],
 )
-def test_unsupported_keywords_name_keyword_and_line(command, keyword):
+def test_thermodynamic_keywords_we_cannot_evaluate_name_keyword_and_line(command, keyword):
     text = HEADER + "\n\n" + command + "\n"
     line = text.splitlines().index(command) + 1
     with pytest.raises(NotImplementedError, match=rf"'{keyword}' on line {line}"):
         parse_tdb(text)
+
+
+def test_metadata_keywords_are_stored_and_never_raise():
+    text = HEADER + """
+DATABASE_INFO 'Ag-Cu test database ! with a bang and $ a dollar' !
+VERSION_DATE 2026-10-10 !
+ASSESSED_SYSTEMS AG-CU(;G5 MGSP:MGSP) !
+REFERENCE_FILE refs.txt !
+SPECIES CU2 CU2 !
+LIST_OF_REFERENCES
+ NUMBER  SOURCE
+ REF1  'First author, Journal 1 (2001) 1-10.'
+ REF2  'Second author, Journal 2 (2002)
+        20-30 (two lines).'
+!
+ADD_REFERENCES
+ REF3  'Added reference.'
+!
+"""
+    database = parse_tdb(text)
+    assert database.metadata["references"] == {
+        "REF1": "First author, Journal 1 (2001) 1-10.",
+        "REF2": "Second author, Journal 2 (2002) 20-30 (two lines).",
+        "REF3": "Added reference.",
+    }
+    assert database.metadata["database_info"] == "Ag-Cu test database ! with a bang and $ a dollar"
+    assert database.metadata["version_date"] == "2026-10-10"
+    assert database.metadata["assessed_systems"].startswith("AG-CU")
+    assert database.species == {"CU2": "CU2"}
+    definition = definition_from_database(database, elements=["Ag", "Cu"])
+    assert definition.metadata["references"]["REF2"].endswith("(two lines).")
+
+
+def test_metadata_only_keywords_log_a_warning(caplog):
+    with caplog.at_level("WARNING"):
+        database = parse_tdb(HEADER + "ZERO_VOLUME_SPECIES VA !\nDATABASE_REFERENCE_LIST x !\n")
+    assert "ZERO_VOLUME_SPECIES" in caplog.text and "DATABASE_REFERENCE_LIST" in caplog.text
+    assert len(database.metadata["ignored"]) == 2
+
+
+def test_temperature_limits_and_parameter_aliases():
+    database = parse_tdb(
+        HEADER + "TEMP-LIM 200 4000 !\nFUNCTION F +5*T; ,, N !\n"
+        "PHASE BCC % 1 1 !\nCONSTITUENT BCC :AG,CU: !\nPARAMETER BM(BCC,CU;0) 1 2.2; 10 N !\n"
+    )
+    assert [(i.T_min, i.T_max) for i in database.functions["F"].intervals] == [(200.0, 4000.0)]
+    assert database.parameters[0].kind == "BMAGN"
+
+
+def test_quote_is_an_ordinary_type_definition_code():
+    database = parse_tdb(HEADER + "TYPE_DEFINITION ' GES A_P_D X MAGNETIC -3.0 0.28 !\nPHASE X %' 1 1 !\n")
+    assert database.type_definitions["'"].magnetic_factors() == (-3.0, 0.28)
+
+
+def test_species_constituents_are_not_supported():
+    with pytest.raises(NotImplementedError, match="species CU2"):
+        definition_from_database(
+            parse_tdb(HEADER + "SPECIES CU2 CU2 !\nPHASE X % 1 1 !\nCONSTITUENT X :AG,CU2: !\n"), elements=["Ag", "Cu"]
+        )
 
 
 def test_unsupported_parameter_type_names_line():
@@ -147,7 +212,7 @@ def test_substitutional_phase_with_vacancy_sublattice_and_reversed_interaction()
     # The TDB lists the interaction as (CU,AG), so L1 multiplies (x_Cu - x_Ag).
     expected = (
         (1 - x) * g_ag + x * g_cu
-        + GAS_CONSTANT * T * (x * np.log(x) + (1 - x) * np.log(1 - x))
+        + DATABASE_GAS_CONSTANT * T * (x * np.log(x) + (1 - x) * np.log(1 - x))
         + x * (1 - x) * (L0 + L1 * (x - (1 - x)))
     )
     assert system["FCC_A1"].molar_gibbs(T, x) == pytest.approx(expected, rel=1e-12)
@@ -161,7 +226,7 @@ def test_site_count_gives_energies_per_mole_of_atoms():
     # LIQUID has 2 sites: G and L parameters are per formula unit of 2 atoms.
     expected = (
         (1 - x) * g_ag + x * g_cu
-        + GAS_CONSTANT * T * (x * np.log(x) + (1 - x) * np.log(1 - x))
+        + DATABASE_GAS_CONSTANT * T * (x * np.log(x) + (1 - x) * np.log(1 - x))
         + x * (1 - x) * (-1000.0) * ((1 - x) - x)
     )
     assert system["LIQUID"].molar_gibbs(T, x) == pytest.approx(expected, rel=1e-12)
@@ -184,6 +249,8 @@ def test_element_order_is_required(tmp_path):
         load_system(path, elements=["Ag", "Al"])
 
     definition = load_system(path, dependent_element="Cu")
+    assert definition.gas_constant == DATABASE_GAS_CONSTANT
+    assert load_system(path, dependent_element="Cu", gas_constant=8.3145).gas_constant == 8.3145
     assert [e.symbol for e in definition.elements] == ["Ag", "Cu"]
     assert definition.elements[0].atomic_mass == pytest.approx(107.87)
     assert definition.name == "Ag-Cu"
@@ -201,6 +268,7 @@ def test_metadata_file_supplies_order_and_descriptive_fields(tmp_path):
                 "t_range_k": [600, 1300],
                 "_status": "provisional",
                 "_status_reason": "test",
+                "gas_constant": 8.314,
             }
         )
     )
@@ -210,6 +278,7 @@ def test_metadata_file_supplies_order_and_descriptive_fields(tmp_path):
     assert definition.dependent_element.name == "Silver"
     assert definition.t_range_k == (600.0, 1300.0)
     assert definition.is_provisional
+    assert definition.gas_constant == 8.314
 
     # an argument overrides the metadata
     assert load_system(path, elements=["Ag", "Cu"]).dependent_element.symbol == "Cu"
@@ -226,22 +295,35 @@ PARAMETER BMAGN(FCC_A1,CU;0) 298.15 -0.5; 3000 N !
 """
 
 
-def test_magnetic_parameters_are_stored_and_build_raises():
+def test_magnetic_phase_is_evaluated_with_the_ihj_model():
     definition = definition_from_database(parse_tdb(MAGNETIC), elements=["Ag", "Cu"])
     (phase,) = definition.phases
     assert [p.kind for p in phase.magnetic_parameters] == ["TC", "BMAGN"]
     assert phase.type_definitions == ["TYPE_DEFINITION & GES A_P_D FCC_A1 MAGNETIC -3.0 2.80000E-01"]
-    assert phase.is_magnetic
-    with pytest.raises(NotImplementedError, match=MAGNETIC_MODEL_MESSAGE):
-        build_system(definition)
-    assert not is_computable(definition)
+    assert (phase.magnetic.afm_factor, phase.magnetic.structure_factor) == (-3.0, 0.28)
+    assert phase.is_magnetic and is_computable(definition)
+
+    fcc = build_system(definition)["FCC_A1"]
+    T, x = 300.0, 0.6  # above the Neel temperature 201 * 0.6 / 3 = 40 K
+    TC, beta = -201.0 * x, -0.5 * x
+    G_mag = float(magnetic_gibbs(T, TC, beta, fcc.model.magnetic, DATABASE_GAS_CONSTANT)[0])
+    ideal = DATABASE_GAS_CONSTANT * T * (x * np.log(x) + (1 - x) * np.log(1 - x))
+    assert G_mag < 0.0
+    assert fcc.molar_gibbs(T, x) == pytest.approx(ideal + G_mag, rel=1e-12)
 
 
-def test_magnetic_type_definition_alone_raises():
-    text = MAGNETIC.replace("PARAMETER TC(FCC_A1,CU;0) 298.15 -201; 3000 N !", "").replace(
-        "PARAMETER BMAGN(FCC_A1,CU;0) 298.15 -0.5; 3000 N !", ""
-    )
-    with pytest.raises(NotImplementedError, match="magnetic model: added in 0.2.1"):
+def test_magnetic_parameters_without_magnetic_type_definition_are_ignored(caplog):
+    text = MAGNETIC.replace("TYPE_DEFINITION & GES A_P_D FCC_A1 MAGNETIC -3.0 2.80000E-01 !", "")
+    definition = definition_from_database(parse_tdb(text), elements=["Ag", "Cu"])
+    with caplog.at_level("WARNING"):
+        fcc = build_system(definition)["FCC_A1"]
+    assert "no MAGNETIC type definition" in caplog.text
+    assert fcc.molar_gibbs(300.0, 0.5) == pytest.approx(DATABASE_GAS_CONSTANT * 300.0 * np.log(0.5))
+
+
+def test_other_type_definitions_raise():
+    text = MAGNETIC.replace("PHASE FCC_A1 %& 1 1 !", "TYPE_DEFINITION D GES A_P_D FCC_A1 DIS_PART FCC4 !\nPHASE FCC_A1 %&D 1 1 !")
+    with pytest.raises(NotImplementedError, match="DIS_PART"):
         build_system(definition_from_database(parse_tdb(text), elements=["Ag", "Cu"]))
 
 
@@ -250,18 +332,22 @@ PHASE SIGMA % 3 8 4 18 !
 CONSTITUENT SIGMA :AG,CU:AG:AG,CU: !
 PARAMETER G(SIGMA,AG:AG:AG;0) 298.15 +1000; 3000 N !
 PARAMETER G(SIGMA,CU:AG:CU;0) 298.15 +2000; 3000 N !
+PARAMETER G(SIGMA,CU:AG:AG;0) 298.15 +5000; 3000 N !
+PARAMETER G(SIGMA,AG:AG:CU;0) 298.15 +5000; 3000 N !
 """
 
 
-def test_multi_sublattice_phases_are_stored_and_build_raises():
+def test_multi_sublattice_phases_are_built():
     definition = definition_from_database(parse_tdb(SUBLATTICE), elements=["Ag", "Cu"])
     (phase,) = definition.phases
     assert phase.model_type == "sublattice"
     assert phase.sublattice_sites == [8.0, 4.0, 18.0]
     assert phase.constituents == [["AG", "CU"], ["AG"], ["AG", "CU"]]
-    assert len(phase.raw_parameters) == 2
-    with pytest.raises(NotImplementedError, match="sublattice model"):
-        build_system(definition)
+    assert len(phase.raw_parameters) == 4
+    sigma = build_system(definition)["SIGMA"]
+    assert sigma.mode == MINIMISE
+    assert sigma.composition_range == pytest.approx((0.0, 26.0 / 30.0))
+    assert np.isfinite(sigma.molar_gibbs(800.0, 0.4))
 
 
 def test_compound_from_sublattices_is_stoichiometric():
@@ -285,7 +371,9 @@ def test_json_to_tdb_round_trip_gives_identical_gibbs_energies(tmp_path, path):
     original = load_system(path)
     tdb_path = tmp_path / f"{path.stem}.tdb"
     write_tdb(original, tdb_path)
-    reloaded = load_system(tdb_path, elements=[e.symbol for e in original.elements])
+    write_metadata(original, tdb_path)  # carries the element order and the gas constant
+    reloaded = load_system(tdb_path)
+    assert reloaded.gas_constant == CODATA_GAS_CONSTANT
 
     assert [e.symbol for e in reloaded.elements] == [e.symbol for e in original.elements]
     assert [e.atomic_mass for e in reloaded.elements] == [e.atomic_mass for e in original.elements]
@@ -343,10 +431,23 @@ def test_written_tdb_reads_with_tdb_conventions(tmp_path):
     assert set(database.phases) == {"LIQUID", "FCC_AL", "AL2CU"}
 
 
+def test_write_tdb_writes_sublattice_and_magnetic_phases(tmp_path):
+    for text in (SUBLATTICE, MAGNETIC):
+        first = definition_from_database(parse_tdb(text), elements=["Ag", "Cu"])
+        path = tmp_path / "phase.tdb"
+        write_tdb(first, path)
+        second = load_system(path, elements=["Ag", "Cu"])
+        assert second.phases[0].magnetic == first.phases[0].magnetic
+        a, b = build_system(first), build_system(second)
+        for name in a:
+            Y = np.random.default_rng(0).random((5, a[name].model.n_columns))
+            assert np.allclose(a[name].model.molar_gibbs(600.0, Y), b[name].model.molar_gibbs(600.0, Y), rtol=1e-14)
+
+
 def test_write_tdb_rejects_unsupported_models():
-    definition = definition_from_database(parse_tdb(SUBLATTICE), elements=["Ag", "Cu"])
+    text = MAGNETIC.replace("PHASE FCC_A1 %& 1 1 !", "TYPE_DEFINITION D GES A_P_D FCC_A1 DIS_PART FCC4 !\nPHASE FCC_A1 %&D 1 1 !")
     with pytest.raises(NotImplementedError, match="write_tdb"):
-        to_tdb(definition)
+        to_tdb(definition_from_database(parse_tdb(text), elements=["Ag", "Cu"]))
 
 
 def test_system_files_lists_tdb_but_not_metadata(tmp_path):

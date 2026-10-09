@@ -1,15 +1,17 @@
 import numpy as np
 
-from phase_diagram_explorer.thermo.solution import SolutionPhase
 from phase_diagram_explorer.thermo.stoichiometric import StoichiometricPhase
+from phase_diagram_explorer.thermo.sublattice import SublatticePhase
 
 
 def evaluate_phase_curves(system: dict, T: float, n_points: int = 500):
     """Evaluate molar Gibbs energy for every phase in `system` on a shared grid.
 
-    `system` maps phase name to a SolutionPhase or StoichiometricPhase instance.
-    Stoichiometric phases have a fixed composition and are represented as a
-    single point marker at the nearest grid index, with NaN elsewhere.
+    `system` maps phase name to a phase model (a SublatticePhase, including
+    SolutionPhase and StoichiometricPhase). Stoichiometric phases have a
+    fixed composition and are represented as a single point marker at the
+    nearest grid index, with NaN elsewhere; other phases are NaN outside
+    their composition range.
 
     Returns (x, curves): x is the shared composition grid, shape (n_points,);
     curves maps phase name to a (n_points,) array of Gibbs energies.
@@ -18,10 +20,11 @@ def evaluate_phase_curves(system: dict, T: float, n_points: int = 500):
     curves = {}
 
     for name, phase in system.items():
-        if isinstance(phase, SolutionPhase):
-            curves[name] = np.asarray(phase.molar_gibbs(T, x), dtype=float)
-        elif isinstance(phase, StoichiometricPhase):
+        if isinstance(phase, StoichiometricPhase):
             curves[name] = _stoichiometric_curve(phase, T, x)
+        elif isinstance(phase, SublatticePhase):
+            curve = np.asarray(phase.molar_gibbs(T, x), dtype=float)
+            curves[name] = np.where(np.isfinite(curve), curve, np.nan)
         else:
             raise TypeError(f"unsupported phase type for {name!r}: {type(phase)!r}")
 

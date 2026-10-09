@@ -91,20 +91,50 @@ A Gibbs energy is either a coefficient object or a piecewise expression.
   reference as the end members. The JSON example systems take each element's
   own stable solid as G = 0, so this is the energy of formation.
 
-**`"sublattice"`** is a TDB phase that no model here evaluates yet (see
-below). Its `sublattice_sites`, `constituents` and `raw_parameters` are kept
-as read.
+**`"sublattice"`** is a Compound Energy Formalism phase. Every phase read
+from a TDB file has this type (see [theory.md](theory.md)).
+- `sublattice_sites` gives the site ratio of each sublattice, and
+  `constituents` gives the species on each one. Species are element symbols
+  as written in the TDB file, plus `VA`, the vacancy.
+- `raw_parameters` holds the G and L parameters per mole of formula units.
+- `magnetic_parameters` holds TC and BMAGN. `magnetic`, which gives the
+  `afm_factor` and `structure_factor`, comes from the phase's MAGNETIC type
+  definition.
+- `type_definitions` keeps the GES TYPE_DEFINITION commands the phase uses,
+  as read.
 
-Phases read from a TDB file also carry:
-- `sublattice_sites` and `constituents`;
-- `magnetic_parameters`, holding the TC and BMAGN parameters;
-- `type_definitions`, holding the GES TYPE_DEFINITION commands the phase
-  uses.
+"solution" and "stoichiometric" are special cases of the same model:
+- a solution is the single sublattice (A,B)1;
+- a compound is (A)m(B)n.
 
-## TDB (supported subset)
+They give the same results as before 0.2.1.
 
-`load_system("x.tdb")` reads the binary subset of the TDB format.
-`tdb.writer.write_tdb(system, path)` writes it. The CLI command
+### Gas constant
+
+`gas_constant` (J/(mol K)) sets R for ideal mixing, for the magnetic term
+and for `R` in expressions.
+- JSON systems that do not set it use 8.314462618, as every system did
+  before 0.2.1, so their results are unchanged.
+- TDB systems default to 8.31451, the usual database convention, unless
+  their `.meta.json` sets `gas_constant`.
+- `load_system(path, gas_constant=...)` overrides either default.
+- `pressure_pa` (default 101325) is the value of `P` in TDB expressions.
+
+### Composition of sublattice phases
+
+The composition axis is a mole fraction **per mole of atoms**. Vacancies are
+not atoms, so for site ratios a_s and site fractions y_si:
+
+    x_dep = sum_s a_s y_s,dep / N,    N = sum_s a_s (1 - y_s,VA)
+
+and every Gibbs energy is per mole of atoms, G_formula / N. For example,
+BCC_A2 (FE)1(C,VA)3 with y_C = 0.1 has x_C = 0.3 / 1.3 = 0.231, and its
+composition range is 0 to 0.75.
+
+## TDB
+
+`load_system("x.tdb")` reads binary TDB databases.
+`tdb.writer.write_tdb(system, path)` writes them. The CLI command
 `phase-diagram-explorer export-tdb` writes a TDB file together with its
 `.meta.json`.
 
@@ -112,32 +142,56 @@ Phases read from a TDB file also carry:
 
 - `$` starts a comment that runs to the end of the line.
 - A command runs over as many lines as it needs, until its terminating `!`.
+- In metadata commands, single-quoted text (reference texts) may contain
+  `!` and `$`. Elsewhere `'` is an ordinary character, for example a
+  TYPE_DEFINITION code.
 - Keywords may be abbreviated word by word, as in Thermo-Calc, for example
-  `PARA`, `FUNCT`, `TYPE_DEF` or `DEF_SYS_DEF`.
+  `PARA`, `FUNCT`, `TYPE_DEF`, `DEF_SYS_DEF` or `LIST_OF_REF`. `TEMP-LIM` and
+  `DATABASE_INFORMATION` are also accepted.
+
+**Thermodynamic keywords**
 
 | Keyword | Handling |
 |---|---|
 | `ELEMENT` | Symbol, reference state and mass. `/-` and `VA` are not chemical elements. |
+| `SPECIES` | Parsed and stored (`name`, formula). As a constituent, only element species and `VA` are supported: another species raises `NotImplementedError` naming it. |
 | `FUNCTION` | A named piecewise function. It can be referenced from other functions and from parameters, with or without a trailing `#`. |
-| `TYPE_DEFINITION` | Stored. Plain `SEQ` definitions are ignored. GES definitions are attached to the phases that use their code. |
-| `PHASE` | Name (a `:L`-style suffix is dropped), type codes, and site counts per sublattice. |
+| `TYPE_DEFINITION` | `MAGNETIC` definitions give the phase's antiferromagnetic and structure factors. Plain `SEQ` definitions are ignored. Other GES definitions (e.g. `DIS_PART`) are stored, and `build_system` raises `NotImplementedError` for them. |
+| `PHASE` | Name (a `:L`-style suffix is dropped), type codes, and site ratios. |
 | `CONSTITUENT` | Species on each sublattice. `%` markers are dropped. |
-| `PARAMETER` | `G` and `L`, Redlich-Kister orders 0..n, are evaluated. `TC` and `BMAGN` are stored. |
+| `PARAMETER` | `G` and `L`, Redlich-Kister orders 0..n on any sublattice; `TC` and `BMAGN` (alias `BM`) for the magnetic model. `*` is a wildcard sublattice. |
+| `TEMPERATURE_LIMITS` | Default lower and upper limits for later functions and parameters. |
 | `DEFINE_SYSTEM_DEFAULT`, `DEFAULT_COMMAND` | Read and ignored. |
 
-Any other keyword, such as `SPECIES`, `DATABASE_INFO` or
-`LIST_OF_REFERENCES`, and any other parameter type, such as `MQ` or `NT`,
-raises `NotImplementedError` naming it and its line number.
+**Metadata keywords** are stored and never raise:
+
+| Keyword | Stored as |
+|---|---|
+| `LIST_OF_REFERENCES`, `ADD_REFERENCES` | `system.metadata["references"]`, as `{id: text}` |
+| `DATABASE_INFO` | `system.metadata["database_info"]` |
+| `VERSION_DATE`, `VERSION_DATA`, `ASSESSED_SYSTEMS`, `REFERENCE_FILE` | `system.metadata["version_date"]` etc. |
+
+Some other keywords carry no Gibbs energy data:
+`ZERO_VOLUME_SPECIES`, `DIFFUSION`, `DATABASE_TITLE`, `DATABASE_VERSION`,
+and any name containing `REFERENCE` or `INFO`. These are stored under
+`metadata["ignored"]`, and a warning is logged.
+
+Every other keyword might affect the thermodynamics, for example
+`ADD_CONSTITUENT`, `TABLE` or `FTP_FILE`. So might any other parameter type,
+for example `MQ` or `NT`. These raise `NotImplementedError` naming the
+keyword or type and its line number.
 
 ### Expressions
 
-- Expressions use `+ - * / **`, parentheses, `T`, `R` (8.314462618), numbers
-  (`1.5E+03` and Fortran `1.5D+03`), `LN()`, `LOG()` (also natural log, as
-  in Thermo-Calc), `EXP()`, and FUNCTION names. Nothing else is accepted.
+- Expressions use `+ - * / **`, parentheses, `T`, `P` (the system's pressure),
+  `R` (the system's gas constant), numbers (`1.5E+03` and Fortran `1.5D+03`),
+  `LN()`, `LOG()` (also natural log, as in Thermo-Calc), `EXP()`, and
+  FUNCTION names. Nothing else is accepted.
 - They are parsed by a small recursive-descent parser and evaluated with
   numpy. `eval()` and `exec()` are never used.
 - Function references are checked when the system is built. An undefined
   name or a circular reference is an error.
+- For a single temperature, each FUNCTION is evaluated once and cached.
 
 ### Piecewise functions
 
@@ -148,39 +202,38 @@ raises `NotImplementedError` naming it and its line number.
   reference after `N` is dropped.
 - As in Thermo-Calc:
   - an omitted lower limit is 298.15 K;
-  - an omitted upper limit, or `,,`, is 6000 K;
+  - an omitted upper limit, or `,,`, is 6000 K (both are changed by
+    `TEMPERATURE_LIMITS`);
   - a final limit without `Y` or `N` ends the function.
 - Evaluating outside every interval raises `ValueError`.
 
-### How phases map to models
+### How TDB phases are evaluated
 
-- **One mixing sublattice holding both elements.** Any other sublattices
-  hold only `VA`. This becomes `"solution"`.
-  - G and L parameters are divided by the site count, which gives energies
-    per mole of atoms.
-  - An interaction listed as (dependent, base), for example
-    `L(FCC_A1,CU,AG:VA;1)` with Ag as the base element, has its odd orders
-    negated.
-- **Every non-`VA` sublattice holds one element, and both elements occur.**
-  This becomes `"stoichiometric"`. The single G parameter is divided by the
-  total number of sites.
-- **Anything else** becomes `"sublattice"`: mixing on several sublattices,
-  or a phase of only one element. `build_system` raises
-  `NotImplementedError` until the sublattice model exists.
-- **Magnetic phases:** phases with TC or BMAGN parameters, or with a
-  `MAGNETIC` type definition such as AFCC or ABCC. `build_system` raises
-  `NotImplementedError("magnetic model: added in 0.2.1 ...")` rather than
-  silently ignoring the magnetic contribution.
+Every phase is a sublattice phase, and its constituents must be the two
+elements or `VA`. How it is solved depends on how many site fractions are
+free (see [theory.md](theory.md)):
+- **fixed:** every sublattice holds one species, as in a compound or a
+  pure-element phase such as graphite;
+- **direct:** one sublattice mixes two species, as in a substitutional
+  solution or an interstitial (FE)1(C,VA)3;
+- **minimise:** there are internal degrees of freedom, as in ordering
+  (CU,MG)2(CU,MG)1. G(x) is the minimum over the site fractions.
+
+Magnetic phases add the Inden-Hillert-Jarl term. A phase with TC or BMAGN
+parameters but no MAGNETIC type definition gets no magnetic contribution,
+as in pycalphad, and a warning is logged.
 
 ### Writing
 
-`write_tdb` supports `"solution"` and `"stoichiometric"` phases. It writes
-the following:
+`write_tdb` supports `"solution"`, `"stoichiometric"` and `"sublattice"`
+phases. It writes:
 
 - `ELEMENT` lines for `/-`, `VA` and both elements, with their masses;
 - the functions;
 - a `% SEQ` type definition;
-- one `PHASE` / `CONSTITUENT` / `PARAMETER` block per phase.
+- one `PHASE` / `CONSTITUENT` / `PARAMETER` block per phase, with a
+  MAGNETIC type definition for magnetic phases;
+- the references, as `LIST_OF_REFERENCES`.
 
 How energies are written:
 - Coefficient energies become a single expression, valid over 1–10000 K
@@ -189,6 +242,8 @@ How energies are written:
   (m + n) times the per-atom energy.
 - Numbers keep full precision, so reading the file back gives identical
   Gibbs energies.
+- The gas constant is not part of the TDB format. `write_metadata` stores it
+  in the `.meta.json`.
 
 ## `<name>.meta.json`
 
@@ -202,6 +257,7 @@ are read from a metadata file next to the TDB file: `ag_cu.meta.json` for
   "elements": ["Ag", "Cu"],
   "element_names": {"Ag": "Silver", "Cu": "Copper"},
   "t_range_k": [500.0, 1450.0],
+  "gas_constant": 8.314462618,
   "_source": "...",
   "_status": "provisional",
   "_status_reason": "..."
@@ -212,6 +268,8 @@ are read from a metadata file next to the TDB file: `ag_cu.meta.json` for
 |---|---|
 | `elements` | `[base, dependent]`. This sets the composition axis, and its spelling ("Ag") is used for display. |
 | `dependent_element` | Alternative to `elements`: the dependent element alone. |
+| `gas_constant` | R for this system. Optional; the TDB default is 8.31451. |
+| `pressure_pa` | Pressure for `P` in expressions. Optional; the default is 101325. |
 | `name`, `element_names`, `t_range_k`, `_source`, `_status`, `_status_reason` | As in JSON. Optional. `name` defaults to "Base-Dependent". |
 
 Arguments to `load_system(path, elements=[...])` or
@@ -224,4 +282,11 @@ metadata. If neither the arguments nor the metadata give the element order,
 `tests/fixtures/*_provisional.tdb` are the provisional example systems,
 exported with `write_tdb`, for testing the TDB reader and for
 cross-validation against pycalphad. They are **not literature data**.
-`regular_solution.tdb` and `gap_eutectic.tdb` are synthetic.
+`regular_solution.tdb` and `gap_eutectic.tdb` are synthetic, and so are:
+- `interstitial.tdb`: (A)1(C,VA)1, (A)1(C,VA)3, graphite-like C and a
+  liquid;
+- `magnetic.tdb`: ferro- and antiferromagnetic BCC/FCC with a
+  composition-dependent TC.
+
+`reference_equilibria_0.2.0.json` holds equilibria computed with 0.2.0. A
+test checks that 0.2.1 reproduces them.

@@ -12,7 +12,7 @@ from phase_diagram_explorer.tdb.expression import (
     PiecewiseGibbs,
     parse_piecewise,
 )
-from phase_diagram_explorer.thermo.solution import GAS_CONSTANT
+from phase_diagram_explorer.thermo.constants import DATABASE_GAS_CONSTANT
 
 # Unary Ag (SGTE, Dinsdale 1991) as a realistic piecewise function.
 GHSERAG = (
@@ -53,7 +53,8 @@ def evaluate(text: str, T: float = 1000.0, functions: FunctionTable | None = Non
         ("LOG(T)", math.log(1000.0)),
         ("EXP(-T/1000)", math.exp(-1.0)),
         ("ln(t)", math.log(1000.0)),
-        ("R*T", GAS_CONSTANT * 1000.0),
+        ("R*T", DATABASE_GAS_CONSTANT * 1000.0),
+        ("P/101325", 1.0),
     ],
 )
 def test_arithmetic(text, expected):

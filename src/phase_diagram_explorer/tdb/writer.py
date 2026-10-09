@@ -1,9 +1,10 @@
 """Write a binary SystemDefinition as a TDB database.
 
 Supported: substitutional solution phases (one sublattice holding both
-elements, G end members and Redlich-Kister L parameters) and stoichiometric
-compounds (one sublattice per element), with energies given as polynomial
-coefficients or piecewise expressions. Numbers are written with full
+elements, G end members and Redlich-Kister L parameters), stoichiometric
+compounds (one sublattice per element), and sublattice phases (as read
+from TDB files, with their magnetic model and references), with energies
+given as polynomial coefficients or piecewise expressions. Numbers are written with full
 precision, so reading the file back gives the same Gibbs energies.
 
 Per-mole-of-atoms energies are written per formula unit as TDB expects:
@@ -15,6 +16,7 @@ import textwrap
 from pathlib import Path
 
 from phase_diagram_explorer import __version__
+from phase_diagram_explorer.thermo.constants import CODATA_GAS_CONSTANT
 from phase_diagram_explorer.models import (
     GibbsCoefficients,
     Phase,
@@ -83,10 +85,42 @@ def _is_zero(value) -> bool:
     return isinstance(value, (int, float)) and value == 0.0
 
 
-def _phase_lines(phase: Phase, base: str, dependent: str) -> list[str]:
+# Type-definition codes given to magnetic phases, in order.
+MAGNETIC_CODES = "&()*+-/<>?@^~"
+
+
+def _constituents(array: list[list[str]]) -> str:
+    return ":".join(",".join(species) for species in array)
+
+
+def _sublattice_lines(phase: Phase, code: str | None) -> list[str]:
     name = phase.name.upper()
-    if phase.is_magnetic or phase.type_definitions:
-        raise NotImplementedError(f"write_tdb: phase {phase.name} uses a magnetic or other GES model")
+    lines = []
+    if code is not None:
+        magnetic = phase.magnetic
+        lines.append(
+            f"TYPE_DEFINITION {code} GES A_P_D {name} MAGNETIC {_number(magnetic.afm_factor)} "
+            f"{_number(magnetic.structure_factor)} !"
+        )
+    sites = " ".join(_number(a) for a in phase.sublattice_sites)
+    lines += [
+        f"PHASE {name} %{code or ''} {len(phase.sublattice_sites)} {sites} !",
+        f"CONSTITUENT {name} :{_constituents(phase.constituents)}: !",
+    ]
+    for parameter in [*phase.raw_parameters, *(phase.magnetic_parameters if code is not None else [])]:
+        lines.append(
+            f"PARAMETER {parameter.kind}({name},{_constituents(parameter.constituents)};{parameter.order}) "
+            f"{_energy(parameter.function)} !"
+        )
+    return lines
+
+
+def _phase_lines(phase: Phase, base: str, dependent: str, code: str | None = None) -> list[str]:
+    name = phase.name.upper()
+    if phase.unsupported_type_definitions:
+        raise NotImplementedError(f"write_tdb: phase {phase.name} uses {phase.unsupported_type_definitions[0]}")
+    if phase.model_type == "sublattice":
+        return _sublattice_lines(phase, code)
     if phase.model_type == "solution":
         symbols = {base: base.upper(), dependent: dependent.upper()}
         end_members = phase.end_members or {}
@@ -112,7 +146,7 @@ def _phase_lines(phase: Phase, base: str, dependent: str) -> list[str]:
             lines.append(f"PARAMETER G({name},{base.upper()}:{dependent.upper()};0) {_energy(phase.formation, total)} !")
         return lines
     raise NotImplementedError(
-        f"write_tdb supports substitutional solution and stoichiometric phases; {phase.name} is {phase.model_type!r}"
+        f"write_tdb supports solution, stoichiometric and sublattice phases; {phase.name} is {phase.model_type!r}"
     )
 
 
@@ -148,9 +182,16 @@ def to_tdb(system: SystemDefinition) -> str:
         "DEFINE_SYSTEM_DEFAULT ELEMENT 2 !",
         "DEFAULT_COMMAND DEF_SYS_ELEMENT VA /- !",
     ]
+    codes = iter(MAGNETIC_CODES)
     for phase in system.phases:
         lines.append("")
-        lines += _phase_lines(phase, base.symbol, dependent.symbol)
+        code = next(codes) if phase.model_type == "sublattice" and phase.magnetic is not None else None
+        lines += _phase_lines(phase, base.symbol, dependent.symbol, code)
+    references = system.metadata.get("references")
+    if references:
+        lines += ["", "LIST_OF_REFERENCES", " NUMBER  SOURCE"]
+        lines += [f" {key}  '{text}'" for key, text in references.items()]
+        lines.append("!")
     return "\n".join(lines) + "\n"
 
 
@@ -168,6 +209,7 @@ def write_metadata(system: SystemDefinition, tdb_path: str | Path) -> Path:
     }
     if system.t_range_k is not None:
         metadata["t_range_k"] = list(system.t_range_k)
+    metadata["gas_constant"] = system.gas_constant if system.gas_constant is not None else CODATA_GAS_CONSTANT
     for key, value in (("_source", system.source), ("_status", system.status), ("_status_reason", system.status_reason)):
         if value is not None:
             metadata[key] = value

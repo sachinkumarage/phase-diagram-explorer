@@ -12,5 +12,6 @@
     600.0,
     1100.0
   ],
+  "gas_constant": 8.314462618,
   "_source": "Synthetic test fixture: tests/fixtures/gap_eutectic.json exported with write_tdb. Synthetic system for validating invariant detection with composition sets: the regular solution ALPHA (L0 = 20000 J/mol, Tc = 1202.73 K) plus an ideal LIQUID whose end members both melt at 1000 K (dHfus = 10000 J/mol). Below the liquidus minimum the liquid decomposes eutectically into the two composition sets of ALPHA, symmetrically about x = 0.5."
 }

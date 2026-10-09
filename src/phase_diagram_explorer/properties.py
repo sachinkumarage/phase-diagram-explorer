@@ -1,7 +1,7 @@
 import numpy as np
 
 from phase_diagram_explorer.equilibrium.equilibrium import compute_equilibrium
-from phase_diagram_explorer.thermo.solution import GAS_CONSTANT, SolutionPhase
+from phase_diagram_explorer.thermo.solution import SolutionPhase
 from phase_diagram_explorer.thermo.stoichiometric import StoichiometricPhase
 
 DERIVATIVE_STEP = 1e-5
@@ -48,7 +48,7 @@ def activity(T: float, x: float | np.ndarray, phase: SolutionPhase) -> float | n
     """
     mu_b = chemical_potential(T, x, phase)
     g_b_ref = float(phase.gibbs_b.G(T))
-    a_b = np.exp((np.asarray(mu_b, dtype=float) - g_b_ref) / (GAS_CONSTANT * T))
+    a_b = np.exp((np.asarray(mu_b, dtype=float) - g_b_ref) / (phase.gas_constant * T))
 
     if np.ndim(x) == 0:
         return float(a_b)

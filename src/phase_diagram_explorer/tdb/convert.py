@@ -1,21 +1,15 @@
 """Convert a parsed TDB database into a binary SystemDefinition.
 
-Each TDB phase becomes one of:
+Every TDB phase becomes a Compound Energy Formalism phase (model_type
+"sublattice"): its sublattices, site ratios, constituents and G/L
+parameters are kept as written, per mole of formula units. TC and BMAGN
+parameters, with the antiferromagnetic and structure factors of the
+phase's MAGNETIC type definition, give its magnetic model. build_system
+evaluates these (thermo/cef.py, thermo/sublattice.py).
 
-- "solution": one sublattice holding both elements (plus any sublattices
-  holding only VA). End-member G parameters and G/L interaction parameters
-  are divided by the site count, giving energies per mole of atoms, and
-  interaction parameters listed as (dependent, base) have odd orders negated
-  so they multiply (x_base - x_dependent)^v.
-- "stoichiometric": every sublattice (apart from VA-only ones) holds a
-  single element. Its G parameter is divided by the total number of sites.
-- "sublattice": anything else (mixing on several sublattices, or a phase of
-  only one element). Its sublattices and parameters are stored as read;
-  build_system raises NotImplementedError for it.
-
-TC and BMAGN parameters and the GES type definitions a phase uses are
-stored on the phase; build_system raises NotImplementedError for magnetic
-phases until the magnetic model exists.
+Constituents must be the two elements of the system or the vacancy VA.
+Other GES type definitions (e.g. a disordered part) are stored and make
+build_system raise NotImplementedError.
 """
 import json
 from pathlib import Path
@@ -23,13 +17,12 @@ from typing import Sequence
 
 from phase_diagram_explorer.models import (
     Element,
+    MagneticSettings,
     Phase,
-    PiecewiseExpression,
     RawParameter,
     SystemDefinition,
     metadata_path,
 )
-from phase_diagram_explorer.tdb.expression import divide, scale
 from phase_diagram_explorer.tdb.parser import (
     GIBBS_PARAMETERS,
     MAGNETIC_PARAMETERS,
@@ -39,8 +32,10 @@ from phase_diagram_explorer.tdb.parser import (
     TdbPhase,
     read_tdb,
 )
+from phase_diagram_explorer.thermo.constants import DATABASE_GAS_CONSTANT
 
 VACANCY = "VA"
+WILDCARD = "*"
 # ELEMENT entries that are not chemical elements.
 NON_ELEMENTS = {"/-", VACANCY}
 
@@ -51,114 +46,54 @@ def _raw(parameter: TdbParameter) -> RawParameter:
     )
 
 
-def _is_vacancy_sublattice(species: list[str]) -> bool:
-    return species == [VACANCY]
-
-
-def _mixing_sublattice(phase: TdbPhase, parameter: TdbParameter) -> list[str]:
-    """The species of a parameter on the phase's one non-VA sublattice."""
-    if len(parameter.constituents) != len(phase.sites):
-        raise TdbError(
-            f"PARAMETER on line {parameter.line} gives {len(parameter.constituents)} sublattices; "
-            f"phase {phase.name} has {len(phase.sites)}"
-        )
-    species = None
-    for k, sublattice in enumerate(parameter.constituents):
-        if _is_vacancy_sublattice(phase.constituents[k]):
-            if sublattice != [VACANCY]:
-                raise TdbError(f"PARAMETER on line {parameter.line}: expected VA on sublattice {k + 1} of {phase.name}")
-        else:
-            species = sublattice
-    return species
-
-
-def _solution_phase(phase: TdbPhase, parameters: list[TdbParameter], base: str, dependent: str, symbols) -> dict:
-    (index,) = [k for k, species in enumerate(phase.constituents) if not _is_vacancy_sublattice(species)]
-    sites = phase.sites[index]
-    end_members: dict[str, PiecewiseExpression] = {}
-    interactions: dict[int, PiecewiseExpression] = {}
-
-    for parameter in parameters:
-        species = _mixing_sublattice(phase, parameter)
-        if len(species) == 1:
-            if parameter.order != 0:
-                raise TdbError(f"end-member PARAMETER on line {parameter.line} has order {parameter.order}")
-            (element,) = species
-            if element not in (base, dependent):
-                raise TdbError(f"PARAMETER on line {parameter.line}: species {element} is not an element of the system")
-            if symbols[element] in end_members:
-                raise TdbError(f"duplicate end member {element} of phase {phase.name} on line {parameter.line}")
-            end_members[symbols[element]] = divide(parameter.function, sites)
-        elif sorted(species) == sorted([base, dependent]):
-            if parameter.order in interactions:
-                raise TdbError(f"duplicate order-{parameter.order} interaction of {phase.name} on line {parameter.line}")
-            sign = 1.0 if species == [base, dependent] or parameter.order % 2 == 0 else -1.0
-            interactions[parameter.order] = scale(divide(parameter.function, sites), sign)
-        else:
+def _check_species(database: TdbDatabase, phase: str, names, allowed: set[str], line: int | None) -> None:
+    where = f" (line {line})" if line else ""
+    for name in names:
+        if name in allowed:
+            continue
+        if name in database.species and name not in database.elements:
             raise NotImplementedError(
-                f"PARAMETER on line {parameter.line}: interaction {','.join(species)} in phase {phase.name} "
-                "is not a binary Redlich-Kister parameter"
+                f"phase {phase}{where}: species {name} ({database.species[name]}) is not an element; "
+                "only element and VA constituents are supported"
             )
-
-    orders = range(max(interactions) + 1) if interactions else range(0)
-    return {
-        "model_type": "solution",
-        "end_members": end_members,
-        "interaction_parameters": [interactions.get(v, 0.0) for v in orders],
-    }
+        raise TdbError(f"phase {phase}{where}: constituent {name} is not an element of the system")
 
 
-def _stoichiometric_phase(phase: TdbPhase, parameters: list[TdbParameter], symbols) -> dict:
-    stoichiometry: dict[str, float] = {}
-    for species, sites in zip(phase.constituents, phase.sites):
-        if not _is_vacancy_sublattice(species):
-            stoichiometry[symbols[species[0]]] = stoichiometry.get(symbols[species[0]], 0.0) + sites
-    if len(parameters) != 1 or parameters[0].order != 0:
-        lines = ", ".join(str(p.line) for p in parameters) or "none"
-        raise TdbError(f"stoichiometric phase {phase.name} needs exactly one G parameter (lines: {lines})")
-    (parameter,) = parameters
-    if parameter.constituents != phase.constituents:
-        raise TdbError(f"PARAMETER on line {parameter.line} does not match the constituents of {phase.name}")
-    return {
-        "model_type": "stoichiometric",
-        "stoichiometry": stoichiometry,
-        "formation": divide(parameter.function, sum(stoichiometry.values())),
-    }
-
-
-def _phase(database: TdbDatabase, phase: TdbPhase, base: str, dependent: str, symbols) -> Phase:
+def _phase(database: TdbDatabase, phase: TdbPhase, base: str, dependent: str) -> Phase:
     if phase.constituents is None:
         raise TdbError(f"phase {phase.name} (line {phase.line}) has no CONSTITUENT")
+    allowed = {base, dependent, VACANCY}
     for species in phase.constituents:
-        for name in species:
-            if name != VACANCY and name not in (base, dependent):
-                raise TdbError(f"phase {phase.name} has constituent {name}, which is not an element of the system")
+        _check_species(database, phase.name, species, allowed, phase.line)
 
     parameters = [p for p in database.parameters if p.phase == phase.name]
-    gibbs = [p for p in parameters if p.kind in GIBBS_PARAMETERS]
-    magnetic = [_raw(p) for p in parameters if p.kind in MAGNETIC_PARAMETERS]
-    type_definitions = [
-        f"TYPE_DEFINITION {definition.code} {definition.text}"
-        for code in phase.types
-        if (definition := database.type_definitions.get(code)) is not None and not definition.is_sequential
-    ]
+    for parameter in parameters:
+        if len(parameter.constituents) != len(phase.sites):
+            raise TdbError(
+                f"PARAMETER on line {parameter.line} gives {len(parameter.constituents)} sublattices; "
+                f"phase {phase.name} has {len(phase.sites)}"
+            )
+        for k, species in enumerate(parameter.constituents):
+            if species == [WILDCARD]:
+                continue
+            _check_species(database, phase.name, species, set(phase.constituents[k]), parameter.line)
 
-    mixing = [s for s in phase.constituents if not _is_vacancy_sublattice(s)]
-    elements = {name for species in mixing for name in species}
-    if len(mixing) == 1 and elements == {base, dependent} and VACANCY not in mixing[0]:
-        fields = _solution_phase(phase, gibbs, base, dependent, symbols)
-    elif len(mixing) >= 2 and all(len(s) == 1 for s in mixing) and elements == {base, dependent}:
-        fields = _stoichiometric_phase(phase, gibbs, symbols)
-    else:
-        fields = {"model_type": "sublattice", "raw_parameters": [_raw(p) for p in gibbs]}
+    definitions = [database.type_definitions[code] for code in phase.types if code in database.type_definitions]
+    magnetic = None
+    for definition in definitions:
+        if definition.is_magnetic:
+            afm_factor, structure_factor = definition.magnetic_factors()
+            magnetic = MagneticSettings(afm_factor=afm_factor, structure_factor=structure_factor)
 
     return Phase(
         name=phase.name,
+        model_type="sublattice",
         sublattice_sites=phase.sites,
         constituents=phase.constituents,
-        magnetic_parameters=magnetic,
-        type_definitions=type_definitions,
-        **fields,
+        raw_parameters=[_raw(p) for p in parameters if p.kind in GIBBS_PARAMETERS],
+        magnetic_parameters=[_raw(p) for p in parameters if p.kind in MAGNETIC_PARAMETERS],
+        magnetic=magnetic,
+        type_definitions=[f"TYPE_DEFINITION {d.code} {d.text}" for d in definitions if not d.is_sequential],
     )
 
 
@@ -232,9 +167,12 @@ def definition_from_database(
         status=metadata.get("_status"),
         status_reason=metadata.get("_status_reason"),
         elements=element_models,
-        phases=[_phase(database, phase, base, dependent, symbols) for phase in database.phases.values()],
+        phases=[_phase(database, phase, base, dependent) for phase in database.phases.values()],
         t_range_k=metadata.get("t_range_k"),
         functions=database.functions,
+        gas_constant=metadata.get("gas_constant", DATABASE_GAS_CONSTANT),
+        pressure_pa=metadata.get("pressure_pa", 101325.0),
+        metadata=database.metadata,
     )
 
 

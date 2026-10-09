@@ -11,7 +11,7 @@ from dataclasses import dataclass
 from typing import Callable
 
 import numpy as np
-from scipy.optimize import brentq, minimize_scalar
+from scipy.optimize import brentq
 
 from phase_diagram_explorer.diagram import PhaseDiagram
 from phase_diagram_explorer.equilibrium.equilibrium import (
@@ -20,7 +20,7 @@ from phase_diagram_explorer.equilibrium.equilibrium import (
     base_phase_name,
     phase_assemblage,
 )
-from phase_diagram_explorer.equilibrium.tangent import common_tangent, tangent_line
+from phase_diagram_explorer.equilibrium.tangent import common_tangent, lowest_point, tangent_line
 from phase_diagram_explorer.thermo.stoichiometric import StoichiometricPhase
 
 EUTECTIC = "eutectic"
@@ -137,16 +137,11 @@ def _three_phase_state(system: dict, T: float, p2: str, tie13: PhaseField):
         x2 = phase2.composition
         return float(phase2.molar_gibbs(T)) - (slope * x2 + intercept), x1, x2, x3
 
-    def distance(x):
-        return np.asarray(phase2.molar_gibbs(T, x), dtype=float) - (slope * np.asarray(x) + intercept)
-
-    x = np.linspace(x1, x3, REACTING_PHASE_SAMPLES)[1:-1]
-    k = int(np.argmin(distance(x)))
-    refined = minimize_scalar(
-        lambda xi: float(distance(xi)), bounds=(x[max(k - 1, 0)], x[min(k + 1, len(x) - 1)]),
-        method="bounded", options={"xatol": 1e-12},
-    )
-    return float(refined.fun), x1, float(refined.x), x3
+    point = lowest_point(phase2, T, slope, intercept, np.linspace(x1, x3, REACTING_PHASE_SAMPLES)[1:-1])
+    if point is None:
+        return np.inf, x1, (x1 + x3) / 2.0, x3
+    x2, distance = point
+    return float(distance), x1, float(x2), x3
 
 
 def _solve_reaction(system: dict, lower: PhaseAssemblage, upper: PhaseAssemblage, p2: str, tie13: PhaseField):

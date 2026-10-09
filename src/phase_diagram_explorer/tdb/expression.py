@@ -8,11 +8,13 @@ exec(). The grammar is the TDB subset
     term       := unary (("*" | "/") unary)*
     unary      := ("+" | "-") unary | power
     power      := atom ("**" unary)?
-    atom       := number | "T" | "R" | name | call | "(" expression ")"
+    atom       := number | "T" | "P" | "R" | name | call | "(" expression ")"
     call       := ("LN" | "LOG" | "EXP") "(" expression ")"
 
-where `name` is a reference to a FUNCTION (resolved through a FunctionTable)
-and LOG is the natural logarithm, as in Thermo-Calc. Names are
+where `name` is a reference to a FUNCTION (resolved through a FunctionTable),
+P is the pressure and R the gas constant of the table (8.31451 J/(mol K)
+and 101325 Pa unless the system sets them), and LOG is the natural
+logarithm, as in Thermo-Calc. Names are
 case-insensitive; a trailing "#" on a function reference is ignored.
 
 A piecewise function is a list of temperature intervals, written in a TDB
@@ -21,20 +23,23 @@ file as
     298.15  <expression>; 1234.93  Y  <expression>; 3000  N  <reference> !
 
 As in Thermo-Calc, an omitted lower limit is 298.15 K, an omitted (or ",,")
-upper limit is 6000 K, and a final limit without Y or N ends the function.
+upper limit is 6000 K (both changed by TEMPERATURE_LIMITS), and a final
+limit without Y or N ends the function.
 Evaluation outside every interval raises ValueError.
 """
 import re
+from collections import OrderedDict
 from dataclasses import dataclass
 from typing import Mapping
 
 import numpy as np
 
 from phase_diagram_explorer.models import ExpressionInterval, PiecewiseExpression
-from phase_diagram_explorer.thermo.solution import GAS_CONSTANT
+from phase_diagram_explorer.thermo.constants import DATABASE_GAS_CONSTANT, STANDARD_PRESSURE
 
 CALLS = {"LN": np.log, "LOG": np.log, "EXP": np.exp}
 TEMPERATURE = "T"
+PRESSURE = "P"
 GAS_CONSTANT_NAME = "R"
 
 _TOKEN = re.compile(
@@ -47,8 +52,6 @@ _TOKEN = re.compile(
 _NUMBER = r"[+-]?(?:\d+\.?\d*|\.\d+)(?:[EeDd][+-]?\d+)?"
 _FIRST_INTERVAL = re.compile(rf"^\s*({_NUMBER})\s+(.*)$", re.DOTALL)
 _NEXT_INTERVAL = re.compile(rf"^\s*({_NUMBER}|,,)?\s*(?:([YNyn])(?![A-Za-z0-9_]))?\s*(.*)$", re.DOTALL)
-DEFAULT_T_LOW = 298.15
-DEFAULT_T_HIGH = 6000.0
 
 
 def _to_float(text: str) -> float:
@@ -73,7 +76,7 @@ def _tokenize(text: str) -> list[tuple[str, str]]:
 
 class _Parser:
     """Recursive-descent parser producing nested tuples:
-    ("num", value), ("T",), ("R",), ("ref", name), ("neg", node),
+    ("num", value), ("T",), ("P",), ("R",), ("ref", name), ("neg", node),
     ("call", name, node) and (op, left, right) for + - * / **."""
 
     def __init__(self, text: str):
@@ -157,6 +160,8 @@ class _Parser:
                 return ("T",)
             if value == GAS_CONSTANT_NAME:
                 return ("R",)
+            if value == PRESSURE:
+                return ("P",)
             return ("ref", value)
         raise ValueError(f"unexpected {value!r} in expression {self.text!r}")
 
@@ -170,6 +175,8 @@ def _references(node) -> set[str]:
             found |= _references(child)
     return found
 
+
+MEMO_SIZE = 4096
 
 _BINARY = {
     "+": np.add,
@@ -198,7 +205,9 @@ class Expression:
             if kind == "T":
                 return T
             if kind == "R":
-                return GAS_CONSTANT
+                return functions.gas_constant if functions is not None else DATABASE_GAS_CONSTANT
+            if kind == "P":
+                return functions.pressure if functions is not None else STANDARD_PRESSURE
             if kind == "ref":
                 if functions is None:
                     raise ValueError(f"expression {self.text!r} references undefined function {node[1]!r}")
@@ -250,7 +259,15 @@ class FunctionTable:
     """TDB FUNCTIONs by name, with every reference resolved and checked for
     cycles when the table is built."""
 
-    def __init__(self, functions: Mapping[str, PiecewiseExpression | Piecewise] | None = None):
+    def __init__(
+        self,
+        functions: Mapping[str, PiecewiseExpression | Piecewise] | None = None,
+        gas_constant: float = DATABASE_GAS_CONSTANT,
+        pressure: float = STANDARD_PRESSURE,
+    ):
+        self.gas_constant = float(gas_constant)
+        self.pressure = float(pressure)
+        self._memo: OrderedDict = OrderedDict()
         self.functions: dict[str, Piecewise] = {}
         for name, function in (functions or {}).items():
             piecewise = function if isinstance(function, Piecewise) else Piecewise.from_model(function)
@@ -275,7 +292,16 @@ class FunctionTable:
         name = normalise_name(name)
         if name not in self.functions:
             raise ValueError(f"undefined function {name!r}")
-        return self.functions[name].evaluate(T, self)
+        if np.size(T) != 1:
+            return self.functions[name].evaluate(T, self)
+        # Memoised for single temperatures: nested FUNCTIONs are evaluated
+        # once per temperature however often they are referenced.
+        key = (name, float(np.ravel(T)[0]))
+        if key not in self._memo:
+            self._memo[key] = self.functions[name].evaluate(T, self)
+            if len(self._memo) > MEMO_SIZE:
+                self._memo.popitem(last=False)
+        return np.broadcast_to(self._memo[key], np.shape(np.atleast_1d(T))).reshape(np.shape(T)) if np.ndim(T) else self._memo[key]
 
 
 class PiecewiseGibbs:
@@ -286,11 +312,17 @@ class PiecewiseGibbs:
         self.piecewise = Piecewise.from_model(model)
         self.functions = functions if functions is not None else FunctionTable()
         self.functions.check_references(self.piecewise, context)
+        self._memo: OrderedDict = OrderedDict()
 
     def G(self, T: float | np.ndarray) -> float | np.ndarray:
-        result = self.piecewise.evaluate(T, self.functions)
         if np.ndim(T) == 0:
-            return float(result[0])
+            key = float(T)
+            if key not in self._memo:
+                self._memo[key] = float(self.piecewise.evaluate(T, self.functions)[0])
+                if len(self._memo) > MEMO_SIZE:
+                    self._memo.popitem(last=False)
+            return self._memo[key]
+        result = self.piecewise.evaluate(T, self.functions)
         return result.reshape(np.shape(T))
 
 
@@ -298,7 +330,7 @@ def normalise_name(name: str) -> str:
     return name.strip().rstrip("#").upper()
 
 
-def parse_piecewise(text: str) -> PiecewiseExpression:
+def parse_piecewise(text: str, default_low: float = 298.15, default_high: float = 6000.0) -> PiecewiseExpression:
     """Parse TDB range syntax "T_low expr; T_high Y expr; T_high N [ref]".
 
     Every expression is parsed (not evaluated) so syntax errors are reported
@@ -312,7 +344,7 @@ def parse_piecewise(text: str) -> PiecewiseExpression:
     if first is not None:
         T_low, expression = _to_float(first.group(1)), first.group(2).strip()
     else:
-        T_low, expression = DEFAULT_T_LOW, segments[0].strip()
+        T_low, expression = default_low, segments[0].strip()
 
     intervals: list[ExpressionInterval] = []
     terminated = False
@@ -322,7 +354,7 @@ def parse_piecewise(text: str) -> PiecewiseExpression:
                 raise ValueError(f"text after the N terminator: {segment.strip()!r}")
             continue
         limit, flag, rest = _NEXT_INTERVAL.match(segment).groups()
-        T_high = DEFAULT_T_HIGH if limit in (None, ",,") else _to_float(limit)
+        T_high = default_high if limit in (None, ",,") else _to_float(limit)
         if not T_high > T_low:
             raise ValueError(f"temperature limits must increase: {T_low:g} then {T_high:g}")
         Expression(expression)

@@ -59,8 +59,8 @@ Interaction = Annotated[PiecewiseExpression | float, Field(union_mode="left_to_r
 
 
 class RawParameter(BaseModel):
-    """A TDB PARAMETER kept as written: for phases or parameter types that
-    no model here evaluates yet (multi-sublattice phases, TC, BMAGN)."""
+    """A TDB PARAMETER as written (G, L, TC or BMAGN) of a sublattice phase,
+    per mole of formula units."""
 
     kind: str
     # Species on each sublattice, interacting species together.
@@ -69,10 +69,19 @@ class RawParameter(BaseModel):
     function: PiecewiseExpression
 
 
+class MagneticSettings(BaseModel):
+    """Inden-Hillert-Jarl model of a phase, from its MAGNETIC TYPE_DEFINITION:
+    antiferromagnetic factor (-3 FCC/HCP, -1 BCC) and structure factor p
+    (0.28 FCC/HCP, 0.40 BCC)."""
+
+    afm_factor: float
+    structure_factor: float
+
+
 class Phase(BaseModel):
     name: str
-    # "sublattice": a TDB phase stored as read (sublattice_sites,
-    # constituents, raw_parameters) that no model here evaluates yet.
+    # "sublattice": a Compound Energy Formalism phase (sublattice_sites,
+    # constituents, raw_parameters), e.g. every phase read from a TDB file.
     model_type: Literal["pure", "solution", "stoichiometric", "sublattice"]
     # "solution": Gibbs energy of each end member (pure component in this
     # phase's own reference structure) per mole of atoms, keyed by element symbol.
@@ -87,19 +96,26 @@ class Phase(BaseModel):
     # same reference as the end members (JSON systems reference each element
     # to its own stable solid, G = 0, so this is the energy of formation).
     formation: GibbsEnergy | None = None
-    # TDB phases: sites and species of each sublattice, as read.
+    # "sublattice": site ratio and species of each sublattice, and the G and
+    # L parameters (species "*" is a wildcard; "VA" is the vacancy).
     sublattice_sites: list[float] | None = None
     constituents: list[list[str]] | None = None
-    # TDB parameters stored but not evaluated (see RawParameter).
     raw_parameters: list[RawParameter] = []
+    # TC and BMAGN parameters, and the magnetic model they enter.
     magnetic_parameters: list[RawParameter] = []
+    magnetic: MagneticSettings | None = None
     # TDB TYPE_DEFINITION commands (other than plain SEQ ones) applying to
-    # this phase, e.g. the magnetic AFCC/ABCC definitions.
+    # this phase, e.g. the magnetic AFCC/ABCC definitions, as read.
     type_definitions: list[str] = []
 
     @property
     def is_magnetic(self) -> bool:
-        return bool(self.magnetic_parameters) or any("MAGNETIC" in t.upper() for t in self.type_definitions)
+        return self.magnetic is not None and bool(self.magnetic_parameters)
+
+    @property
+    def unsupported_type_definitions(self) -> list[str]:
+        """GES type definitions other than MAGNETIC (e.g. a disordered part)."""
+        return [t for t in self.type_definitions if "GES" in t.upper().split() and "MAGNETIC" not in t.upper()]
 
 
 PROVISIONAL = "provisional"
@@ -123,6 +139,14 @@ class SystemDefinition(BaseModel):
     t_range_k: tuple[float, float] | None = None
     # TDB FUNCTIONs referenced by piecewise expressions, by upper-case name.
     functions: dict[str, PiecewiseExpression] = {}
+    # Gas constant R (J/(mol K)) for ideal mixing, the magnetic term and "R"
+    # in expressions. None: 8.314462618 for JSON systems (unchanged since
+    # 0.1); TDB systems are given 8.31451 unless their metadata says otherwise.
+    gas_constant: float | None = None
+    # Pressure (Pa) for "P" in TDB expressions.
+    pressure_pa: float = 101325.0
+    # Database metadata: "references" ({id: text}), "database_info", ...
+    metadata: dict = {}
 
     @model_validator(mode="after")
     def check_t_range(self) -> "SystemDefinition":
@@ -169,6 +193,7 @@ def load_system(
     *,
     elements: Sequence[str] | None = None,
     dependent_element: str | None = None,
+    gas_constant: float | None = None,
 ) -> SystemDefinition:
     """Load a binary system from JSON, YAML or a TDB database.
 
@@ -177,19 +202,20 @@ def load_system(
     from `elements` or `dependent_element`, falling back to the fields of
     the same name in <name>.meta.json; see docs/data_format.md. These
     arguments are ignored for JSON and YAML, which list their elements in
-    order.
+    order. `gas_constant` overrides the system's gas constant.
     """
     path = Path(path)
     if path.suffix.lower() == TDB_SUFFIX:
         from phase_diagram_explorer.tdb.convert import load_tdb_system
 
-        return load_tdb_system(path, elements=elements, dependent_element=dependent_element)
-    text = path.read_text()
-    if path.suffix in (".yaml", ".yml"):
-        data = yaml.safe_load(text)
+        definition = load_tdb_system(path, elements=elements, dependent_element=dependent_element)
     else:
-        data = json.loads(text)
-    return SystemDefinition.model_validate(data)
+        text = path.read_text()
+        data = yaml.safe_load(text) if path.suffix in (".yaml", ".yml") else json.loads(text)
+        definition = SystemDefinition.model_validate(data)
+    if gas_constant is not None:
+        definition = definition.model_copy(update={"gas_constant": float(gas_constant)})
+    return definition
 
 
 def system_files(directory: str | Path) -> list[Path]:

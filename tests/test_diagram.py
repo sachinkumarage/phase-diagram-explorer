@@ -79,20 +79,19 @@ def test_phase_fractions_sum_to_one_everywhere():
 
 
 def test_gibbs_curves_evaluated_once_per_temperature_not_per_grid_point(monkeypatch):
-    import phase_diagram_explorer.equilibrium.equilibrium as equilibrium_module
-
     system = _mirrored_ideal_system(5000.0)
-    call_count = 0
-    original = equilibrium_module.evaluate_phase_curves
+    call_counts = {name: 0 for name in system}
 
-    def counting_wrapper(*args, **kwargs):
-        nonlocal call_count
-        call_count += 1
-        return original(*args, **kwargs)
+    def counting(name, original):
+        def wrapper(*args, **kwargs):
+            call_counts[name] += 1
+            return original(*args, **kwargs)
+        return wrapper
 
-    monkeypatch.setattr(equilibrium_module, "evaluate_phase_curves", counting_wrapper)
+    for name, phase in system.items():
+        monkeypatch.setattr(phase, "hull_points", counting(name, phase.hull_points))
 
     n_T, n_x = 4, 25
     compute_diagram(system, T_range=(400.0, 600.0), n_T=n_T, n_x=n_x, n_points=101)
 
-    assert call_count == n_T
+    assert call_counts == {name: n_T for name in system}
