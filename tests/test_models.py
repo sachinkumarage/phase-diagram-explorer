@@ -11,9 +11,8 @@ from phase_diagram_explorer.models import (
     load_system,
 )
 
-EXAMPLE_SYSTEM_PATH = (
-    Path(__file__).resolve().parents[1] / "data" / "systems" / "example.json"
-)
+EXAMPLE_SYSTEM_PATH = Path(__file__).resolve().parent / "fixtures" / "example.json"
+SYSTEMS_DIR = Path(__file__).resolve().parents[1] / "data" / "systems"
 
 
 def test_composition_valid_sum():
@@ -78,3 +77,17 @@ def test_load_system_yaml(tmp_path):
 
     assert system_from_yaml.name == system_from_json.name
     assert len(system_from_yaml.elements) == len(system_from_json.elements)
+
+
+def test_provisional_status_is_read_from_underscore_fields():
+    for name in ("ag_cu.json", "al_cu.json"):
+        system = load_system(SYSTEMS_DIR / name)
+        assert system.status == "provisional"
+        assert system.is_provisional
+        assert system.status_reason
+
+
+def test_status_defaults_to_none():
+    system = load_system(EXAMPLE_SYSTEM_PATH)
+    assert system.status is None
+    assert not system.is_provisional

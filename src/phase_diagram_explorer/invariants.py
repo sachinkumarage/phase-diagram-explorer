@@ -3,7 +3,7 @@ from dataclasses import dataclass
 import numpy as np
 
 from phase_diagram_explorer.diagram import PhaseDiagram, compute_diagram
-from phase_diagram_explorer.equilibrium.equilibrium import compute_equilibrium
+from phase_diagram_explorer.equilibrium.equilibrium import base_phase_name, compute_equilibrium
 
 EUTECTIC = "eutectic"
 PERITECTIC = "peritectic"
@@ -19,61 +19,69 @@ class InvariantReaction:
     composition: dict[str, float]
 
 
-def _row_two_phase_fields(phase_labels_row, x_grid) -> dict[frozenset, list[float]]:
-    """Map each two-phase field (frozenset of phase names) in a row to its
-    (x_min, x_max) composition extent."""
-    fields: dict[frozenset, list[float]] = {}
+@dataclass
+class _TwoPhaseSegment:
+    """A contiguous run of grid points in one temperature row where the same
+    two phases (or composition sets) coexist, `left` being the lower-x one."""
+
+    left: str
+    right: str
+    x_min: float
+    x_max: float
+    last_index: int
+
+    @property
+    def base_phases(self) -> tuple[str, str]:
+        return base_phase_name(self.left), base_phase_name(self.right)
+
+    def overlaps(self, x_min: float, x_max: float) -> bool:
+        return self.x_min <= x_max and self.x_max >= x_min
+
+
+def _row_two_phase_segments(phase_labels_row, x_grid) -> list[_TwoPhaseSegment]:
+    """Contiguous two-phase segments of one row, ordered by composition.
+
+    Labels of a two-phase grid point are ordered by composition (from the
+    hull), so each segment knows which phase lies on which side. Two separate
+    fields of the same phase pair (e.g. LIQUID+FCC on both sides of a
+    compound) stay separate segments.
+    """
+    segments: list[_TwoPhaseSegment] = []
     for j, label in enumerate(phase_labels_row):
-        if len(label) == 2:
-            key = frozenset(label)
-            x = x_grid[j]
-            if key not in fields:
-                fields[key] = [x, x]
-            else:
-                fields[key][0] = min(fields[key][0], x)
-                fields[key][1] = max(fields[key][1], x)
-    return fields
+        if len(label) != 2:
+            continue
+        x = float(x_grid[j])
+        last = segments[-1] if segments else None
+        if last is not None and last.last_index == j - 1 and (last.left, last.right) == tuple(label):
+            last.x_max = x
+            last.last_index = j
+        else:
+            segments.append(_TwoPhaseSegment(label[0], label[1], x, x, j))
+    return segments
 
 
 def _default_liquid_phases(system: dict) -> set[str]:
     return {name for name in system if "liquid" in name.lower()}
 
 
-def _shared_phase_pairs(fields: dict[frozenset, list[float]]):
-    """Yield (p2, left_key, right_key) for pairs of two-phase fields that
-    share a common phase p2, ordered left-to-right by composition."""
-    keys = list(fields.keys())
-    for a in range(len(keys)):
-        for b in range(a + 1, len(keys)):
-            shared = keys[a] & keys[b]
-            if len(shared) != 1:
-                continue
-            p2 = next(iter(shared))
-            key_a, key_b = keys[a], keys[b]
-            if sum(fields[key_a]) <= sum(fields[key_b]):
-                yield p2, key_a, key_b
-            else:
-                yield p2, key_b, key_a
-
-
 def _refine_composition(
-    system: dict, T: float, x_range: list[float], n_points: int
+    system: dict, T: float, segment: _TwoPhaseSegment, n_points: int
 ) -> dict[str, float]:
-    x_mid = (x_range[0] + x_range[1]) / 2.0
+    x_mid = (segment.x_min + segment.x_max) / 2.0
     result = compute_equilibrium(system, T, x_mid, n_points=n_points)
     return result.phase_compositions
 
 
 def _classify(phases: tuple[str, str, str], is_eutectic_type: bool, liquid_phases: set[str]) -> str:
-    involves_liquid = any(phase in liquid_phases for phase in phases)
+    involves_liquid = any(base_phase_name(phase) in liquid_phases for phase in phases)
     if is_eutectic_type:
         return EUTECTIC if involves_liquid else EUTECTOID
     return PERITECTIC if involves_liquid else PERITECTOID
 
 
 def _find_reactions(
-    fields_with_p2: dict[frozenset, list[float]],
-    fields_without_p2: dict[frozenset, list[float]],
+    segments_with_p2: list[_TwoPhaseSegment],
+    segments_without_p2: list[_TwoPhaseSegment],
     T_with_p2: float,
     T_without_p2: float,
     system: dict,
@@ -81,21 +89,37 @@ def _find_reactions(
     n_points: int,
     is_eutectic_type: bool,
 ) -> list[InvariantReaction]:
-    """Find reactions where phase p2, flanked by two two-phase fields in the
-    `fields_with_p2` row, is replaced by their combined field in the other row.
+    """Find reactions where phase p2, flanked by adjacent two-phase segments
+    P1+P2 and P2+P3 in the `segments_with_p2` row, is replaced by a P1+P3
+    segment spanning p2's composition in the other row.
+
+    Phases are compared by base name, so P1 and P3 may be two composition
+    sets of one phase (e.g. LIQUID -> FCC#1 + FCC#2). The reaction is labelled
+    with the composition set names from the row where P1 and P3 coexist.
     """
     reactions = []
-    for p2, left_key, right_key in _shared_phase_pairs(fields_with_p2):
-        p1 = next(iter(left_key - {p2}))
-        p3 = next(iter(right_key - {p2}))
-        combined_key = frozenset({p1, p3})
-        if combined_key not in fields_without_p2 or combined_key in fields_with_p2:
+    for left, right in zip(segments_with_p2, segments_with_p2[1:]):
+        if left.right != right.left:
             continue
+        p2 = left.right
+        outer = (base_phase_name(left.left), base_phase_name(right.right))
+        # The P1+P3 field must span the composition where P2 is stable in
+        # this row, between the two flanking fields.
+        window = (left.x_max, right.x_min)
 
-        left_composition = _refine_composition(system, T_with_p2, fields_with_p2[left_key], n_points)
-        right_composition = _refine_composition(system, T_with_p2, fields_with_p2[right_key], n_points)
-        x1 = left_composition[p1]
-        x3 = right_composition[p3]
+        combined = [
+            s for s in segments_without_p2 if s.base_phases == outer and s.overlaps(*window)
+        ]
+        if not combined or any(
+            s.base_phases == outer and s.overlaps(*window) for s in segments_with_p2
+        ):
+            continue
+        p1, p3 = combined[0].left, combined[0].right
+
+        left_composition = _refine_composition(system, T_with_p2, left, n_points)
+        right_composition = _refine_composition(system, T_with_p2, right, n_points)
+        x1 = left_composition[left.left]
+        x3 = right_composition[right.right]
         x2 = (left_composition[p2] + right_composition[p2]) / 2.0
 
         reactions.append(
@@ -118,9 +142,10 @@ def detect_invariants(
     """Detect three-phase invariant reactions from a computed PhaseDiagram.
 
     Scans consecutive temperature rows for a change in which two-phase
-    fields are present. A phase P2 flanked by two-phase fields {P1,P2} and
-    {P2,P3} in one row, replaced by the combined field {P1,P3} in the
-    adjacent row, marks an invariant reaction: if P2 is stable in the hotter
+    fields are present. A phase P2 flanked by adjacent two-phase fields P1+P2
+    and P2+P3 in one row, replaced by a P1+P3 field over the same composition
+    window in the adjacent row, marks an invariant reaction. P1 and P3 may be
+    composition sets of one phase (PHASE#1, PHASE#2): if P2 is stable in the hotter
     row and absent from that composition window in the colder row, P2
     decomposes into P1+P3 on cooling (a eutectic-type reaction). If P2
     instead appears only in the colder row, P1+P3 combine into P2 on cooling
@@ -140,18 +165,18 @@ def detect_invariants(
 
     for i in range(len(T_grid) - 1):
         T_lower, T_upper = T_grid[i], T_grid[i + 1]
-        fields_lower = _row_two_phase_fields(diagram.phase_labels[i], x_grid)
-        fields_upper = _row_two_phase_fields(diagram.phase_labels[i + 1], x_grid)
+        segments_lower = _row_two_phase_segments(diagram.phase_labels[i], x_grid)
+        segments_upper = _row_two_phase_segments(diagram.phase_labels[i + 1], x_grid)
 
         reactions.extend(
             _find_reactions(
-                fields_upper, fields_lower, T_upper, T_lower,
+                segments_upper, segments_lower, T_upper, T_lower,
                 system, liquid_phases, n_points, is_eutectic_type=True,
             )
         )
         reactions.extend(
             _find_reactions(
-                fields_lower, fields_upper, T_lower, T_upper,
+                segments_lower, segments_upper, T_lower, T_upper,
                 system, liquid_phases, n_points, is_eutectic_type=False,
             )
         )

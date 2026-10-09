@@ -1,5 +1,37 @@
 # Changelog
 
+## 0.1.3 - 2026-10-09
+
+### Added
+- Miscibility gap support: the equilibrium solver reports two tangent points
+  on one phase's Gibbs curve as composition sets (`PHASE#1`, `PHASE#2`).
+  Diagrams, invariant detection, tables and plots handle these labels.
+  Validated against a synthetic symmetric regular solution
+  (`tests/fixtures/regular_solution.json`): the analytical binodal at three
+  temperatures, symmetry about x = 0.5, and Tc = L0/(2R) to within 1 K.
+- `"_status"` / `"_status_reason"` fields in system JSON. Ag-Cu and Al-Cu are
+  marked provisional, and the app shows a preview banner for them.
+- `builder.is_computable`. The app lists only systems with complete Gibbs
+  energy data.
+- Strict-xfail Ag-Cu solvus regression tests: assessed eutectic solid
+  solubilities x(Cu) = 0.141 and 0.950.
+- `slow` pytest marker. The default local run skips slow tests; CI runs the
+  full suite.
+
+### Fixed
+- Stoichiometric compounds enter the convex hull at their exact composition,
+  not the nearest grid point. At x(Cu) = 1/3 in Al-Cu the equilibrium is
+  single-phase AL2CU.
+- Invariant detection no longer merges separate two-phase fields that share
+  the same phase pair. This removes the spurious Al-Cu "eutectic" (liquid
+  at 46 at% Cu) and "peritectic" reported in 0.1.2.
+
+### Changed
+- `data/systems/example.json` moved to `tests/fixtures/`.
+- The Al-Cu invariant test in `tests/test_systems.py` uses a composition grid
+  fine enough to resolve the ~0.005-wide Al-rich liquid field.
+- Tightened the Fe-C conversion check to 3.44 ± 0.01 at% C.
+
 ## 0.1.2 - 2026-10-09
 
 ### Fixed

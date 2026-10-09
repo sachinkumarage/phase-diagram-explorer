@@ -3,6 +3,7 @@ import plotly.graph_objects as go
 from plotly.colors import qualitative
 
 from phase_diagram_explorer.diagram import PhaseDiagram
+from phase_diagram_explorer.equilibrium.equilibrium import base_phase_name
 from phase_diagram_explorer.invariants import InvariantReaction
 from phase_diagram_explorer.units import (
     ATOMIC_PERCENT,
@@ -18,19 +19,23 @@ def _phase_field_ids(phase_labels: np.ndarray) -> tuple[np.ndarray, list[str]]:
     """Assign a stable integer id to each distinct phase-field tuple.
 
     Returns the id grid (same shape as phase_labels) and the ordered list of
-    field names ("ALPHA" or "ALPHA+LIQUID") indexed by id.
+    field names ("ALPHA", "ALPHA+LIQUID" or "ALPHA#1+ALPHA#2") indexed by id.
+    A single-phase field is named by its base phase, so a composition set
+    (ALPHA#1) and the same phase above its miscibility gap (ALPHA) form one
+    continuous field with no boundary drawn between them.
     """
     field_names: list[str] = []
-    field_index: dict[tuple, int] = {}
+    field_index: dict[str, int] = {}
     ids = np.empty(phase_labels.shape, dtype=float)
 
     for i in range(phase_labels.shape[0]):
         for j in range(phase_labels.shape[1]):
             phases = phase_labels[i, j]
-            if phases not in field_index:
-                field_index[phases] = len(field_names)
-                field_names.append("+".join(phases))
-            ids[i, j] = field_index[phases]
+            name = base_phase_name(phases[0]) if len(phases) == 1 else "+".join(phases)
+            if name not in field_index:
+                field_index[name] = len(field_names)
+                field_names.append(name)
+            ids[i, j] = field_index[name]
 
     return ids, field_names
 

@@ -55,11 +55,11 @@ def test_weight_fraction_endpoints():
 
 
 def test_fe_c_eutectoid_composition():
-    # 0.76 wt% C in Fe is about 3.46 at% C
+    # 0.76 wt% C in Fe with M(Fe) = 55.845, M(C) = 12.011 is 3.44 at% C
     at_percent_c = composition_to_display(
         composition_from_display(0.76, WEIGHT_PERCENT, FE, C), ATOMIC_PERCENT
     )
-    assert at_percent_c == pytest.approx(3.46, abs=0.03)
+    assert at_percent_c == pytest.approx(3.44, abs=0.01)
 
 
 def test_weight_percent_needs_atomic_masses():

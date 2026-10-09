@@ -1,13 +1,14 @@
+import os
 from pathlib import Path
 
 import numpy as np
 import plotly.graph_objects as go
 import streamlit as st
 
-from phase_diagram_explorer.builder import build_system
+from phase_diagram_explorer.builder import build_system, is_computable
 from phase_diagram_explorer.diagram import compute_diagram
 from phase_diagram_explorer.equilibrium.curves import evaluate_phase_curves
-from phase_diagram_explorer.equilibrium.equilibrium import compute_equilibrium
+from phase_diagram_explorer.equilibrium.equilibrium import base_phase_name, compute_equilibrium
 from phase_diagram_explorer.invariants import detect_invariants_over_range
 from phase_diagram_explorer.models import SystemDefinition, load_system
 from phase_diagram_explorer.thermo.stoichiometric import StoichiometricPhase
@@ -25,7 +26,10 @@ from phase_diagram_explorer.units import (
 )
 from phase_diagram_explorer.visualization import plot_diagram
 
-SYSTEMS_DIR = Path(__file__).resolve().parents[2] / "data" / "systems"
+SYSTEMS_DIR = Path(
+    os.environ.get("PHASE_DIAGRAM_SYSTEMS_DIR", Path(__file__).resolve().parents[2] / "data" / "systems")
+)
+PROVISIONAL_BANNER = "Preview: provisional thermodynamic data, not yet validated."
 
 # Temperature slider limits (K). Used as the analysis range for systems whose
 # JSON has no "t_range_k".
@@ -74,7 +78,7 @@ def _tangent_line_figure(system, T: float, x_overall: float, n_points: int, to_x
     if len(result.stable_phases) == 2:
         p1, p2 = result.stable_phases
         x1, x2 = result.phase_compositions[p1], result.phase_compositions[p2]
-        phase1, phase2 = system[p1], system[p2]
+        phase1, phase2 = system[base_phase_name(p1)], system[base_phase_name(p2)]
         g1 = phase1.molar_gibbs(T) if isinstance(phase1, StoichiometricPhase) else float(phase1.molar_gibbs(T, x1))
         g2 = phase2.molar_gibbs(T) if isinstance(phase2, StoichiometricPhase) else float(phase2.molar_gibbs(T, x2))
 
@@ -109,9 +113,12 @@ def _tangent_line_figure(system, T: float, x_overall: float, n_points: int, to_x
 st.set_page_config(page_title="Phase Diagram Explorer", layout="wide")
 st.title("Phase Diagram Explorer")
 
-system_paths = sorted(SYSTEMS_DIR.glob("*.json"))
+# Only systems with complete Gibbs energy data are offered.
+system_paths = [
+    path for path in sorted(SYSTEMS_DIR.glob("*.json")) if is_computable(_load_definition(str(path)))
+]
 if not system_paths:
-    st.error(f"No system definitions found in {SYSTEMS_DIR}")
+    st.error(f"No system definitions with complete Gibbs energy data found in {SYSTEMS_DIR}")
     st.stop()
 
 system_names = [path.stem for path in system_paths]
@@ -119,11 +126,12 @@ selected_name = st.selectbox("System", system_names)
 selected_path = system_paths[system_names.index(selected_name)]
 
 definition = _load_definition(str(selected_path))
-try:
-    system = build_system(definition)
-except ValueError as error:
-    st.error(f"System {selected_name!r} cannot be computed: {error}")
-    st.stop()
+system = build_system(definition)
+
+if definition.is_provisional:
+    st.warning(PROVISIONAL_BANNER)
+    if definition.status_reason:
+        st.caption(definition.status_reason)
 
 base = definition.base_element
 dependent = definition.dependent_element

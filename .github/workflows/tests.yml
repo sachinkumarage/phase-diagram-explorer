@@ -21,5 +21,5 @@ jobs:
       - name: Install package
         run: pip install -e .
 
-      - name: Run tests
-        run: pytest -q
+      - name: Run full test suite (including slow tests)
+        run: pytest -q -m "slow or not slow"

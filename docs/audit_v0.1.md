@@ -256,15 +256,113 @@ parameters, not of the code.
 The Ag-Cu default display range is 500–1450 K. That covers the eutectic and
 both melting points.
 
-### Still open
+## Resolved in 0.1.3
 
-- **Al-Cu data.** `al_cu.json` has no Cu-rich solid phase, so LIQUID is the
-  most stable phase at the Cu-rich end even at 500–700 K. Its 931 K eutectic
-  (liquid at 46 at% Cu) is far from the assessed 821 K, 17.3 at% Cu. The
-  detector also reports a second reaction (FCC_AL + AL2CU + LIQUID) at the
-  same temperature. These are limits of the uncalibrated Al-Cu parameters
-  and of the grid-based detector, and fall outside this Ag-Cu audit.
-- **Compound grid sampling.** A stoichiometric compound is sampled at the
-  nearest point on the Gibbs-curve grid. As a result, the equilibrium at
-  exactly x = 1/3 can come out as a tie line with phase fraction close to
-  1, rather than as the single phase AL2CU.
+The "Still open" items from 0.1.2 are resolved, or moved to the updated
+list below.
+
+### Stoichiometric compounds are exact hull points
+
+- Each compound now enters the convex hull at its exact composition, taken
+  from its site ratios. It is no longer snapped to the nearest point on the
+  Gibbs-curve grid.
+- If the overall composition lands exactly on a hull vertex, the result is
+  that vertex's phase on its own.
+- At x(Cu) = 1/3 in Al-Cu, the result is now single-phase AL2CU with
+  fraction 1.0 for every grid size tested.
+
+### Spurious Al-Cu invariants
+
+Both 0.1.2 Al-Cu reactions were artifacts of the detector:
+- the "eutectic" with liquid at 46 at% Cu,
+- the FCC_AL + AL2CU + LIQUID "peritectic".
+
+The cause was that two-phase fields were merged by phase set. The
+LIQUID+AL2CU fields on both sides of the compound became one field.
+
+The detector now works with contiguous two-phase segments in composition
+order. It also requires the P1+P3 field to span the composition where P2
+was stable.
+
+With a composition grid fine enough to resolve it (n_x = 1001), the engine
+finds the one real invariant in the provisional Al-Cu model:
+L (x(Cu) ≈ 0.004) → FCC_AL + AL2CU at 931 K, just below the melting point
+of Al.
+
+`tests/test_systems.py` used to pass its Al-Cu invariant test only because
+of the artifact. It now uses that finer grid. The thermodynamic parameters
+are unchanged. The Ag-Cu result is unchanged too: 1051.0 K, with liquid at
+x(Cu) = 0.3878.
+
+### Miscibility gaps (engine capability)
+
+- The hull now detects tie lines that join two tangent points on the same
+  phase's Gibbs curve, where the bridged curve lies above the tie line.
+  Those phases are reported as composition sets PHASE#1, PHASE#2, ...,
+  numbered from left to right.
+- Diagrams, invariant detection, tables and plots all handle these labels:
+  - A single-phase region is drawn as its base phase, so ALPHA and ALPHA#1
+    form one continuous field.
+  - Invariants match phases by base name, so LIQUID → ALPHA#1 + ALPHA#2 is
+    detected.
+- These are validated against a synthetic symmetric regular solution,
+  `tests/fixtures/regular_solution.json`, with L0 = 20000 J/mol:
+  - the binodal at 800, 1000 and 1150 K matches the analytical root of
+    ln(x/(1-x)) = L0(2x-1)/(RT) to within one grid step;
+  - the gap is symmetric about x = 0.5;
+  - the bisected critical temperature is within 0.02 K of
+    L0/(2R) = 1202.72 K.
+- A second fixture, `gap_eutectic.json`, checks a eutectic that decomposes
+  into two composition sets.
+- `ag_cu.json` still uses separate FCC_AG and FCC_CU phases. Converting it to
+  one FCC_A1 phase waits for assessed parameters.
+
+### Data status and system list
+
+- `ag_cu.json` and `al_cu.json` are marked `"_status": "provisional"`, each
+  with a `_status_reason`. The app shows a "Preview: provisional
+  thermodynamic data, not yet validated." banner for them.
+- `example.json`, which has no Gibbs energy data, moved to `tests/fixtures/`.
+  The app's system selector now lists only systems that `build_system` can
+  compute (`builder.is_computable`).
+
+### Regression tests for the solvus
+
+Two new strict-xfail tests in `tests/test_physics_regression.py` record the
+assessed solid solubilities at the eutectic. They fail today against the
+values below:
+
+| Test | Assessed x(Cu) | Current x(Cu) |
+|---|---|---|
+| Ag-rich fcc phase | 0.141 ± 0.015 | 0.261 |
+| Cu-rich fcc phase | 0.950 ± 0.010 | 0.543 |
+
+### Tests and units
+
+- There is a new `slow` pytest marker for the full-range invariant tests and
+  the headless app tests:
+  - a plain `pytest` run skips them and takes about 10 s;
+  - `pytest -m "slow or not slow"` runs everything, which is what CI does.
+- The Fe-C unit check is tightened to 3.44 ± 0.01 at% C for 0.76 wt% C.
+
+## Still open
+
+- **Ag-Cu solvus.** The simplified FCC_AG and FCC_CU parameters put the
+  eutectic solid solubilities at x(Cu) = 0.261 and 0.543, against assessed
+  values of 0.141 and 0.950. The two strict-xfail tests above record this.
+  It will be fixed by assessed database parameters, together with
+  converting the system to a single FCC_A1 phase, which the engine now
+  supports.
+- **Ag-Cu eutectic liquid composition.** It is 0.3878, which clears the
+  0.399 ± 0.015 band by only about 0.004.
+- **Al-Cu data (provisional).** The model has no Cu-rich solid phases, so
+  LIQUID is stable at the Cu-rich end at every temperature. Its eutectic
+  (931 K, liquid x(Cu) ≈ 0.004) is far from the assessed 821 K and
+  x(Cu) = 0.173.
+- **Al-Cu eutectic is missing from the app.** Its Al-rich liquid field is
+  narrower than the spacing of the app's 201-point invariant grid
+  (Δx = 0.005), so the app's invariant table lists no reaction for Al-Cu.
+  Better grid precision and root-finding are still deferred.
+- **Grid-limited precision.** Invariant temperatures are accurate to about
+  ±1 K, from the 2 K detection grid. Tie-line and binodal compositions are
+  accurate to one Gibbs-curve grid step, 1/(n_points − 1).

@@ -9,3 +9,19 @@ An interactive Streamlit app is included for exploring computed phase diagrams: 
 ```
 streamlit run src/phase_diagram_explorer/app.py
 ```
+
+Only systems in `data/systems/` with complete Gibbs energy data are listed. Systems whose data are marked `"_status": "provisional"` are shown with a preview banner.
+
+## Running the tests
+
+Slow tests (full-range invariant detection and headless Streamlit app tests) are marked `slow` and skipped by default, so a plain local run is fast:
+
+```
+pytest                         # same as: pytest -m "not slow"
+```
+
+Run the full suite, as CI does, with:
+
+```
+pytest -m "slow or not slow"
+```

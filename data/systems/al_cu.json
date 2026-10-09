@@ -1,6 +1,8 @@
 {
   "name": "Al-Cu",
   "_source": "Simplified two-term CALPHAD-style model. Pure-element melting points and enthalpies of fusion from standard reference tables (Al: Tm=933.47 K, dHfus=10711 J/mol; Cu: Tm=1357.77 K, dHfus=13050 J/mol), consistent with SGTE-derived unary assessments (Dinsdale, CALPHAD 15 (1991) 317-425). LIQUID follows the standard linear fusion approximation dG_fus(T) = dHfus*(1 - T/Tm) relative to each element's own solid reference state. FCC_AL is a simplified ideal solid solution with a large positive cross-endpoint energy standing in for the very limited real Cu solubility in fcc Al. AL2CU (theta phase) is modeled as a stoichiometric Al2Cu compound with a negative Gibbs energy of formation, giving the qualitative eutectic reaction LIQUID -> FCC_AL + AL2CU characteristic of the Al-rich Al-Cu system (Murray, Int. Met. Rev. 30 (1985) 211-233); unlike Ag-Cu, this system's invariant point is not numerically calibrated against experiment.",
+  "_status": "provisional",
+  "_status_reason": "Cu-rich solid phases are missing and the eutectic is wrong (931 K, liquid x(Cu) ~0.005 vs assessed 821 K, 0.173).",
   "elements": [
     {
       "symbol": "Al",

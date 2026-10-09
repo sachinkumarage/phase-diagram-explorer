@@ -4,7 +4,7 @@ from pathlib import Path
 import numpy as np
 import pytest
 
-from phase_diagram_explorer.builder import build_system
+from phase_diagram_explorer.builder import build_system, is_computable
 from phase_diagram_explorer.diagram import compute_diagram
 from phase_diagram_explorer.equilibrium.equilibrium import compute_equilibrium
 from phase_diagram_explorer.invariants import EUTECTIC, detect_invariants_over_range
@@ -13,6 +13,7 @@ from phase_diagram_explorer.thermo.solution import SolutionPhase
 from phase_diagram_explorer.thermo.stoichiometric import StoichiometricPhase
 
 SYSTEMS_DIR = Path(__file__).resolve().parents[1] / "data" / "systems"
+FIXTURES_DIR = Path(__file__).resolve().parent / "fixtures"
 
 
 def _write_reordered(tmp_path: Path, name: str) -> Path:
@@ -83,6 +84,19 @@ def test_al2cu_is_placed_at_its_site_ratio_composition():
         assert result.phase_compositions["AL2CU"] == pytest.approx(1.0 / 3.0)
 
 
+@pytest.mark.parametrize("n_points", [500, 501, 1000])
+def test_al2cu_is_single_phase_at_exactly_one_third(n_points):
+    """The compound is a hull point at its exact composition, whatever the grid."""
+    system = build_system(load_system(SYSTEMS_DIR / "al_cu.json"))
+    result = compute_equilibrium(system, 700.0, 1.0 / 3.0, n_points=n_points)
+
+    assert result.stable_phases == ["AL2CU"]
+    assert result.phase_fractions["AL2CU"] == pytest.approx(1.0, abs=1e-9)
+    assert result.phase_compositions["AL2CU"] == 1.0 / 3.0
+    assert result.total_gibbs == pytest.approx(system["AL2CU"].molar_gibbs(700.0))
+
+
+@pytest.mark.slow
 def test_ag_cu_invariants_cover_the_full_system_range():
     definition = load_system(SYSTEMS_DIR / "ag_cu.json")
     reactions = detect_invariants_over_range(build_system(definition), definition.t_range_k)
@@ -100,4 +114,16 @@ def test_ag_cu_default_range_includes_both_melting_points():
 
 def test_phase_without_gibbs_data_is_rejected():
     with pytest.raises(ValueError, match="no end_members"):
-        build_system(load_system(SYSTEMS_DIR / "example.json"))
+        build_system(load_system(FIXTURES_DIR / "example.json"))
+
+
+def test_is_computable():
+    assert is_computable(load_system(SYSTEMS_DIR / "ag_cu.json"))
+    assert is_computable(load_system(SYSTEMS_DIR / "al_cu.json"))
+    assert not is_computable(load_system(FIXTURES_DIR / "example.json"))
+
+
+def test_shipped_systems_all_have_complete_gibbs_data():
+    paths = sorted(SYSTEMS_DIR.glob("*.json"))
+    assert paths
+    assert all(is_computable(load_system(path)) for path in paths)

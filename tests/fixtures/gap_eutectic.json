@@ -1,0 +1,29 @@
+{
+  "name": "A-B gap eutectic",
+  "_source": "Synthetic system for validating invariant detection with composition sets: the regular solution ALPHA (L0 = 20000 J/mol, Tc = 1202.73 K) plus an ideal LIQUID whose end members both melt at 1000 K (dHfus = 10000 J/mol). Below the liquidus minimum the liquid decomposes eutectically into the two composition sets of ALPHA, symmetrically about x = 0.5.",
+  "elements": [
+    { "symbol": "A", "name": "Element A", "reference_state": "alpha", "atomic_mass": 50.0 },
+    { "symbol": "B", "name": "Element B", "reference_state": "alpha", "atomic_mass": 100.0 }
+  ],
+  "t_range_k": [600.0, 1100.0],
+  "phases": [
+    {
+      "name": "LIQUID",
+      "model_type": "solution",
+      "end_members": {
+        "A": { "a": 10000.0, "b": -10.0 },
+        "B": { "a": 10000.0, "b": -10.0 }
+      },
+      "interaction_parameters": []
+    },
+    {
+      "name": "ALPHA",
+      "model_type": "solution",
+      "end_members": {
+        "A": { "a": 0.0 },
+        "B": { "a": 0.0 }
+      },
+      "interaction_parameters": [20000.0]
+    }
+  ]
+}

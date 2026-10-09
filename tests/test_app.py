@@ -3,6 +3,7 @@ how invariant reactions relate to the displayed range, and display units."""
 import ast
 import base64
 import json
+import shutil
 from pathlib import Path
 
 import numpy as np
@@ -13,8 +14,13 @@ from streamlit.testing.v1 import AppTest
 from phase_diagram_explorer import builder
 from phase_diagram_explorer.units import CELSIUS_OFFSET
 
+pytestmark = pytest.mark.slow
+
 ROOT = Path(__file__).resolve().parents[1]
 APP_PATH = ROOT / "src" / "phase_diagram_explorer" / "app.py"
+SYSTEMS_DIR = ROOT / "data" / "systems"
+FIXTURES_DIR = ROOT / "tests" / "fixtures"
+PROVISIONAL_BANNER = "Preview: provisional thermodynamic data, not yet validated."
 
 THERMO_CLASSES = {"PureElementGibbs", "SolutionPhase", "StoichiometricPhase"}
 OUTSIDE_NOTE = "outside displayed temperature range"
@@ -26,9 +32,17 @@ def _slider(at: AppTest, label: str):
     return matches[0]
 
 
+def _systems_dir(monkeypatch, tmp_path: Path, *files: Path) -> None:
+    """Point the app at a directory holding copies of `files`."""
+    for path in files:
+        shutil.copy(path, tmp_path / path.name)
+    monkeypatch.setenv("PHASE_DIAGRAM_SYSTEMS_DIR", str(tmp_path))
+
+
 def _run(system: str = "ag_cu", **radios) -> AppTest:
     at = AppTest.from_file(str(APP_PATH), default_timeout=120)
     at.run()
+    assert not at.exception
     at.selectbox[0].set_value(system)
     for radio in at.radio:
         if radio.label in radios:
@@ -175,3 +189,50 @@ def test_axes_markers_and_tables_share_units(temperature_unit, composition_unit)
 
     compositions = at.table[1].value
     assert x_title in compositions.columns
+
+
+def test_selector_lists_only_systems_with_complete_gibbs_data(monkeypatch, tmp_path):
+    _systems_dir(monkeypatch, tmp_path, SYSTEMS_DIR / "ag_cu.json", FIXTURES_DIR / "example.json")
+    at = AppTest.from_file(str(APP_PATH), default_timeout=120).run()
+    assert not at.exception
+    assert at.selectbox[0].options == ["ag_cu"]
+
+
+def test_shipped_selector_has_no_example_system():
+    at = AppTest.from_file(str(APP_PATH), default_timeout=120).run()
+    assert at.selectbox[0].options == ["ag_cu", "al_cu"]
+
+
+@pytest.mark.parametrize("system", ["ag_cu", "al_cu"])
+def test_provisional_systems_show_banner(system):
+    at = _run(system)
+    assert [warning.value for warning in at.warning] == [PROVISIONAL_BANNER]
+
+
+def test_validated_systems_show_no_banner(monkeypatch, tmp_path):
+    _systems_dir(monkeypatch, tmp_path, FIXTURES_DIR / "regular_solution.json")
+    at = AppTest.from_file(str(APP_PATH), default_timeout=120).run()
+    assert not at.exception
+    assert len(at.warning) == 0
+
+
+def test_composition_sets_in_tables_and_plots(monkeypatch, tmp_path):
+    _systems_dir(monkeypatch, tmp_path, FIXTURES_DIR / "regular_solution.json")
+    at = AppTest.from_file(str(APP_PATH), default_timeout=120).run()
+    _slider(at, "Temperature (K) for equilibrium and Gibbs curves").set_value(1000.0)
+    at.run()
+    assert not at.exception
+
+    markdown = [element.value for element in at.markdown]
+    assert markdown[markdown.index("**Stable phases**") + 1] == "ALPHA#1, ALPHA#2"
+    assert list(at.table[1].value["phase"]) == ["ALPHA#1", "ALPHA#2"]
+
+    diagram = _figure(at, 0)
+    legend = {trace.get("name") for trace in diagram["data"]}
+    assert {"ALPHA", "ALPHA#1+ALPHA#2"} <= legend
+
+    gibbs = _figure(at, 1)
+    tangent = _trace(gibbs, "tangent points")
+    assert tangent is not None
+    x1, x2 = _values(tangent["x"])
+    assert x1 + x2 == pytest.approx(100.0, abs=0.2)

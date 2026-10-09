@@ -62,3 +62,12 @@ def build_system(definition: SystemDefinition) -> ComputableSystem:
             raise ValueError(f"unsupported model_type {phase.model_type!r} for phase {phase.name!r}")
 
     return system
+
+
+def is_computable(definition: SystemDefinition) -> bool:
+    """True if every phase has the Gibbs energy data build_system needs."""
+    try:
+        build_system(definition)
+    except ValueError:
+        return False
+    return True

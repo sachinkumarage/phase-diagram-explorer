@@ -3,7 +3,7 @@ from pathlib import Path
 from typing import Literal
 
 import yaml
-from pydantic import BaseModel, RootModel, model_validator
+from pydantic import BaseModel, ConfigDict, Field, RootModel, model_validator
 
 COMPOSITION_TOLERANCE = 1e-6
 
@@ -51,8 +51,17 @@ class Phase(BaseModel):
     formation: GibbsCoefficients | None = None
 
 
+PROVISIONAL = "provisional"
+
+
 class SystemDefinition(BaseModel):
+    model_config = ConfigDict(populate_by_name=True)
+
     name: str
+    # Data status, e.g. "provisional" for parameters not yet validated against
+    # assessed data, with a short human-readable reason.
+    status: str | None = Field(default=None, alias="_status")
+    status_reason: str | None = Field(default=None, alias="_status_reason")
     elements: list[Element]
     phases: list[Phase]
     # Full temperature range (K) over which the system is analysed: invariant
@@ -67,6 +76,10 @@ class SystemDefinition(BaseModel):
             if not 0.0 < T_min < T_max:
                 raise ValueError(f"t_range_k must satisfy 0 < T_min < T_max, got {self.t_range_k}")
         return self
+
+    @property
+    def is_provisional(self) -> bool:
+        return self.status == PROVISIONAL
 
     def _binary_elements(self) -> tuple[Element, Element]:
         if len(self.elements) != 2:
