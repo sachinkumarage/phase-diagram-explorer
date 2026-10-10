@@ -1,0 +1,15 @@
+# Streamlit settings for local runs and Streamlit Community Cloud.
+
+[server]
+headless = true
+
+[browser]
+gatherUsageStats = false
+
+# Only an accent colour and fonts are set, so the viewer's light or dark
+# theme stays in effect (no "base" is forced). The accent colour is readable
+# on both light and dark backgrounds. Phase diagrams are drawn on a white
+# plot area with dark text in either theme.
+[theme]
+primaryColor = "#2E7D9A"
+font = "sans serif"

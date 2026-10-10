@@ -93,10 +93,12 @@ def test_app_does_not_construct_gibbs_energy_models():
 @pytest.fixture
 def isolated_cache():
     """Keep systems built under a monkeypatched builder out of the shared
-    st.cache_data cache used by other app tests."""
+    st.cache_data and st.cache_resource caches used by other app tests."""
     st.cache_data.clear()
+    st.cache_resource.clear()
     yield
     st.cache_data.clear()
+    st.cache_resource.clear()
 
 
 def test_app_system_comes_from_build_system(monkeypatch, isolated_cache):
@@ -297,3 +299,92 @@ def test_invariant_csv_has_full_precision():
     at = _run()
     (button,) = [b for b in at.get("download_button") if "CSV" in b.proto.label]
     assert "full precision" in button.proto.label
+
+
+# --- deployment: entry point, precomputed data, caching --------------------
+
+PRECOMPUTED_NOTE = "Diagram and invariant reactions from precomputed data"
+LIVE_NOTICE = "computing the diagram live"
+ENTRY_POINT = ROOT / "streamlit_app.py"
+
+
+def _captions(at: AppTest) -> list[str]:
+    return [caption.value for caption in at.caption]
+
+
+def test_root_entry_point_runs_the_app():
+    at = AppTest.from_file(str(ENTRY_POINT), default_timeout=120).run()
+    assert not at.exception
+    assert at.title[0].value == "Phase Diagram Explorer"
+    assert at.selectbox[0].options == ["ag_cu", "al_cu"]
+
+
+@pytest.mark.parametrize("system", ["ag_cu", "al_cu"])
+def test_each_system_loads_from_precomputed_data(system):
+    at = _run(system)
+    assert any(caption.startswith(PRECOMPUTED_NOTE) for caption in _captions(at))
+    assert not [info for info in at.info if LIVE_NOTICE in info.value]
+    assert [warning.value for warning in at.warning] == [PROVISIONAL_BANNER]
+
+
+def test_switching_systems_and_units_does_not_raise():
+    at = AppTest.from_file(str(ENTRY_POINT), default_timeout=120).run()
+    for system in ["al_cu", "ag_cu", "al_cu"]:
+        at.selectbox[0].set_value(system)
+        at.run()
+        assert not at.exception
+        for temperature_unit, composition_unit in [("°C", "wt%"), ("K", "at%"), ("°C", "at%")]:
+            at.radio[0].set_value(temperature_unit)
+            at.radio[1].set_value(composition_unit)
+            at.run()
+            assert not at.exception
+            assert [warning.value for warning in at.warning] == [PROVISIONAL_BANNER]
+            assert any(caption.startswith(PRECOMPUTED_NOTE) for caption in _captions(at))
+
+
+def test_missing_precomputed_data_is_computed_live_with_a_notice(monkeypatch, tmp_path):
+    monkeypatch.setenv("PHASE_DIAGRAM_PRECOMPUTED_DIR", str(tmp_path))
+    at = _run()
+    notices = [info.value for info in at.info if LIVE_NOTICE in info.value]
+    assert len(notices) == 1 and "no precomputed file ag_cu.npz" in notices[0]
+    assert "Diagram computed live for these settings." in _captions(at)
+    assert list(_invariant_table(at)["type"]) == ["eutectic"]
+
+
+def test_stale_precomputed_data_is_not_used(monkeypatch, tmp_path):
+    from phase_diagram_explorer.precomputed import load, save
+
+    stale = load(ROOT / "data" / "precomputed" / "ag_cu.npz")
+    stale.metadata["source_sha256"] = "0" * 64
+    save(stale, tmp_path / "ag_cu.npz")
+    monkeypatch.setenv("PHASE_DIAGRAM_PRECOMPUTED_DIR", str(tmp_path))
+    at = _run()
+    notices = [info.value for info in at.info if LIVE_NOTICE in info.value]
+    assert len(notices) == 1 and "out of date (source_sha256 changed)" in notices[0]
+
+
+def test_other_settings_are_computed_live_without_a_notice():
+    at = _run()
+    _slider(at, "Temperature points").set_value(40)
+    at.run()
+    assert not at.exception
+    assert "Diagram computed live for these settings." in _captions(at)
+    assert not at.info
+
+
+def test_high_resolution_warns_with_an_estimated_time_before_running():
+    at = _run()
+    at.checkbox[0].check()
+    at.run()
+    assert not at.exception
+    (warning,) = [w.value for w in at.warning if w.value.startswith("High resolution")]
+    assert "about" in warning and warning.rstrip(").").endswith("estimate")
+    assert _slider(at, "Temperature points").proto.disabled
+
+
+def test_figure_exports_are_rendered_on_demand():
+    """The export buttons are created without rendering the figures (their
+    data is a callable), which keeps matplotlib out of the start-up path."""
+    at = _run()
+    labels = [button.proto.label for button in at.get("download_button")]
+    assert {"Export figure (SVG)", "Export figure (PDF)"} <= set(labels)

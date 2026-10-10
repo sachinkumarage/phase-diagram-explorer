@@ -6,3 +6,6 @@ __pycache__/
 dist/
 build/
 .DS_Store
+
+# Streamlit secrets (none are needed; never commit them)
+.streamlit/secrets.toml

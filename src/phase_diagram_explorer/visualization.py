@@ -21,6 +21,8 @@ COMPOSITION_FORMAT = ".1f"
 # (they still show their phases on hover).
 MIN_LABELLED_AREA_FRACTION = 0.005
 FIELD_OPACITY = 0.35
+# Text drawn on the (always white) plot area: dark in light and dark themes.
+PLOT_TEXT_COLOR = "#222222"
 
 
 def field_colors(labels) -> dict[str, str]:
@@ -117,7 +119,7 @@ def plot_diagram(
     fig.add_trace(
         go.Scatter(
             x=[to_x(x) for x, _ in positions], y=[to_T(T) for _, T in positions],
-            mode="text", text=[r.label for r in labelled], textfont=dict(size=12),
+            mode="text", text=[r.label for r in labelled], textfont=dict(size=12, color=PLOT_TEXT_COLOR),
             name="field labels", showlegend=False, hoverinfo="skip",
         )
     )
@@ -130,6 +132,7 @@ def plot_diagram(
                 mode="markers+text",
                 text=[invariant_label(r, temperature_unit) for r in traced.invariants],
                 textposition="top center",
+                textfont=dict(color=PLOT_TEXT_COLOR),
                 marker=dict(symbol="diamond", size=9, color="black"),
                 name="invariant reactions",
                 hovertemplate=f"%{{text}}<br>{point_hover}<extra></extra>",

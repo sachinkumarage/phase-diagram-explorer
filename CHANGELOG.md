@@ -1,5 +1,68 @@
 # Changelog
 
+## 0.2.2 - 2026-10-10
+
+### Added
+- Streamlit Community Cloud deployment:
+  - `streamlit_app.py` at the repository root runs the app from the
+    package. It works with the package installed, or straight from `src/`.
+  - `requirements.txt` holds the package (`-e .`) plus its runtime
+    dependencies with `~=` pins.
+  - `.streamlit/config.toml` sets a headless server and an accent colour
+    only, so light and dark themes both work. `.streamlit/secrets.toml` is
+    git-ignored.
+- Precomputed diagrams (`precomputed.py`, `scripts/precompute.py`,
+  `data/precomputed/<system>.npz`).
+  - Each file holds the traced diagram, the invariant reactions and the
+    default equilibrium at the app's default settings.
+  - Its metadata records the source SHA256, package version, gas constant,
+    temperature range, settings and computation time.
+  - The app uses a file only while its metadata matches; otherwise it
+    computes live and shows a notice.
+  - Sizes: ag_cu 15.1 KiB, al_cu 12.6 KiB. Computation time: 1.2 s and
+    1.3 s.
+- Tests:
+  - `tests/test_precomputed.py`: every app system's file is present and up
+    to date, under 1 MB, round-trips, detects changed data or version, and
+    (slow) equals a live computation;
+  - `tests/test_requirements.py`: every runtime dependency in
+    `pyproject.toml` is in `requirements.txt`, with `~=` pins, and no
+    dev/validation tool is;
+  - AppTest checks of the entry point, loading each system from precomputed
+    data, switching systems and units, the live-computation notice for
+    missing or stale data, the High resolution warning, and deferred
+    exports.
+- `scripts/smoke_test.py` and a `cloud-smoke` CI job: a fresh virtual
+  environment with only `requirements.txt`, then the AppTest smoke test,
+  with the cold-start time written to the job summary. The test job also
+  runs `scripts/precompute.py --check`.
+- "High resolution" option (240 temperature levels, 2000 Gibbs-curve
+  points). It shows an estimated time, scaled from the precomputed run,
+  before it runs.
+
+### Changed
+- The app's UI is a `main()` function. Systems are loaded with
+  `st.cache_resource`. Live computations use `st.cache_data`, keyed by
+  system, data hash, temperature range, settings and package version, with
+  a spinner.
+- Figure exports are rendered only when a download button is clicked, and
+  matplotlib is imported on first use. Neither is in the start-up path any
+  more.
+- Text on the plot area is dark in both light and dark themes.
+- `pytest` moved from the runtime dependencies to a `dev` extra. CI
+  installs `.[dev]`.
+
+### Performance (AppTest, local machine)
+
+| | 0.2.1 | 0.2.2 |
+|---|---|---|
+| Cold start (first run, Ag-Cu) | 4.0 s | 1.5–1.7 s |
+| Switch to Al-Cu | 1.6 s | 0.05 s |
+
+In a fresh virtual environment installed only from `requirements.txt`, the
+very first start took 43.8 s, spent loading the newly installed packages
+for the first time. The next start took 1.49 s.
+
 ## 0.2.1 - 2026-10-10
 
 ### Added

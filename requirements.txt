@@ -1,0 +1,12 @@
+# Runtime requirements for Streamlit Community Cloud ("pip install -r requirements.txt").
+# The package itself (src layout), then its runtime dependencies with
+# compatible-release pins. Every runtime dependency in pyproject.toml must be
+# listed here; development and validation tools (pytest, pycalphad) must not.
+-e .
+numpy~=2.5
+scipy~=1.18
+matplotlib~=3.11
+plotly~=6.9
+streamlit~=1.61
+pydantic~=2.13
+pyyaml~=6.0

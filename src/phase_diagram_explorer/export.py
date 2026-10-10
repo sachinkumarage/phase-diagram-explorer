@@ -9,14 +9,9 @@ import csv
 import io
 import textwrap
 
-import matplotlib
-
-matplotlib.use("Agg")
-import matplotlib.pyplot as plt  # noqa: E402
-
-from phase_diagram_explorer.invariants import InvariantReaction  # noqa: E402
-from phase_diagram_explorer.tracing import TracedDiagram  # noqa: E402
-from phase_diagram_explorer.units import (  # noqa: E402
+from phase_diagram_explorer.invariants import InvariantReaction
+from phase_diagram_explorer.tracing import TracedDiagram
+from phase_diagram_explorer.units import (
     ATOMIC_PERCENT,
     KELVIN,
     composition_label,
@@ -24,9 +19,20 @@ from phase_diagram_explorer.units import (  # noqa: E402
     temperature_label,
     temperature_to_display,
 )
-from phase_diagram_explorer.visualization import MIN_LABELLED_AREA_FRACTION  # noqa: E402
+from phase_diagram_explorer.visualization import MIN_LABELLED_AREA_FRACTION
 
 EXPORT_FORMATS = ("svg", "pdf")
+
+
+def _pyplot():
+    """matplotlib.pyplot with the non-interactive Agg backend, imported on
+    first use so that the app starts without loading matplotlib."""
+    import matplotlib
+
+    matplotlib.use("Agg")
+    import matplotlib.pyplot as plt
+
+    return plt
 FOOTNOTE_WIDTH = 110
 STYLE = {
     "font.family": "DejaVu Serif",
@@ -54,6 +60,7 @@ def publication_figure(
     atomic_masses: tuple[float | None, float | None] = (None, None),
     footnote: str = "",
 ):
+    plt = _pyplot()
     mass_a, mass_b = atomic_masses
 
     def to_x(x):
@@ -101,6 +108,7 @@ def export_figure(traced: TracedDiagram, system_name: str, fmt: str, **kwargs) -
     """The publication figure as SVG or PDF bytes."""
     if fmt not in EXPORT_FORMATS:
         raise ValueError(f"unsupported export format {fmt!r}; expected one of {EXPORT_FORMATS}")
+    plt = _pyplot()
     fig = publication_figure(traced, system_name, **kwargs)
     buffer = io.BytesIO()
     with plt.rc_context(STYLE):

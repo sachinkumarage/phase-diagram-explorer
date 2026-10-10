@@ -4,15 +4,39 @@ Phase Diagram Explorer is a scientific Python toolkit for computing and visualiz
 
 ## Running the web app
 
-An interactive Streamlit app is included for exploring computed phase diagrams: selecting a system, adjusting the temperature range and composition, and viewing stable phases, phase fractions, phase compositions, and Gibbs energy curves with the common tangent construction. Run it with:
+An interactive Streamlit app is included for exploring computed phase diagrams. You can select a system, adjust the temperature range and composition, and view stable phases, phase fractions, phase compositions, and Gibbs energy curves with the common tangent construction.
+
+Phase boundaries are traced from exact equilibrium tie lines, and invariant reactions are located by root-finding, so neither depends on a composition grid. The diagram can be exported as a vector figure (SVG or PDF) with the "Export figure" buttons, and the invariant reactions can be downloaded as CSV at full precision.
+
+Only systems in `data/systems/` whose every phase can be evaluated are listed: JSON files, or TDB databases with a `<name>.meta.json` that gives the element order. Systems whose data are marked `"_status": "provisional"` are shown with the banner "Preview: provisional thermodynamic data, not yet validated."
+
+### Run online
+
+The app is deployed on Streamlit Community Cloud: https://<subdomain>.streamlit.app
+
+### Run locally
 
 ```
-streamlit run src/phase_diagram_explorer/app.py
+pip install -r requirements.txt     # the package plus its pinned runtime dependencies
+streamlit run streamlit_app.py
 ```
 
-Phase boundaries are traced from exact equilibrium tie lines and invariant reactions are located by root-finding, so neither depends on a composition grid. The diagram can be exported as a vector figure (SVG or PDF) with the "Export figure" buttons.
+`streamlit_app.py` at the repository root is the entry point used by Streamlit Community Cloud. `streamlit run src/phase_diagram_explorer/app.py` also works with the package installed. Settings are in `.streamlit/config.toml`. The theme follows the viewer's light or dark mode. No secrets are needed, and `.streamlit/secrets.toml` is git-ignored.
 
-Only systems in `data/systems/` whose every phase can be evaluated are listed: JSON files, or TDB databases with a `<name>.meta.json` giving the element order. Systems whose data are marked `"_status": "provisional"` are shown with a preview banner. The invariant reactions can be downloaded as CSV at full precision.
+At the default settings, the diagram and invariant reactions are loaded from `data/precomputed/`, so the app starts quickly on a small machine. Other temperature ranges and resolutions are computed live and cached. "High resolution" shows an estimated time before it runs. The equilibrium at the selected temperature and composition is always computed live.
+
+### Regenerating precomputed data
+
+Regenerate the precomputed diagrams whenever system data or the engine change (every engine change bumps the package version, which makes the files stale):
+
+```
+python scripts/precompute.py            # writes data/precomputed/<system>.npz
+python scripts/precompute.py --check    # exit status 1 if any file is missing or out of date
+```
+
+Each file records the SHA256 of its source data, the package version, the gas constant, the temperature range, the settings and the computation time. The app only uses a file whose metadata matches; otherwise it computes live and says so. A test fails if any app system's file is missing or stale.
+
+Runtime dependencies go into both `pyproject.toml` and `requirements.txt` (with `~=` pins). Development and validation tools (`pytest`, `pycalphad`) never go into `requirements.txt`.
 
 ## Command line
 
@@ -46,14 +70,14 @@ write_tdb(load_system("data/systems/ag_cu.json"), "ag_cu.tdb")
 The equilibrium engine is cross-validated against [pycalphad](https://pycalphad.org) on the same TDB files. The comparison covers synthetic fixtures (interstitial, magnetic, miscibility gap) and literature databases (Pb-Sn, Cu-Mg, Fe-C). For each system it checks Gibbs energies at the same site fractions, stable phases, fractions and compositions at 30 points, every invariant temperature, and a miscibility-gap binodal. Results are in [docs/validation/engine_vs_pycalphad.md](docs/validation/engine_vs_pycalphad.md). pycalphad is an optional dependency:
 
 ```
-pip install -e ".[validation]"
+pip install -e ".[dev,validation]"
 pytest -m validation
 python -m phase_diagram_explorer.validation     # regenerate the report and plots
 ```
 
 ## Running the tests
 
-Slow tests (full-range tracing, export and headless Streamlit app tests) are marked `slow`, and the pycalphad cross-validation tests are marked `validation`. Both are skipped by default, so a plain local run is fast:
+Install the test runner with `pip install -e ".[dev]"`. Slow tests (full-range tracing, export and headless Streamlit app tests) are marked `slow`, and the pycalphad cross-validation tests are marked `validation`. Both are skipped by default, so a plain local run is fast:
 
 ```
 pytest                         # same as: pytest -m "not slow and not validation"
@@ -65,4 +89,7 @@ Run everything (validation tests skip with a reason if pycalphad is not installe
 pytest -m ""
 ```
 
-CI runs the full suite on Python 3.11 and 3.12, and the validation tests in a separate job with `.[validation]` installed.
+CI does the following:
+- runs the full suite on Python 3.11 and 3.12, after `python scripts/precompute.py --check`;
+- runs the validation tests in a separate job with `.[validation]` installed;
+- runs a cloud smoke test: a fresh virtual environment with only `pip install -r requirements.txt`, then `python scripts/smoke_test.py`. That script starts the app with Streamlit's AppTest, loads every system from precomputed data, toggles units, and records the cold-start time in the job summary.
