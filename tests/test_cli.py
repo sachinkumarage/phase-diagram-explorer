@@ -33,7 +33,7 @@ def test_unknown_system_is_reported(capsys):
 
 
 def test_export_tdb_and_list(tmp_path, capsys):
-    shutil.copy(SYSTEMS_DIR / "ag_cu.json", tmp_path)
+    shutil.copy(FIXTURES_DIR / "ag_cu_provisional.json", tmp_path / "ag_cu.json")
     output = tmp_path / "ag_cu.tdb"
     cli.main(["--systems-dir", str(tmp_path), "export-tdb", "--system", "ag_cu", "--output", str(output)])
     assert (tmp_path / "ag_cu.meta.json").exists()

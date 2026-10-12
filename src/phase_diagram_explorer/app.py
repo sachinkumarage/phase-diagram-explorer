@@ -6,6 +6,7 @@ data/precomputed (see precomputed.py), so the app starts quickly on a small
 cloud machine; anything else is computed live and cached. The equilibrium
 at the selected (T, x) is always computed live.
 """
+import json
 from pathlib import Path
 
 import numpy as np
@@ -18,7 +19,14 @@ from phase_diagram_explorer.equilibrium.curves import evaluate_phase_curves
 from phase_diagram_explorer.equilibrium.equilibrium import base_phase_name, compute_equilibrium
 from phase_diagram_explorer.export import EXPORT_FORMATS, export_figure, invariants_csv
 from phase_diagram_explorer.invariants import detect_invariants_over_range
-from phase_diagram_explorer.models import SystemDefinition, default_systems_dir, load_system, system_files
+from phase_diagram_explorer.models import (
+    SystemDefinition,
+    default_systems_dir,
+    is_sourced_system,
+    load_system,
+    system_files,
+    system_name,
+)
 from phase_diagram_explorer.precomputed import (
     DEFAULT_POINTS,
     DEFAULT_X,
@@ -28,6 +36,7 @@ from phase_diagram_explorer.precomputed import (
     source_hash,
     status,
 )
+from phase_diagram_explorer.sources import SourceError, ensure, source, tdb_dir
 from phase_diagram_explorer.thermo.stoichiometric import StoichiometricPhase
 from phase_diagram_explorer.tracing import DEFAULT_LEVELS, trace_diagram
 from phase_diagram_explorer.units import (
@@ -57,9 +66,9 @@ HIGH_RESOLUTION = (240, 2000)
 
 
 def _system_names(paths: list[Path]) -> list[str]:
-    """File stems, or full file names where two files share a stem."""
-    stems = [path.stem for path in paths]
-    return [path.stem if stems.count(path.stem) == 1 else path.name for path in paths]
+    """System names ("ag_cu"), or full file names where two files share one."""
+    names = [system_name(path) for path in paths]
+    return [name if names.count(name) == 1 else path.name for name, path in zip(names, paths)]
 
 
 @st.cache_data(show_spinner=False)
@@ -80,7 +89,39 @@ def _load(system_path: str, data_hash: str):
 
 @st.cache_data(show_spinner=False)
 def _is_computable(system_path: str, data_hash: str) -> bool:
-    return is_computable(load_system(system_path))
+    # A system whose database is downloaded is listed without loading it,
+    # so that listing the systems never downloads anything.
+    return is_sourced_system(system_path) or is_computable(load_system(system_path))
+
+
+def _ensure_database(system_path: str) -> None:
+    """Download a sourced system's database on first use (verified and kept
+    in data/tdb/), stopping the app with a clear message if that fails."""
+    if not is_sourced_system(system_path):
+        return
+    name = json.loads(Path(system_path).read_text())["source"]
+    entry = source(name)
+    try:
+        if not (tdb_dir() / entry.file).exists():
+            with st.spinner(f"Downloading {entry.title or name} from {entry.url} (first use only)..."):
+                ensure(name)
+        else:
+            ensure(name, download=False)
+    except SourceError as error:
+        st.error(f"The database for this system could not be loaded: {error}")
+        st.stop()
+
+
+def _show_citations(definition: SystemDefinition) -> None:
+    if not definition.citations:
+        return
+    st.markdown("**Data sources**")
+    st.markdown(
+        "\n".join(
+            f"- [{citation.text}]({citation.url})" if citation.url else f"- {citation.text}"
+            for citation in definition.citations
+        )
+    )
 
 
 @st.cache_data(show_spinner=False)
@@ -203,6 +244,7 @@ def main() -> None:
     selected_name = st.selectbox("System", system_names)
     selected_path = str(system_paths[system_names.index(selected_name)])
     data_hash = _data_hash(selected_path)
+    _ensure_database(selected_path)
     definition, system = _load(selected_path, data_hash)
 
     if definition.is_provisional:
@@ -309,6 +351,7 @@ def main() -> None:
         width="stretch",
     )
     st.caption(source_note)
+    _show_citations(definition)
     export_columns = st.columns(len(EXPORT_FORMATS))
     settings = (T_range[0], T_range[1], n_T, n_points)
     for column, fmt in zip(export_columns, EXPORT_FORMATS):

@@ -118,15 +118,47 @@ def common_tangent(phase_left, phase_right, T: float, x_left: float, x_right: fl
             equations.append((phase_right.molar_gibbs_derivative(T, xr) - slope) / scale)
         return equations
 
-    start = ([_logit(x_left, *range_left)] if left_free else []) + (
-        [_logit(x_right, *range_right)] if right_free else []
-    )
-    solution = root(residual, start, method="hybr", options={"xtol": 1e-13})
-    xl, xr = unpack(solution.x)
+    def solve(xl0: float, xr0: float):
+        start = ([_logit(xl0, *range_left)] if left_free else []) + (
+            [_logit(xr0, *range_right)] if right_free else []
+        )
+        solution = root(residual, start, method="hybr", options={"xtol": 1e-13})
+        xl, xr = unpack(solution.x)
+        valid = (
+            np.all(np.isfinite([xl, xr]))
+            and xr - xl > 1e-9
+            and max(abs(r) for r in residual(solution.x)) * scale < TANGENT_RESIDUAL_TOLERANCE
+        )
+        return (xl, xr) if valid else None
 
-    valid = (
-        np.all(np.isfinite([xl, xr]))
-        and xr - xl > 1e-9
-        and max(abs(r) for r in residual(solution.x)) * scale < TANGENT_RESIDUAL_TOLERANCE
-    )
-    return (xl, xr) if valid else (x_left, x_right)
+    result = solve(x_left, x_right)
+    if result is None:
+        for xl0, xr0 in _alternative_starts(x_left, x_right, range_left, range_right, left_free, right_free):
+            result = solve(xl0, xr0)
+            if result is not None:
+                break
+    return result if result is not None else (x_left, x_right)
+
+
+# Fractions of the estimated tie line used as alternative starting points.
+INTERIOR_STARTS = ((0.25, 0.75), (0.1, 0.9), (0.4, 0.6), (0.05, 0.5), (0.5, 0.95))
+# Distances from a pure end used as alternative starting points when the
+# estimate touches that end (two-phase fields narrower than one grid cell).
+END_DISTANCES = tuple(np.geomspace(1e-3, 1e-12, 10))
+
+
+def _alternative_starts(x_left, x_right, range_left, range_right, left_free, right_free):
+    """Starting points tried when the solver fails from the hull estimate:
+    points inside the estimated tie line, then, if the estimate touches an
+    end of a phase's composition range, pairs geometrically close to it."""
+    width = x_right - x_left
+    for f_left, f_right in INTERIOR_STARTS:
+        yield (x_left + f_left * width if left_free else x_left, x_left + f_right * width if right_free else x_right)
+    if right_free and range_right[1] - x_right <= width:
+        end = range_right[1]
+        for d in END_DISTANCES:
+            yield (end - 4.0 * d if left_free else x_left, end - d)
+    if left_free and x_left - range_left[0] <= width:
+        end = range_left[0]
+        for d in END_DISTANCES:
+            yield (end + d, end + 4.0 * d if right_free else x_right)

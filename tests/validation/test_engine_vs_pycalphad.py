@@ -8,6 +8,12 @@ Systems (see phase_diagram_explorer.validation.CASES):
   (A)1(C,VA)1 + (A)1(C,VA)3 + graphite-like C + liquid, and the synthetic
   magnetic system (ferro- and antiferromagnetic BCC/FCC with
   composition-dependent TC and BMAGN). None of these is literature data.
+- data/tdb/nist_solder.tdb, downloaded from NIST (scripts/fetch_tdb.py): the
+  Ag-Cu-Va subsystem of Kattner, U.R. (2017), Phase Diagrams & Computational
+  Thermodynamics - Solder Systems, NIST Standard Reference Database 139,
+  https://doi.org/10.18434/T4759N; Ag-Cu description of F.H. Hayes,
+  H.L. Lukas, G. Effenberg, G. Petzow, Z. Metallkd. 77 (1986) 749-754.
+  pycalphad reads the whole six-element file with components AG, CU, VA.
 - Literature databases from pycalphad's test databases:
   - pbsn.tdb, Pb-Sn: T.L. Ngai and Y.A. Chang, CALPHAD 5 (1981) 267-276
     (TDB file by T. Abe, K. Hashimoto and Y. Sawada, NIMS 2011).
@@ -63,6 +69,7 @@ EXPECTED_INVARIANTS = {
     "Gap eutectic": [("ALPHA#1", "LIQUID", "ALPHA#2")],
     "Interstitial (synthetic)": [("BCC_A2", "FCC_A1", "GRAPHITE"), ("FCC_A1", "LIQUID", "GRAPHITE")],
     "Magnetic (synthetic)": [("BCC_A2", "FCC_A1", "LIQUID")],
+    "Ag-Cu (NIST)": [("FCC_A1#1", "LIQUID", "FCC_A1#2")],
     "Pb-Sn": [("FCC_A1", "LIQUID", "BCT_A5")],
     "Cu-Mg": [("CUMG2", "LIQUID", "HCP_A3"), ("CU2MG", "LIQUID", "CUMG2"), ("FCC_A1", "LIQUID", "CU2MG")],
     "Fe-C": [("BCC_A2", "FCC_A1", "GRAPHITE"), ("FCC_A1", "LIQUID", "GRAPHITE"), ("BCC_A2", "FCC_A1", "LIQUID")],
@@ -72,7 +79,7 @@ EXPECTED_INVARIANTS = {
 @pytest.fixture(scope="module", params=list(CASES), ids=lambda name: CASES[name].file_name)
 def case(request):
     case = CASES[request.param]
-    if not case.path.exists():
+    if case.location == "pycalphad" and not case.path.exists():
         pytest.skip(f"{case.path} is not installed")
     return case
 

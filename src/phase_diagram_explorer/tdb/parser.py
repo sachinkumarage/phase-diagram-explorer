@@ -3,8 +3,9 @@
 Keywords may be abbreviated as in Thermo-Calc, word by word ("PARA",
 "TYPE_DEF", "DEF_SYS_DEF", "LIST_OF_REF"). "$" starts a comment that runs to
 the end of the line, and a command runs over as many lines as it needs until
-its terminating "!". Single-quoted text in metadata commands (reference
-texts) may contain "!" and "$".
+its terminating "!". Single-quoted reference texts (LIST_OF_REFERENCES,
+ADD_REFERENCES) may contain "!" and "$"; in DATABASE_INFO "'" marks a line
+break, as in Thermo-Calc.
 
 Thermodynamic keywords: ELEMENT, SPECIES, FUNCTION, PHASE, CONSTITUENT,
 PARAMETER, TYPE_DEFINITION, TEMPERATURE_LIMITS, DEFINE_SYSTEM_DEFAULT and
@@ -159,9 +160,10 @@ def _resolve_keyword(word: str, line: int) -> str:
     raise NotImplementedError(f"unsupported TDB keyword {word!r} on line {line}")
 
 
-# Commands whose single-quoted text may contain "!" and "$" (elsewhere "'"
-# is an ordinary character, e.g. a TYPE_DEFINITION code).
-_QUOTING_PREFIXES = ("DATABASE", "LIST_OF", "ADD_REF", "REFERENCE", "ASSESSED", "VERSION")
+# Reference-list commands, whose single-quoted texts may contain "!" and "$".
+# Elsewhere "'" is an ordinary character: a TYPE_DEFINITION code, or the
+# line-break marker of DATABASE_INFO.
+_QUOTING_PREFIXES = ("LIST_OF", "ADD_REF")
 
 
 def _quotes_text(buffer: list[str], current: list[str]) -> bool:
@@ -171,8 +173,8 @@ def _quotes_text(buffer: list[str], current: list[str]) -> bool:
 
 def _commands(text: str):
     """(line number, command text) for each "!"-terminated command, with
-    comments removed. In metadata commands, "!" and "$" inside single
-    quotes are kept."""
+    comments removed. In reference lists, "!" and "$" inside single quotes
+    are kept."""
     buffer: list[str] = []
     start = None
     quoted = False
@@ -324,6 +326,10 @@ def _metadata(database: TdbDatabase, keyword: str, arguments: str, line: int) ->
         references = metadata.setdefault("references", {})
         for key, text in _REFERENCE.findall(arguments):
             references[key] = " ".join(text.split())
+    elif keyword == "DATABASE_INFO":
+        # Thermo-Calc convention: "'" marks a line break in DATABASE_INFO.
+        lines = [" ".join(part.split()) for part in arguments.split("'")]
+        metadata["database_info"] = "\n".join(line for line in lines if line)
     elif keyword in METADATA_KEYWORDS:
         metadata[keyword.lower()] = _unquote(arguments)
     else:

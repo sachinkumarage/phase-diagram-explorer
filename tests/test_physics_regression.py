@@ -3,11 +3,14 @@
 These drive the real app through Streamlit's AppTest harness and check what a
 user sees against the assessed Ag-Cu diagram. They were introduced as strict
 xfails in 0.1.1, when the app used placeholder Gibbs curves instead of the
-system JSON (see docs/audit_v0.1.md), and pass since 0.1.2.
+system JSON (see docs/audit_v0.1.md), and pass since 0.1.2. The solvus tests
+were strict xfails with the provisional two-FCC model and pass since 0.3.0,
+when Ag-Cu became the assessed description from the NIST solder database
+(data/systems/ag_cu.meta.json).
 
-Composition is the mole fraction of the second element listed in the system
-JSON (SystemDefinition.dependent_element). For ag_cu.json that is Cu, so
-x = x(Cu); the app shows it in at% by default.
+Composition is the mole fraction of the dependent element
+(SystemDefinition.dependent_element). For Ag-Cu that is Cu, so x = x(Cu); the
+app shows it in at% by default.
 """
 import json
 from pathlib import Path
@@ -20,7 +23,7 @@ from phase_diagram_explorer.models import load_system
 
 ROOT = Path(__file__).resolve().parents[1]
 APP_PATH = ROOT / "src" / "phase_diagram_explorer" / "app.py"
-AG_CU_PATH = ROOT / "data" / "systems" / "ag_cu.json"
+AG_CU_PATH = ROOT / "data" / "systems" / "ag_cu.meta.json"
 
 AG_MELTING_K = 1234.93
 CU_MELTING_K = 1357.77
@@ -48,12 +51,6 @@ AL_CU_DATA_PENDING = pytest.mark.xfail(
     strict=True,
     raises=AssertionError,
     reason="provisional Al-Cu data; fixed by assessed data",
-)
-
-SOLVUS_DATA_PENDING = pytest.mark.xfail(
-    strict=True,
-    raises=AssertionError,
-    reason="solvus wrong with simplified parameters; fixed by assessed data",
 )
 
 T_RANGE_LABEL = "Temperature range (K)"
@@ -163,19 +160,19 @@ def test_eutectic_temperature_and_composition():
 
 @pytest.mark.slow
 def test_ag_rich_terminal_phase_is_on_the_ag_side():
-    assert _stable_phases_at(800.0, x=0.0) == ["FCC_AG"]
-    assert _stable_phases_at(800.0, x=1.0) == ["FCC_CU"]
+    """One FCC_A1 phase with a miscibility gap: its composition sets are
+    numbered from the Ag side."""
+    assert _stable_phases_at(800.0, x=0.0) == ["FCC_A1#1"]
+    assert _stable_phases_at(800.0, x=1.0) == ["FCC_A1#2"]
 
 
 @pytest.mark.slow
-@SOLVUS_DATA_PENDING
 def test_max_cu_solubility_in_ag_rich_fcc_at_eutectic():
     ag_rich, _ = _eutectic_solid_compositions()
     assert ag_rich == pytest.approx(AG_RICH_FCC_X_CU, abs=AG_RICH_FCC_X_TOLERANCE)
 
 
 @pytest.mark.slow
-@SOLVUS_DATA_PENDING
 def test_cu_rich_fcc_composition_at_eutectic():
     _, cu_rich = _eutectic_solid_compositions()
     assert cu_rich == pytest.approx(CU_RICH_FCC_X_CU, abs=CU_RICH_FCC_X_TOLERANCE)

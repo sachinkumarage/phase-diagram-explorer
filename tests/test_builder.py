@@ -8,30 +8,33 @@ from phase_diagram_explorer.builder import build_system, is_computable
 from phase_diagram_explorer.diagram import compute_diagram
 from phase_diagram_explorer.equilibrium.equilibrium import compute_equilibrium
 from phase_diagram_explorer.invariants import EUTECTIC, detect_invariants_over_range
-from phase_diagram_explorer.models import load_system
+from phase_diagram_explorer.models import load_system, system_files, system_name
 from phase_diagram_explorer.thermo.solution import SolutionPhase
 from phase_diagram_explorer.thermo.stoichiometric import StoichiometricPhase
 
 SYSTEMS_DIR = Path(__file__).resolve().parents[1] / "data" / "systems"
 FIXTURES_DIR = Path(__file__).resolve().parent / "fixtures"
+# The provisional two-FCC Ag-Cu model (data/systems/ag_cu.json until 0.3.0).
+AG_CU = FIXTURES_DIR / "ag_cu_provisional.json"
+AL_CU = SYSTEMS_DIR / "al_cu.json"
 
 
-def _write_reordered(tmp_path: Path, name: str) -> Path:
-    data = json.loads((SYSTEMS_DIR / name).read_text())
+def _write_reordered(tmp_path: Path, source: Path) -> Path:
+    data = json.loads(source.read_text())
     data["phases"] = list(reversed(data["phases"]))
-    path = tmp_path / name
+    path = tmp_path / source.name
     path.write_text(json.dumps(data))
     return path
 
 
 def test_dependent_element_is_second_listed_element():
-    definition = load_system(SYSTEMS_DIR / "ag_cu.json")
+    definition = load_system(AG_CU)
     assert definition.base_element.symbol == "Ag"
     assert definition.dependent_element.symbol == "Cu"
 
 
 def test_end_members_are_mapped_by_element_symbol():
-    definition = load_system(SYSTEMS_DIR / "ag_cu.json")
+    definition = load_system(AG_CU)
     system = build_system(definition)
 
     fcc_ag = system["FCC_AG"]
@@ -41,10 +44,10 @@ def test_end_members_are_mapped_by_element_symbol():
     assert fcc_ag.molar_gibbs(800.0, 1.0) == pytest.approx(definition.phases[1].end_members["Cu"].a)
 
 
-@pytest.mark.parametrize("name", ["ag_cu.json", "al_cu.json"])
-def test_reordering_phases_in_json_gives_identical_diagram(tmp_path, name):
-    original = build_system(load_system(SYSTEMS_DIR / name))
-    reordered = build_system(load_system(_write_reordered(tmp_path, name)))
+@pytest.mark.parametrize("path", [AG_CU, AL_CU], ids=["ag_cu", "al_cu"])
+def test_reordering_phases_in_json_gives_identical_diagram(tmp_path, path):
+    original = build_system(load_system(path))
+    reordered = build_system(load_system(_write_reordered(tmp_path, path)))
     assert list(reordered) != list(original)
 
     kwargs = dict(T_range=(600.0, 1400.0), n_T=41, n_x=101, n_points=501)
@@ -59,8 +62,8 @@ def test_reordering_phases_in_json_gives_identical_diagram(tmp_path, name):
 
 
 def test_reordering_phases_in_json_gives_identical_invariants(tmp_path):
-    original = build_system(load_system(SYSTEMS_DIR / "ag_cu.json"))
-    reordered = build_system(load_system(_write_reordered(tmp_path, "ag_cu.json")))
+    original = build_system(load_system(AG_CU))
+    reordered = build_system(load_system(_write_reordered(tmp_path, AG_CU)))
 
     reactions_original = detect_invariants_over_range(original, (1000.0, 1100.0))
     reactions_reordered = detect_invariants_over_range(reordered, (1000.0, 1100.0))
@@ -71,7 +74,7 @@ def test_reordering_phases_in_json_gives_identical_invariants(tmp_path):
 
 
 def test_al2cu_is_placed_at_its_site_ratio_composition():
-    system = build_system(load_system(SYSTEMS_DIR / "al_cu.json"))
+    system = build_system(load_system(AL_CU))
     al2cu = system["AL2CU"]
 
     assert isinstance(al2cu, StoichiometricPhase)
@@ -87,7 +90,7 @@ def test_al2cu_is_placed_at_its_site_ratio_composition():
 @pytest.mark.parametrize("n_points", [500, 501, 1000])
 def test_al2cu_is_single_phase_at_exactly_one_third(n_points):
     """The compound is a hull point at its exact composition, whatever the grid."""
-    system = build_system(load_system(SYSTEMS_DIR / "al_cu.json"))
+    system = build_system(load_system(AL_CU))
     result = compute_equilibrium(system, 700.0, 1.0 / 3.0, n_points=n_points)
 
     assert result.stable_phases == ["AL2CU"]
@@ -98,7 +101,7 @@ def test_al2cu_is_single_phase_at_exactly_one_third(n_points):
 
 @pytest.mark.slow
 def test_ag_cu_invariants_cover_the_full_system_range():
-    definition = load_system(SYSTEMS_DIR / "ag_cu.json")
+    definition = load_system(AG_CU)
     reactions = detect_invariants_over_range(build_system(definition), definition.t_range_k)
     eutectics = [r for r in reactions if r.type == EUTECTIC]
 
@@ -107,7 +110,7 @@ def test_ag_cu_invariants_cover_the_full_system_range():
 
 
 def test_ag_cu_default_range_includes_both_melting_points():
-    T_min, T_max = load_system(SYSTEMS_DIR / "ag_cu.json").t_range_k
+    T_min, T_max = load_system(AG_CU).t_range_k
     assert T_min < 1052.0
     assert T_max > 1357.77
 
@@ -118,12 +121,12 @@ def test_phase_without_gibbs_data_is_rejected():
 
 
 def test_is_computable():
-    assert is_computable(load_system(SYSTEMS_DIR / "ag_cu.json"))
-    assert is_computable(load_system(SYSTEMS_DIR / "al_cu.json"))
+    assert is_computable(load_system(AG_CU))
+    assert is_computable(load_system(AL_CU))
     assert not is_computable(load_system(FIXTURES_DIR / "example.json"))
 
 
 def test_shipped_systems_all_have_complete_gibbs_data():
-    paths = sorted(SYSTEMS_DIR.glob("*.json"))
-    assert paths
+    paths = system_files(SYSTEMS_DIR)
+    assert [system_name(path) for path in paths] == ["ag_cu", "al_cu"]
     assert all(is_computable(load_system(path)) for path in paths)

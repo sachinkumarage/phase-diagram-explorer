@@ -142,8 +142,9 @@ composition range is 0 to 0.75.
 
 - `$` starts a comment that runs to the end of the line.
 - A command runs over as many lines as it needs, until its terminating `!`.
-- In metadata commands, single-quoted text (reference texts) may contain
-  `!` and `$`. Elsewhere `'` is an ordinary character, for example a
+- In `LIST_OF_REFERENCES` and `ADD_REFERENCES`, single-quoted reference
+  texts may contain `!` and `$`. In `DATABASE_INFO`, `'` marks a line break,
+  as in Thermo-Calc. Elsewhere `'` is an ordinary character, for example a
   TYPE_DEFINITION code.
 - Keywords may be abbreviated word by word, as in Thermo-Calc, for example
   `PARA`, `FUNCT`, `TYPE_DEF`, `DEF_SYS_DEF` or `LIST_OF_REF`. `TEMP-LIM` and
@@ -245,6 +246,43 @@ How energies are written:
 - The gas constant is not part of the TDB format. `write_metadata` stores it
   in the `.meta.json`.
 
+### Multicomponent databases
+
+A database with more than two elements is reduced to the binary subsystem
+of the two requested elements. For example,
+`load_system("data/tdb/nist_solder.tdb", elements=["AG", "CU"])` selects
+Ag-Cu from the six-element NIST solder database. The reduction:
+
+- keeps the two elements plus `VA` and `/-`;
+- filters every sublattice to those species;
+- drops phases left with an empty sublattice;
+- drops parameters that involve any other element, including ternary and
+  higher interactions (wildcards `*` are kept).
+
+`system.metadata["subsystem"]` reports what was dropped: elements, phases,
+the constituents removed from each kept phase, and parameters with their
+line numbers. Without `elements`, loading a multicomponent database raises
+`ValueError`.
+
+### Downloaded databases (`data/sources.json`)
+
+Databases that may not be redistributed are downloaded from their official
+URL and never committed (`data/tdb/` is git-ignored). Each entry in
+`data/sources.json` registers:
+
+| Field | Meaning |
+|---|---|
+| `file` | Name in `data/tdb/` |
+| `url` | Official download URL |
+| `sha256`, `size` | Expected checksum and size in bytes; a file is used only if both match |
+| `title`, `citation`, `doi`, `page` | What to cite |
+| `license_mode`, `license_url` | `"fetch"`: download only, never redistribute |
+
+`python scripts/fetch_tdb.py` downloads and verifies every registered file,
+with 3 attempts and backoff. It exits with status 1, naming the URL, if a
+download fails or a file doesn't match. `--check` verifies existing files
+without downloading.
+
 ## `<name>.meta.json`
 
 The TDB format does not hold the element order or display information. They
@@ -268,6 +306,8 @@ are read from a metadata file next to the TDB file: `ag_cu.meta.json` for
 |---|---|
 | `elements` | `[base, dependent]`. This sets the composition axis, and its spelling ("Ag") is used for display. |
 | `dependent_element` | Alternative to `elements`: the dependent element alone. |
+| `source` | A registered data source (`data/sources.json`). The `.meta.json` is then a system file of its own in `data/systems/` (for example `ag_cu.meta.json`), and its TDB file is downloaded on first use. |
+| `citations` | `[{"text": ..., "url": ...}]`, shown by the app below the diagram. |
 | `gas_constant` | R for this system. Optional; the TDB default is 8.31451. |
 | `pressure_pa` | Pressure for `P` in expressions. Optional; the default is 101325. |
 | `name`, `element_names`, `t_range_k`, `_source`, `_status`, `_status_reason` | As in JSON. Optional. `name` defaults to "Base-Dependent". |

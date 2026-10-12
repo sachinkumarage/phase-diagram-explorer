@@ -27,8 +27,10 @@ from phase_diagram_explorer.tracing import trace_diagram
 ROOT = Path(__file__).resolve().parents[1]
 SYSTEMS_DIR = ROOT / "data" / "systems"
 FIXTURES_DIR = ROOT / "tests" / "fixtures"
+AG_CU = FIXTURES_DIR / "ag_cu_provisional.json"
+AL_CU = SYSTEMS_DIR / "al_cu.json"
 SYSTEMS = [
-    SYSTEMS_DIR / "ag_cu.json",
+    AG_CU,
     SYSTEMS_DIR / "al_cu.json",
     FIXTURES_DIR / "regular_solution.json",
     FIXTURES_DIR / "gap_eutectic.json",
@@ -49,9 +51,9 @@ def traced_system(request, traced_diagram):
 # --- invariants ------------------------------------------------------------
 
 
-@pytest.mark.parametrize("name", ["ag_cu.json", "al_cu.json"])
-def test_invariants_do_not_depend_on_composition_grid(name):
-    _, system = _load(SYSTEMS_DIR / name)
+@pytest.mark.parametrize("path", [AG_CU, AL_CU], ids=["ag_cu", "al_cu"])
+def test_invariants_do_not_depend_on_composition_grid(path):
+    _, system = _load(path)
     coarse = detect_invariants(compute_diagram(system, (800.0, 1100.0), n_T=31, n_x=101), system)
     fine = detect_invariants(compute_diagram(system, (800.0, 1100.0), n_T=31, n_x=1001), system)
 
@@ -62,9 +64,9 @@ def test_invariants_do_not_depend_on_composition_grid(name):
         assert fine[0].composition[phase] == pytest.approx(x, abs=1e-4)
 
 
-@pytest.mark.parametrize("name", ["ag_cu.json", "al_cu.json"])
-def test_invariants_do_not_depend_on_scan_levels(name):
-    _, system = _load(SYSTEMS_DIR / name)
+@pytest.mark.parametrize("path", [AG_CU, AL_CU], ids=["ag_cu", "al_cu"])
+def test_invariants_do_not_depend_on_scan_levels(path):
+    _, system = _load(path)
     coarse = detect_invariants_over_range(system, (800.0, 1100.0), T_step=25.0)
     fine = detect_invariants_over_range(system, (800.0, 1100.0), T_step=2.0)
 
@@ -77,7 +79,7 @@ def test_invariants_do_not_depend_on_scan_levels(name):
 def test_ag_cu_eutectic_is_root_found_to_within_0_1_K():
     """Bisect directly on whether LIQUID is stable at the eutectic
     composition and compare with the reported temperature."""
-    _, system = _load(SYSTEMS_DIR / "ag_cu.json")
+    _, system = _load(AG_CU)
     (reaction,) = detect_invariants_over_range(system, (1000.0, 1100.0))
     x_liquid = reaction.composition["LIQUID"]
 
@@ -89,7 +91,7 @@ def test_ag_cu_eutectic_is_root_found_to_within_0_1_K():
 
 
 def test_invariant_reports_all_three_phase_compositions():
-    _, system = _load(SYSTEMS_DIR / "ag_cu.json")
+    _, system = _load(AG_CU)
     (reaction,) = detect_invariants_over_range(system, (1000.0, 1100.0))
 
     assert set(reaction.composition) == {"FCC_AG", "LIQUID", "FCC_CU"}
@@ -174,7 +176,7 @@ def test_narrow_al_cu_liquid_field_is_traced(traced_diagram):
 
 @pytest.mark.slow
 def test_levels_are_refined_near_invariants():
-    definition, system = _load(SYSTEMS_DIR / "ag_cu.json")
+    definition, system = _load(AG_CU)
     traced = trace_diagram(system, definition.t_range_k, n_levels=20)
     T_inv = traced.invariants[0].temperature
 
@@ -207,7 +209,7 @@ def test_traced_binodal_matches_analytical_solution(traced_diagram):
 
 @pytest.fixture
 def ag_cu_traced(traced_diagram):
-    return load_system(SYSTEMS_DIR / "ag_cu.json"), traced_diagram(SYSTEMS_DIR / "ag_cu.json")
+    return load_system(AG_CU), traced_diagram(AG_CU)
 
 
 @pytest.mark.slow
@@ -252,7 +254,7 @@ def test_export_rejects_raster_formats(ag_cu_traced):
 
 
 def test_invariants_csv_keeps_full_precision():
-    _, system = _load(SYSTEMS_DIR / "ag_cu.json")
+    _, system = _load(AG_CU)
     (reaction,) = detect_invariants_over_range(system, (1000.0, 1100.0))
     lines = invariants_csv([reaction], "Cu").splitlines()
 

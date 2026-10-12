@@ -36,7 +36,14 @@ from phase_diagram_explorer import __version__
 from phase_diagram_explorer.builder import build_system, is_computable
 from phase_diagram_explorer.equilibrium.equilibrium import EquilibriumResult, compute_equilibrium
 from phase_diagram_explorer.invariants import InvariantReaction, detect_invariants_over_range
-from phase_diagram_explorer.models import SystemDefinition, load_system, metadata_path, system_files
+from phase_diagram_explorer.models import (
+    SystemDefinition,
+    is_sourced_system,
+    load_system,
+    metadata_path,
+    system_files,
+    system_name,
+)
 from phase_diagram_explorer.thermo.constants import CODATA_GAS_CONSTANT
 from phase_diagram_explorer.tracing import DEFAULT_LEVELS, TracedDiagram, TracedField, trace_diagram
 
@@ -73,9 +80,18 @@ def gas_constant(definition: SystemDefinition) -> float:
 
 
 def source_hash(system_path: str | Path) -> str:
-    """SHA256 of the system file, followed by its .meta.json for TDB files."""
+    """SHA256 of the system's data: the system file, followed by its
+    .meta.json for TDB files. For a system whose database is downloaded
+    (a .meta.json naming a data source) it combines the .meta.json with the
+    registered SHA256 of the database file, so that a different database
+    makes the precomputed data stale without the file being present."""
     path = Path(system_path)
     digest = hashlib.sha256(path.read_bytes())
+    if is_sourced_system(path):
+        from phase_diagram_explorer.sources import source
+
+        digest.update(source(json.loads(path.read_text())["source"]).sha256.encode())
+        return digest.hexdigest()
     meta = metadata_path(path)
     if path.suffix.lower() == ".tdb" and meta.exists():
         digest.update(meta.read_bytes())
@@ -83,7 +99,7 @@ def source_hash(system_path: str | Path) -> str:
 
 
 def precomputed_path(system_path: str | Path, directory: str | Path | None = None) -> Path:
-    return Path(directory or default_precomputed_dir()) / f"{Path(system_path).stem}{SUFFIX}"
+    return Path(directory or default_precomputed_dir()) / f"{system_name(system_path)}{SUFFIX}"
 
 
 def app_systems(systems_dir: str | Path) -> list[Path]:

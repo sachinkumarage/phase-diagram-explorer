@@ -123,7 +123,7 @@ def test_app_system_comes_from_build_system(monkeypatch, isolated_cache):
 
     assert "Ag-Cu" in calls
     markdown = [element.value for element in at.markdown]
-    assert markdown[markdown.index("**Stable phases**") + 1] == "FCC_AG"
+    assert markdown[markdown.index("**Stable phases**") + 1] == "FCC_A1"
 
 
 def test_ag_cu_default_display_range_includes_both_melting_points():
@@ -198,7 +198,7 @@ def test_axes_markers_and_tables_share_units(temperature_unit, composition_unit)
 
 
 def test_selector_lists_only_systems_with_complete_gibbs_data(monkeypatch, tmp_path):
-    _systems_dir(monkeypatch, tmp_path, SYSTEMS_DIR / "ag_cu.json", FIXTURES_DIR / "example.json")
+    _systems_dir(monkeypatch, tmp_path, SYSTEMS_DIR / "ag_cu.meta.json", FIXTURES_DIR / "example.json")
     at = AppTest.from_file(str(APP_PATH), default_timeout=120).run()
     assert not at.exception
     assert at.selectbox[0].options == ["ag_cu"]
@@ -209,10 +209,25 @@ def test_shipped_selector_has_no_example_system():
     assert at.selectbox[0].options == ["ag_cu", "al_cu"]
 
 
-@pytest.mark.parametrize("system", ["ag_cu", "al_cu"])
-def test_provisional_systems_show_banner(system):
-    at = _run(system)
+def test_provisional_systems_show_banner():
+    at = _run("al_cu")
     assert [warning.value for warning in at.warning] == [PROVISIONAL_BANNER]
+
+
+def test_assessed_ag_cu_shows_no_banner_and_its_citations():
+    at = _run("ag_cu")
+    assert len(at.warning) == 0
+    markdown = [element.value for element in at.markdown]
+    citations = markdown[markdown.index("**Data sources**") + 1]
+    assert "[Kattner, U.R. (2017), Phase Diagrams & Computational Thermodynamics - Solder Systems" in citations
+    assert "](https://doi.org/10.18434/T4759N)" in citations
+    assert "[F.H. Hayes, H.L. Lukas, G. Effenberg, G. Petzow, Z. Metallkd. 77 (1986) 749-754.](" in citations
+    assert "[A.T. Dinsdale, CALPHAD 15 (1991) 317-425.](https://doi.org/10.1016/0364-5916(91)90030-N)" in citations
+
+
+def test_provisional_al_cu_has_no_citations():
+    at = _run("al_cu")
+    assert "**Data sources**" not in [element.value for element in at.markdown]
 
 
 def test_validated_systems_show_no_banner(monkeypatch, tmp_path):
@@ -251,9 +266,8 @@ def test_diagram_is_drawn_from_traced_polygons_not_a_heatmap():
     assert "heatmap" not in types and "contour" not in types
 
     regions = [trace for trace in diagram["data"] if trace.get("fill") == "toself"]
-    assert {trace["name"] for trace in regions} == {
-        "FCC_AG", "FCC_CU", "LIQUID", "LIQUID + FCC_AG", "LIQUID + FCC_CU", "FCC_AG + FCC_CU",
-    }
+    # assessed Ag-Cu: one FCC_A1 phase with a miscibility gap
+    assert {trace["name"] for trace in regions} == {"FCC_A1", "LIQUID", "LIQUID + FCC_A1", "FCC_A1#1 + FCC_A1#2"}
     labels = _trace(diagram, "field labels")
     assert set(labels["text"]) == {trace["name"] for trace in regions}
 
@@ -319,12 +333,15 @@ def test_root_entry_point_runs_the_app():
     assert at.selectbox[0].options == ["ag_cu", "al_cu"]
 
 
+BANNERS = {"ag_cu": [], "al_cu": [PROVISIONAL_BANNER]}
+
+
 @pytest.mark.parametrize("system", ["ag_cu", "al_cu"])
 def test_each_system_loads_from_precomputed_data(system):
     at = _run(system)
     assert any(caption.startswith(PRECOMPUTED_NOTE) for caption in _captions(at))
     assert not [info for info in at.info if LIVE_NOTICE in info.value]
-    assert [warning.value for warning in at.warning] == [PROVISIONAL_BANNER]
+    assert [warning.value for warning in at.warning] == BANNERS[system]
 
 
 def test_switching_systems_and_units_does_not_raise():
@@ -338,7 +355,7 @@ def test_switching_systems_and_units_does_not_raise():
             at.radio[1].set_value(composition_unit)
             at.run()
             assert not at.exception
-            assert [warning.value for warning in at.warning] == [PROVISIONAL_BANNER]
+            assert [warning.value for warning in at.warning] == BANNERS[system]
             assert any(caption.startswith(PRECOMPUTED_NOTE) for caption in _captions(at))
 
 
@@ -388,3 +405,35 @@ def test_figure_exports_are_rendered_on_demand():
     at = _run()
     labels = [button.proto.label for button in at.get("download_button")]
     assert {"Export figure (SVG)", "Export figure (PDF)"} <= set(labels)
+
+
+def _local_registry(monkeypatch, tmp_path, url: str) -> None:
+    """Register nist_solder with `url` and an empty download directory."""
+    entry = json.loads((ROOT / "data" / "sources.json").read_text())["nist_solder"]
+    registry = tmp_path / "sources.json"
+    registry.write_text(json.dumps({"nist_solder": {**entry, "url": url}}))
+    monkeypatch.setenv("PHASE_DIAGRAM_SOURCES", str(registry))
+    monkeypatch.setenv("PHASE_DIAGRAM_TDB_DIR", str(tmp_path / "tdb"))
+
+
+def test_database_is_downloaded_on_first_use(monkeypatch, tmp_path):
+    """A missing database is fetched (and verified) when its system is first
+    selected; here from a local copy of the NIST file."""
+    _local_registry(monkeypatch, tmp_path, (ROOT / "data" / "tdb" / "nist_solder.tdb").as_uri())
+    at = _run("ag_cu")
+    assert not at.error
+    assert (tmp_path / "tdb" / "nist_solder.tdb").exists()
+    assert list(_invariant_table(at)["type"]) == ["eutectic"]
+
+
+def test_failed_download_shows_a_clear_message(monkeypatch, tmp_path):
+    from phase_diagram_explorer import sources
+
+    monkeypatch.setattr(sources, "BACKOFF_S", 0.0)
+    _local_registry(monkeypatch, tmp_path, (tmp_path / "unreachable.tdb").as_uri())
+    at = AppTest.from_file(str(APP_PATH), default_timeout=120).run()
+    at.selectbox[0].set_value("ag_cu")
+    at.run()
+    assert not at.exception
+    (error,) = [e.value for e in at.error]
+    assert "could not be loaded" in error and "after 3 attempts" in error and "Download it manually" in error

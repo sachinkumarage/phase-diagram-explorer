@@ -20,14 +20,14 @@ ROOT = Path(__file__).resolve().parents[1]
 SYSTEMS_DIR = ROOT / "data" / "systems"
 FIXTURES_DIR = ROOT / "tests" / "fixtures"
 JSON_SYSTEMS = [
-    SYSTEMS_DIR / "ag_cu.json",
+    FIXTURES_DIR / "ag_cu_provisional.json",
     SYSTEMS_DIR / "al_cu.json",
     FIXTURES_DIR / "regular_solution.json",
     FIXTURES_DIR / "gap_eutectic.json",
 ]
 # Committed TDB fixtures and the JSON systems they were exported from.
 TDB_FIXTURES = {
-    "ag_cu_provisional.tdb": SYSTEMS_DIR / "ag_cu.json",
+    "ag_cu_provisional.tdb": FIXTURES_DIR / "ag_cu_provisional.json",
     "al_cu_provisional.tdb": SYSTEMS_DIR / "al_cu.json",
     "regular_solution.tdb": FIXTURES_DIR / "regular_solution.json",
     "gap_eutectic.tdb": FIXTURES_DIR / "gap_eutectic.json",
@@ -106,14 +106,14 @@ def test_thermodynamic_keywords_we_cannot_evaluate_name_keyword_and_line(command
 
 def test_metadata_keywords_are_stored_and_never_raise():
     text = HEADER + """
-DATABASE_INFO 'Ag-Cu test database ! with a bang and $ a dollar' !
+DATABASE_INFO Ag-Cu test database' second line !
 VERSION_DATE 2026-10-10 !
 ASSESSED_SYSTEMS AG-CU(;G5 MGSP:MGSP) !
 REFERENCE_FILE refs.txt !
 SPECIES CU2 CU2 !
 LIST_OF_REFERENCES
  NUMBER  SOURCE
- REF1  'First author, Journal 1 (2001) 1-10.'
+ REF1  'First author, Journal 1 (2001) 1-10! with a bang and $ a dollar.'
  REF2  'Second author, Journal 2 (2002)
         20-30 (two lines).'
 !
@@ -123,16 +123,33 @@ ADD_REFERENCES
 """
     database = parse_tdb(text)
     assert database.metadata["references"] == {
-        "REF1": "First author, Journal 1 (2001) 1-10.",
+        "REF1": "First author, Journal 1 (2001) 1-10! with a bang and $ a dollar.",
         "REF2": "Second author, Journal 2 (2002) 20-30 (two lines).",
         "REF3": "Added reference.",
     }
-    assert database.metadata["database_info"] == "Ag-Cu test database ! with a bang and $ a dollar"
+    assert database.metadata["database_info"] == "Ag-Cu test database\nsecond line"
     assert database.metadata["version_date"] == "2026-10-10"
     assert database.metadata["assessed_systems"].startswith("AG-CU")
     assert database.species == {"CU2": "CU2"}
     definition = definition_from_database(database, elements=["Ag", "Cu"])
     assert definition.metadata["references"]["REF2"].endswith("(two lines).")
+
+
+def test_database_info_apostrophes_are_line_breaks():
+    """The DATABASE_INFO block of the NIST solder database (four lines copied
+    into tests/fixtures/nist_database_info.tdb): "'" ends a line, as in
+    Thermo-Calc, and is not a quote."""
+    text = HEADER + (FIXTURES_DIR / "nist_database_info.tdb").read_text()
+    database = parse_tdb(text)
+    assert database.metadata["database_info"].splitlines() == [
+        "Database for solder alloys under development",
+        "Compiled by Ursula R. Kattner, NIST, Gaithersburg, MD, USA",
+        "Last update: 04-Aug-2017",
+        "Previous update: 30-Nov-1999",
+    ]
+    # the command ends at the "!" on its fourth line; parsing continues
+    database = parse_tdb(text + "PHASE LIQUID % 1 1 !\nCONSTITUENT LIQUID :AG,CU: !\n")
+    assert set(database.phases) == {"LIQUID"}
 
 
 def test_metadata_only_keywords_log_a_warning(caplog):
@@ -459,7 +476,7 @@ def test_system_files_lists_tdb_but_not_metadata(tmp_path):
 
 
 def test_write_metadata(tmp_path):
-    definition = load_system(SYSTEMS_DIR / "ag_cu.json")
+    definition = load_system(FIXTURES_DIR / "ag_cu_provisional.json")
     path = write_metadata(definition, tmp_path / "x.tdb")
     assert path.name == "x.meta.json"
     data = json.loads(path.read_text())

@@ -8,6 +8,8 @@ from phase_diagram_explorer.models import load_system
 from phase_diagram_explorer.thermo.stoichiometric import StoichiometricPhase
 
 SYSTEMS_DIR = Path(__file__).resolve().parents[1] / "data" / "systems"
+# The provisional two-FCC Ag-Cu model (data/systems/ag_cu.json until 0.3.0).
+AG_CU_PROVISIONAL = Path(__file__).resolve().parent / "fixtures" / "ag_cu_provisional.json"
 
 AG_CU_EUTECTIC_C = 779.0
 AG_CU_EUTECTIC_X_CU = 0.399
@@ -16,7 +18,7 @@ COMPOSITION_TOLERANCE = 0.03
 
 
 def test_ag_cu_loads_without_error():
-    definition = load_system(SYSTEMS_DIR / "ag_cu.json")
+    definition = load_system(AG_CU_PROVISIONAL)
     assert definition.name == "Ag-Cu"
     assert {element.symbol for element in definition.elements} == {"Ag", "Cu"}
     assert {phase.name for phase in definition.phases} == {"LIQUID", "FCC_AG", "FCC_CU"}

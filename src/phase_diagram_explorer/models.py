@@ -121,6 +121,11 @@ class Phase(BaseModel):
 PROVISIONAL = "provisional"
 
 
+class Citation(BaseModel):
+    text: str
+    url: str | None = None
+
+
 class SystemDefinition(BaseModel):
     model_config = ConfigDict(populate_by_name=True)
 
@@ -145,8 +150,13 @@ class SystemDefinition(BaseModel):
     gas_constant: float | None = None
     # Pressure (Pa) for "P" in TDB expressions.
     pressure_pa: float = 101325.0
-    # Database metadata: "references" ({id: text}), "database_info", ...
+    # Database metadata: "references" ({id: text}), "database_info",
+    # "subsystem" (what extracting a binary from a larger database dropped), ...
     metadata: dict = {}
+    # Registered data source (data/sources.json) the system's TDB file comes
+    # from, and the citations to show with it.
+    data_source: str | None = None
+    citations: list[Citation] = []
 
     @model_validator(mode="after")
     def check_t_range(self) -> "SystemDefinition":
@@ -188,24 +198,60 @@ def metadata_path(path: str | Path) -> Path:
     return path.with_name(path.stem + METADATA_SUFFIX)
 
 
+def _read_metadata(path: Path) -> dict:
+    return json.loads(path.read_text())
+
+
+def is_sourced_system(path: str | Path) -> bool:
+    """A <name>.meta.json naming a registered data source ("source"), i.e. a
+    system whose TDB file is downloaded rather than stored next to it."""
+    path = Path(path)
+    return path.name.endswith(METADATA_SUFFIX) and "source" in _read_metadata(path)
+
+
+def system_name(path: str | Path) -> str:
+    """"ag_cu" for ag_cu.json, ag_cu.tdb or ag_cu.meta.json."""
+    name = Path(path).name
+    return name[: -len(METADATA_SUFFIX)] if name.endswith(METADATA_SUFFIX) else Path(name).stem
+
+
 def load_system(
     path: str | Path,
     *,
     elements: Sequence[str] | None = None,
     dependent_element: str | None = None,
     gas_constant: float | None = None,
+    download: bool = True,
 ) -> SystemDefinition:
-    """Load a binary system from JSON, YAML or a TDB database.
+    """Load a binary system from JSON, YAML, a TDB database, or a
+    <name>.meta.json that names a registered data source.
 
     For a .tdb file the element order (base element first, then the
     dependent element, whose mole fraction is the composition axis) comes
     from `elements` or `dependent_element`, falling back to the fields of
-    the same name in <name>.meta.json; see docs/data_format.md. These
-    arguments are ignored for JSON and YAML, which list their elements in
-    order. `gas_constant` overrides the system's gas constant.
+    the same name in <name>.meta.json; see docs/data_format.md. For a
+    database with more than two elements, `elements` selects the binary
+    subsystem. These arguments are ignored for JSON and YAML, which list
+    their elements in order. `gas_constant` overrides the system's gas
+    constant.
+
+    A sourced .meta.json ({"source": "nist_solder", ...}) loads the
+    registered database from data/tdb/, downloading and verifying it first
+    if it is missing (unless download=False); see sources.py.
     """
     path = Path(path)
-    if path.suffix.lower() == TDB_SUFFIX:
+    if path.name.endswith(METADATA_SUFFIX):
+        from phase_diagram_explorer.sources import ensure
+        from phase_diagram_explorer.tdb.convert import load_tdb_system
+
+        metadata = _read_metadata(path)
+        if "source" not in metadata:
+            raise ValueError(f"{path} names no data source; load the .tdb file it describes instead")
+        tdb_path = ensure(metadata["source"], download=download)
+        definition = load_tdb_system(
+            tdb_path, elements=elements, dependent_element=dependent_element, metadata=metadata
+        )
+    elif path.suffix.lower() == TDB_SUFFIX:
         from phase_diagram_explorer.tdb.convert import load_tdb_system
 
         definition = load_tdb_system(path, elements=elements, dependent_element=dependent_element)
@@ -219,12 +265,19 @@ def load_system(
 
 
 def system_files(directory: str | Path) -> list[Path]:
-    """System definitions in a directory: JSON, YAML and TDB files, sorted,
-    excluding TDB metadata files."""
-    return sorted(
-        path for path in Path(directory).iterdir()
-        if path.is_file() and path.suffix.lower() in SYSTEM_SUFFIXES and not path.name.endswith(METADATA_SUFFIX)
-    )
+    """System definitions in a directory, sorted by system name: JSON, YAML
+    and TDB files, and .meta.json files that name a data source. Metadata
+    files that only describe a .tdb next to them are not systems."""
+    paths = []
+    for path in Path(directory).iterdir():
+        if not path.is_file():
+            continue
+        if path.name.endswith(METADATA_SUFFIX):
+            if is_sourced_system(path):
+                paths.append(path)
+        elif path.suffix.lower() in SYSTEM_SUFFIXES:
+            paths.append(path)
+    return sorted(paths, key=lambda path: (system_name(path), path.name))
 
 
 def default_systems_dir() -> Path:

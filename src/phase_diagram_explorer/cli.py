@@ -13,7 +13,7 @@ import sys
 from pathlib import Path
 
 from phase_diagram_explorer import __version__
-from phase_diagram_explorer.models import default_systems_dir, load_system, system_files
+from phase_diagram_explorer.models import default_systems_dir, load_system, system_files, system_name
 from phase_diagram_explorer.units import CELSIUS, KELVIN
 
 # Temperature range (K) for systems without "t_range_k".
@@ -25,9 +25,9 @@ def resolve_system(value: str, systems_dir: Path) -> Path:
     path = Path(value)
     if path.is_file():
         return path
-    matches = [candidate for candidate in system_files(systems_dir) if candidate.stem == value]
+    matches = [candidate for candidate in system_files(systems_dir) if system_name(candidate) == value]
     if not matches:
-        available = ", ".join(sorted({candidate.stem for candidate in system_files(systems_dir)})) or "none"
+        available = ", ".join(sorted({system_name(candidate) for candidate in system_files(systems_dir)})) or "none"
         raise SystemExit(f"error: no system {value!r} in {systems_dir} (available: {available})")
     return matches[0]
 
@@ -39,7 +39,7 @@ def _plot(arguments) -> None:
 
     path = resolve_system(arguments.system, arguments.systems_dir)
     definition = load_system(path)
-    output = Path(arguments.output or f"{path.stem}_phase_diagram.{arguments.format or 'svg'}")
+    output = Path(arguments.output or f"{system_name(path)}_phase_diagram.{arguments.format or 'svg'}")
     fmt = arguments.format or output.suffix.lstrip(".").lower()
     if fmt not in FIGURE_FORMATS:
         raise SystemExit(f"error: unsupported figure format {fmt!r}; use one of {', '.join(FIGURE_FORMATS)}")
@@ -62,7 +62,7 @@ def _export_tdb(arguments) -> None:
 
     path = resolve_system(arguments.system, arguments.systems_dir)
     definition = load_system(path)
-    output = Path(arguments.output or f"{path.stem}.tdb")
+    output = Path(arguments.output or f"{system_name(path)}.tdb")
     write_tdb(definition, output)
     print(output)
     print(write_metadata(definition, output))
@@ -70,7 +70,7 @@ def _export_tdb(arguments) -> None:
 
 def _list(arguments) -> None:
     for path in system_files(arguments.systems_dir):
-        print(path.stem if path.suffix == ".json" else path.name)
+        print(system_name(path) if path.suffix == ".json" else path.name)
 
 
 def build_parser() -> argparse.ArgumentParser:

@@ -501,15 +501,60 @@ evidence of a miscibility gap in that phase. This removed a false
 LIQUID#1 + CUMG2 + LIQUID#2 reaction at the congruent melting point of
 CuMg2.
 
+## Resolved in 0.3.0
+
+### Ag-Cu: assessed data
+
+`data/systems/ag_cu.json`, the provisional model with two FCC phases, has
+been replaced. Ag-Cu is now the assessed description from the NIST solder
+database:
+
+- Kattner, U.R. (2017), Phase Diagrams & Computational Thermodynamics -
+  Solder Systems, NIST Standard Reference Database 139;
+- Hayes et al., Z. Metallkd. 77 (1986) 749-754;
+- Dinsdale, CALPHAD 15 (1991) 317-425.
+
+The database is downloaded from NIST and not redistributed.
+`data/systems/ag_cu.meta.json` selects its Ag-Cu-Va subsystem. There is a
+single FCC_A1 phase, whose miscibility gap gives the two terminal solid
+solutions. The old JSON model is kept as `tests/fixtures/ag_cu_provisional.json`.
+
+The two items listed as open for Ag-Cu are resolved:
+
+| Item | Provisional (0.2.2) | Assessed (0.3.0) | Experiment |
+|---|---|---|---|
+| Eutectic T | 1051.74 K | 1052.28 K | 1052 ± 3 K |
+| Liquid x(Cu) | 0.3879 | 0.4025 | 0.399 ± 0.010 |
+| Ag-rich fcc x(Cu) (solvus) | 0.2612 | 0.1327 | 0.141 ± 0.015 |
+| Cu-rich fcc x(Cu) (solvus) | 0.5430 | 0.9546 | 0.950 ± 0.010 |
+
+- The two strict-xfail solvus tests pass with their tolerances unchanged,
+  and their xfail markers are removed.
+- Ag-Cu no longer shows the preview banner, and the app shows its three
+  citations instead.
+- The eutectic reproduces NIST's own calculation from the same database:
+  779.1 °C, with liquid, (Ag) and (Cu) at 28.41, 8.27 and 92.53 mass % Cu.
+- pycalphad gives the same diagram from the same file
+  (`docs/validation/ag_cu.md`).
+
+### Melting next to a pure element
+
+Within about 1.7 K below a pure element's melting point, the L + FCC field
+next to it is narrower than one Gibbs-curve grid cell. The tie-line
+refinement then failed and kept the hull's grid points, so a composition
+just inside the pure end (x = 1 - 1e-9 for Cu) showed liquid up to 1.7 K
+too early. Refinement now retries from points inside the estimated tie line
+and close to the pure end, and resolves these fields.
+
+- Melting detected next to Ag and Cu agrees with the pure-element Gibbs
+  energy crossing to within 0.002 K.
+- Every equilibrium recorded with 0.2.0 is unchanged.
+- The traced Al-Cu boundary within 0.3 K of the Al melting point is now
+  resolved. It previously ran to the grid point x = 0.002 with the solid at
+  x = 0.
+
 ## Still open
 
-- **Ag-Cu solvus.** The simplified FCC_AG and FCC_CU parameters put the
-  eutectic solid solubilities at x(Cu) = 0.2612 and 0.5430, against assessed
-  values of 0.141 and 0.950. Two strict-xfail tests record this. It will be
-  fixed by assessed database parameters, together with converting the
-  system to a single FCC_A1 phase, which the engine supports.
-- **Ag-Cu eutectic liquid composition.** It is 0.3879, which clears the
-  0.399 ± 0.015 band by only about 0.004.
 - **Al-Cu data (provisional).** The model has no Cu-rich solid phases, so
   LIQUID is stable at the Cu-rich end at every temperature. The eutectic is
   at 930.3 K with liquid x(Cu) = 0.0056 and FCC_AL x(Cu) = 0.0009. The

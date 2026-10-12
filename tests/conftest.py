@@ -11,6 +11,8 @@ from phase_diagram_explorer.tracing import trace_diagram
 
 ROOT = Path(__file__).resolve().parents[1]
 SYSTEMS_DIR = ROOT / "data" / "systems"
+# The provisional two-FCC Ag-Cu model, kept as an engine test fixture since 0.3.0.
+AG_CU_PROVISIONAL = ROOT / "tests" / "fixtures" / "ag_cu_provisional.json"
 
 
 @pytest.fixture(scope="session")
@@ -31,8 +33,8 @@ def traced_diagram():
 
 @pytest.fixture(scope="session")
 def ag_cu_eutectic_scan():
-    """(system, reactions) for Ag-Cu: invariants detected on a 1000-1150 K
+    """(system, reactions) for the provisional Ag-Cu fixture: invariants detected on a 1000-1150 K
     diagram (151 x 201, 501 Gibbs points)."""
-    system = build_system(load_system(SYSTEMS_DIR / "ag_cu.json"))
+    system = build_system(load_system(AG_CU_PROVISIONAL))
     diagram = compute_diagram(system, T_range=(1000.0, 1150.0), n_T=151, n_x=201, n_points=501)
     return system, detect_invariants(diagram, system, n_points=501)

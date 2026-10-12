@@ -9,3 +9,6 @@ build/
 
 # Streamlit secrets (none are needed; never commit them)
 .streamlit/secrets.toml
+
+# Downloaded thermodynamic databases (scripts/fetch_tdb.py); never committed
+data/tdb/

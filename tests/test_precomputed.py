@@ -29,7 +29,7 @@ REGENERATE = "regenerate with: python scripts/precompute.py"
 
 
 def test_app_systems_are_the_shipped_systems():
-    assert [path.name for path in APP_SYSTEMS] == ["ag_cu.json", "al_cu.json"]
+    assert [path.name for path in APP_SYSTEMS] == ["ag_cu.meta.json", "al_cu.json"]
     assert default_systems_dir() == SYSTEMS_DIR
     assert default_precomputed_dir() == PRECOMPUTED_DIR
 
@@ -53,7 +53,7 @@ def test_precomputed_metadata():
     assert set(precomputed.metadata) >= {
         "source_sha256", "package_version", "gas_constant", "t_range_k", "computation_time_s", "n_levels", "n_points",
     }
-    assert precomputed.metadata["gas_constant"] == 8.314462618
+    assert precomputed.metadata["gas_constant"] == 8.31451  # TDB default; Al-Cu (JSON) keeps 8.314462618
     assert precomputed.metadata["t_range_k"] == [500.0, 1450.0]
 
 

@@ -80,8 +80,8 @@ def test_load_system_yaml(tmp_path):
 
 
 def test_provisional_status_is_read_from_underscore_fields():
-    for name in ("ag_cu.json", "al_cu.json"):
-        system = load_system(SYSTEMS_DIR / name)
+    for path in (SYSTEMS_DIR.parent.parent / "tests" / "fixtures" / "ag_cu_provisional.json", SYSTEMS_DIR / "al_cu.json"):
+        system = load_system(path)
         assert system.status == "provisional"
         assert system.is_provisional
         assert system.status_reason

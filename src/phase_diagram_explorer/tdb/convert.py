@@ -11,6 +11,7 @@ Constituents must be the two elements of the system or the vacancy VA.
 Other GES type definitions (e.g. a disordered part) are stored and make
 build_system raise NotImplementedError.
 """
+import copy
 import json
 from pathlib import Path
 from typing import Sequence
@@ -97,6 +98,57 @@ def _phase(database: TdbDatabase, phase: TdbPhase, base: str, dependent: str) ->
     )
 
 
+def _parameter_text(parameter: TdbParameter) -> str:
+    constituents = ":".join(",".join(species) for species in parameter.constituents)
+    return f"{parameter.kind}({parameter.phase},{constituents};{parameter.order}) (line {parameter.line})"
+
+
+def extract_subsystem(database: TdbDatabase, elements: Sequence[str]) -> tuple[TdbDatabase, dict]:
+    """The subsystem of a multicomponent database spanned by `elements`.
+
+    Keeps those elements plus VA and /-, filters every sublattice to the
+    kept species, drops phases left with an empty sublattice, and drops
+    parameters that involve any other species (ternary and higher
+    interactions included). Wildcards are kept. Returns the reduced copy
+    and a report of what was dropped.
+    """
+    keep = {symbol.upper() for symbol in elements} | NON_ELEMENTS
+    reduced = copy.deepcopy(database)
+    reduced.elements = {symbol: element for symbol, element in database.elements.items() if symbol in keep}
+    report = {
+        "elements": [symbol.upper() for symbol in elements],
+        "dropped_elements": sorted(set(database.elements) - keep),
+        "dropped_phases": [],
+        "filtered_constituents": {},
+        "dropped_parameters": [],
+    }
+    phases = {}
+    for name, phase in reduced.phases.items():
+        if phase.constituents is None:
+            phases[name] = phase
+            continue
+        kept = [[species for species in sublattice if species in keep] for sublattice in phase.constituents]
+        removed = sorted({species for sublattice in phase.constituents for species in sublattice} - keep)
+        if not all(kept):
+            report["dropped_phases"].append(name)
+            continue
+        if removed:
+            report["filtered_constituents"][name] = removed
+        phase.constituents = kept
+        phases[name] = phase
+    reduced.phases = phases
+
+    parameters = []
+    for parameter in reduced.parameters:
+        species = {name for sublattice in parameter.constituents for name in sublattice if name != WILDCARD}
+        if parameter.phase in phases and species <= keep:
+            parameters.append(parameter)
+        elif parameter.phase in phases:
+            report["dropped_parameters"].append(_parameter_text(parameter))
+    reduced.parameters = parameters
+    return reduced, report
+
+
 def _element_order(
     database: TdbDatabase, elements: Sequence[str] | None, dependent_element: str | None, source: str
 ) -> tuple[str, str]:
@@ -123,10 +175,11 @@ def _element_order(
 
 
 def _display_symbol(symbol: str, preferred: Sequence[str]) -> str:
-    """Symbol as spelled in `preferred` (e.g. "Ag"), else capitalised."""
+    """Symbol as spelled in `preferred` (e.g. "Ag"), else capitalised. A
+    database-style upper-case spelling ("AG") is also capitalised."""
     for spelling in preferred:
         if spelling.upper() == symbol:
-            return spelling
+            return spelling.capitalize() if spelling.isupper() and len(spelling) > 1 else spelling
     return symbol.capitalize()
 
 
@@ -139,11 +192,28 @@ def definition_from_database(
     source: str = "TDB database",
 ) -> SystemDefinition:
     """A SystemDefinition from a parsed database. Arguments take precedence
-    over the corresponding `metadata` fields."""
+    over the corresponding `metadata` fields.
+
+    For a database with more than two elements, `elements` (or the
+    metadata's "elements") selects the binary subsystem, extracted with
+    extract_subsystem; what was dropped is reported in
+    system.metadata["subsystem"]."""
     metadata = dict(metadata or {})
     if elements is None and dependent_element is None:
         elements = metadata.get("elements")
         dependent_element = metadata.get("dependent_element")
+    available = [symbol for symbol in database.elements if symbol not in NON_ELEMENTS]
+    subsystem = None
+    if len(available) > 2:
+        if elements is None or len(elements) != 2:
+            raise ValueError(
+                f"{source}: a database with elements {available} needs elements=[base, dependent] "
+                "(or \"elements\" in the .meta.json) to select a binary subsystem"
+            )
+        missing = [symbol for symbol in elements if symbol.upper() not in available]
+        if missing:
+            raise ValueError(f"{source}: elements {missing} are not in the database ({available})")
+        database, subsystem = extract_subsystem(database, elements)
     base, dependent = _element_order(database, elements, dependent_element, source)
 
     spellings = [*(elements or []), *([dependent_element] if dependent_element else [])]
@@ -172,18 +242,26 @@ def definition_from_database(
         functions=database.functions,
         gas_constant=metadata.get("gas_constant", DATABASE_GAS_CONSTANT),
         pressure_pa=metadata.get("pressure_pa", 101325.0),
-        metadata=database.metadata,
+        metadata={**database.metadata, **({"subsystem": subsystem} if subsystem else {})},
+        data_source=metadata.get("source"),
+        citations=metadata.get("citations", []),
     )
 
 
 def load_tdb_system(
-    path: str | Path, *, elements: Sequence[str] | None = None, dependent_element: str | None = None
+    path: str | Path,
+    *,
+    elements: Sequence[str] | None = None,
+    dependent_element: str | None = None,
+    metadata: dict | None = None,
 ) -> SystemDefinition:
-    """Load a binary system from a TDB file and its optional
-    <name>.meta.json (see docs/data_format.md)."""
+    """Load a binary system from a TDB file and its metadata: `metadata` if
+    given, else the optional <name>.meta.json next to it (see
+    docs/data_format.md)."""
     path = Path(path)
-    meta = metadata_path(path)
-    metadata = json.loads(meta.read_text()) if meta.exists() else {}
+    if metadata is None:
+        meta = metadata_path(path)
+        metadata = json.loads(meta.read_text()) if meta.exists() else {}
     return definition_from_database(
         read_tdb(path), elements=elements, dependent_element=dependent_element, metadata=metadata, source=str(path)
     )

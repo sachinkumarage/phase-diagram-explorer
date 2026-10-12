@@ -4,12 +4,13 @@ pycalphad is an optional dependency (pip install ".[validation]"). Both
 engines read the same TDB file: this package through load_system, pycalphad
 through its own TDB reader, so the comparison also checks the TDB reader.
 
-Run as a module to regenerate the comparison report:
+Run as a module to regenerate the comparison reports:
 
-    python -m phase_diagram_explorer.validation
+    python -m phase_diagram_explorer.validation          # both reports
+    python -m phase_diagram_explorer.validation --ag-cu  # only docs/validation/ag_cu.md
 
-which writes docs/validation/engine_vs_pycalphad.md and overlay plots of
-both engines' phase boundaries to docs/img/.
+which write docs/validation/engine_vs_pycalphad.md and ag_cu.md, and
+overlay plots of both engines' phase boundaries to docs/img/.
 """
 import argparse
 import warnings
@@ -50,8 +51,12 @@ class ValidationCase:
 
     name: str
     file_name: str
-    # "fixture": tests/fixtures; "pycalphad": pycalphad's test databases.
+    # "fixture": tests/fixtures; "pycalphad": pycalphad's test databases;
+    # "data": a downloaded database in data/tdb (see sources.py).
     location: str = "fixture"
+    # For "data": the system file (data/systems/...) this engine loads; pycalphad
+    # reads the same TDB file (all its elements) with only the system's two.
+    system_file: str | None = None
     elements: tuple[str, str] | None = None
     T_range: tuple[float, float] | None = None
     x_values: tuple[float, ...] = VALIDATION_X
@@ -60,6 +65,10 @@ class ValidationCase:
 
     @property
     def path(self) -> Path:
+        if self.location == "data":
+            from phase_diagram_explorer.sources import ensure
+
+            return ensure(Path(self.file_name).stem)
         base = FIXTURES_DIR if self.location == "fixture" else pycalphad_database_dir()
         return base / self.file_name
 
@@ -68,6 +77,8 @@ class ValidationCase:
         return {"elements": list(self.elements)} if self.elements else {}
 
     def definition(self, **kwargs) -> SystemDefinition:
+        if self.system_file:
+            return load_system(ROOT / self.system_file, **kwargs)
         return load_system(self.path, **self.load_kwargs, **kwargs)
 
     def temperature_range(self) -> tuple[float, float]:
@@ -88,6 +99,15 @@ CASES = {
         ValidationCase(
             "Magnetic (synthetic)", "magnetic.tdb",
             models="ferro- and antiferromagnetic BCC/FCC, composition-dependent TC and BMAGN",
+        ),
+        ValidationCase(
+            "Ag-Cu (NIST)", "nist_solder.tdb", location="data", system_file="data/systems/ag_cu.meta.json",
+            provenance="Kattner, U.R. (2017), Phase Diagrams & Computational Thermodynamics - Solder Systems, NIST "
+            "Standard Reference Database 139, National Institute of Standards and Technology, "
+            "https://doi.org/10.18434/T4759N (Accessed 12 October 2026); Ag-Cu: F.H. Hayes, H.L. Lukas, "
+            "G. Effenberg, G. Petzow, Z. Metallkd. 77 (1986) 749-754; unaries: A.T. Dinsdale, CALPHAD 15 (1991) "
+            "317-425. Downloaded from NIST, not redistributed.",
+            models="Ag-Cu-Va subsystem of a six-element database; one FCC_A1 with a miscibility gap",
         ),
         ValidationCase(
             "Pb-Sn", "pbsn.tdb", location="pycalphad", elements=("Pb", "Sn"), T_range=(325.0, 625.0),
@@ -460,7 +480,11 @@ def write_report(docs_dir: Path = ROOT / "docs") -> Path:
         "|---|---|---|",
     ]
     for case in CASES.values():
-        where = f"`tests/fixtures/{case.file_name}`" if case.location == "fixture" else f"pycalphad `{case.file_name}`"
+        where = {
+            "fixture": f"`tests/fixtures/{case.file_name}`",
+            "pycalphad": f"pycalphad `{case.file_name}`",
+            "data": f"`data/tdb/{case.file_name}` (downloaded)",
+        }[case.location]
         lines.append(f"| {case.name} | {where} | {case.models} |")
 
     lines += ["", "### Literature databases", ""]
@@ -577,11 +601,127 @@ def write_report(docs_dir: Path = ROOT / "docs") -> Path:
     return report_path
 
 
+# NIST's calculated Ag-Cu eutectic (https://www.metallurgy.nist.gov/phase/solder/agcu.html):
+# 779.1 C; liquid 28.41, (Ag) 8.27, (Cu) 92.53 mass % Cu, as mole fractions
+# with the database's molar masses (see write_ag_cu_report).
+AG_CU_NIST = {"T": 1052.25, "liquid": 0.40250, "ag_rich": 0.13273, "cu_rich": 0.95460}
+AG_CU_EXPERIMENT = {
+    "T": (1052.0, 3.0), "liquid": (0.399, 0.010), "ag_rich": (0.141, 0.015), "cu_rich": (0.950, 0.010),
+    "Ag melting": (1234.93, 0.1), "Cu melting": (1357.77, 0.1),
+}
+
+
+def write_ag_cu_report(docs_dir: Path = ROOT / "docs") -> Path:
+    """docs/validation/ag_cu.md: the assessed Ag-Cu system against NIST's
+    calculation, experiment and pycalphad, with an overlay plot."""
+    import pycalphad
+    from scipy.optimize import brentq
+
+    from phase_diagram_explorer import __version__
+
+    case = CASES["Ag-Cu (NIST)"]
+    definition = case.definition()
+    system = build_system(definition)
+    (reaction,) = detect_invariants_over_range(system, definition.t_range_k)
+    solids = sorted(x for p, x in reaction.composition.items() if base_phase_name(p) == "FCC_A1")
+    ours = {"T": reaction.temperature, "liquid": reaction.composition["LIQUID"], "ag_rich": solids[0], "cu_rich": solids[1]}
+    reference = PycalphadSystem(case.path, definition)
+    T_pycalphad = pycalphad_transition_temperature(
+        reference, 0.4, "LIQUID", reaction.temperature - INVARIANT_WINDOW_K, reaction.temperature + INVARIANT_WINDOW_K,
+        tolerance=0.001,
+    )
+    below = reference.equilibrium(T_pycalphad - 0.01, 0.4)
+    melting = {}
+    for label, x in (("Ag melting", 0.0), ("Cu melting", 1.0)):
+        T_m = AG_CU_EXPERIMENT[label][0]
+        melting[label] = brentq(
+            lambda T: system["LIQUID"].molar_gibbs(T, x) - system["FCC_A1"].molar_gibbs(T, x), T_m - 20, T_m + 20,
+            xtol=1e-9,
+        )
+
+    rows = [
+        ("Eutectic T (K)", ours["T"], AG_CU_NIST["T"], "T", f"{T_pycalphad:.3f}"),
+        ("Liquid x(Cu)", ours["liquid"], AG_CU_NIST["liquid"], "liquid", "-"),
+        ("Ag-rich FCC_A1 x(Cu)", ours["ag_rich"], AG_CU_NIST["ag_rich"], "ag_rich", f"{below[0].x:.5f}"),
+        ("Cu-rich FCC_A1 x(Cu)", ours["cu_rich"], AG_CU_NIST["cu_rich"], "cu_rich", f"{below[-1].x:.5f}"),
+    ]
+    lines = [
+        "# Ag-Cu: assessed system vs NIST and experiment",
+        "",
+        f"Generated by `python -m phase_diagram_explorer.validation --ag-cu` with phase-diagram-explorer {__version__} "
+        f"and pycalphad {pycalphad.__version__}. The tests in `tests/test_ag_cu_assessed.py` and "
+        "`tests/validation/` check these values.",
+        "",
+        "**Data.** The Ag-Cu-Va subsystem of the NIST solder database, downloaded from NIST "
+        "(`scripts/fetch_tdb.py`, verified by SHA256) and not redistributed here:",
+        "",
+    ]
+    lines += [f"- {citation.text}" for citation in definition.citations]
+    lines += [
+        "",
+        f"Gas constant here: {definition.gas_constant} J/(mol K); pycalphad uses {PYCALPHAD_GAS_CONSTANT}.",
+        "",
+        "## Eutectic L -> (Ag) + (Cu)",
+        "",
+        "NIST's calculated values (https://www.metallurgy.nist.gov/phase/solder/agcu.html) are 779.1 °C and 28.41, "
+        "8.27 and 92.53 mass % Cu. They are converted with x(Cu) = (w/63.546) / (w/63.546 + (100 - w)/107.87), "
+        "the database's molar masses, and 779.1 °C = 1052.25 K.",
+        "",
+        "| Quantity | This engine | NIST (same database) | Difference | Experiment | Difference | pycalphad |",
+        "|---|---|---|---|---|---|---|",
+    ]
+    for label, value, nist, key, pycalphad_value in rows:
+        experiment, tolerance = AG_CU_EXPERIMENT[key]
+        digits = 3 if key == "T" else 5
+        lines.append(
+            f"| {label} | {value:.{digits}f} | {nist:.{digits}f} | {value - nist:+.{digits}f} | "
+            f"{experiment} ± {tolerance} | {value - experiment:+.{digits}f} | {pycalphad_value} |"
+        )
+    lines += [
+        "",
+        "Test tolerances: against NIST ±0.2 K and ±0.0005; against experiment as listed. The pycalphad temperature "
+        "is where LIQUID appears on heating at x(Cu) = 0.4 (bisected to 0.001 K); its solid compositions are 0.01 K "
+        "below that.",
+        "",
+        "## Melting points",
+        "",
+        "| Element | This engine (LIQUID = FCC_A1) | Experiment | Difference |",
+        "|---|---|---|---|",
+    ]
+    for label in ("Ag melting", "Cu melting"):
+        experiment, tolerance = AG_CU_EXPERIMENT[label]
+        lines.append(
+            f"| {label.split()[0]} | {melting[label]:.3f} K | {experiment} ± {tolerance} K | {melting[label] - experiment:+.3f} K |"
+        )
+    lines += [
+        "",
+        "Melting detected from equilibria at x = 1e-9 and 1 - 1e-9 agrees with these crossings to within 0.05 K.",
+        "",
+        "## Phase boundaries",
+        "",
+        "Lines: boundaries traced by this engine. Points: two-phase tie-line end points from pycalphad equilibria "
+        "on the same file (60 x 201 grid).",
+        "",
+        "![Ag-Cu](../img/ag_cu_nist_vs_pycalphad.svg)",
+        "",
+    ]
+    image_dir = docs_dir / "img"
+    image_dir.mkdir(parents=True, exist_ok=True)
+    _overlay_plot(case, image_dir / "ag_cu_nist_vs_pycalphad.svg")
+    path = docs_dir / "validation" / "ag_cu.md"
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text("\n".join(lines))
+    return path
+
+
 def main(argv=None) -> None:
     parser = argparse.ArgumentParser(description=__doc__.split("\n\n")[0])
     parser.add_argument("--docs-dir", type=Path, default=ROOT / "docs")
+    parser.add_argument("--ag-cu", action="store_true", help="write only docs/validation/ag_cu.md")
     arguments = parser.parse_args(argv)
-    print(write_report(arguments.docs_dir))
+    print(write_ag_cu_report(arguments.docs_dir))
+    if not arguments.ag_cu:
+        print(write_report(arguments.docs_dir))
 
 
 if __name__ == "__main__":

@@ -4,6 +4,12 @@ on:
   push:
   pull_request:
 
+# Thermodynamic databases are downloaded from their official URLs
+# (data/sources.json) and verified by SHA256; they are never committed.
+# data/tdb/ is cached under a key derived from data/sources.json, which holds
+# each file's SHA256. If a download fails and nothing is cached, the fetch
+# step fails the job with the error from scripts/fetch_tdb.py.
+
 jobs:
   test:
     runs-on: ubuntu-latest
@@ -11,15 +17,24 @@ jobs:
       matrix:
         python-version: ["3.11", "3.12"]
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Set up Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v7
         with:
           python-version: ${{ matrix.python-version }}
 
       - name: Install package with test tools
         run: pip install -e ".[dev]"
+
+      - name: Restore downloaded databases
+        uses: actions/cache@v6
+        with:
+          path: data/tdb
+          key: tdb-${{ hashFiles('data/sources.json') }}
+
+      - name: Fetch and verify databases (fails the job if unavailable)
+        run: python scripts/fetch_tdb.py
 
       - name: Check precomputed diagrams are up to date
         run: python scripts/precompute.py --check
@@ -30,15 +45,24 @@ jobs:
   validation:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Set up Python 3.12
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v7
         with:
           python-version: "3.12"
 
       - name: Install package with pycalphad
         run: pip install -e ".[dev,validation]"
+
+      - name: Restore downloaded databases
+        uses: actions/cache@v6
+        with:
+          path: data/tdb
+          key: tdb-${{ hashFiles('data/sources.json') }}
+
+      - name: Fetch and verify databases (fails the job if unavailable)
+        run: python scripts/fetch_tdb.py
 
       - name: Cross-validate the engine against pycalphad
         run: pytest -q -m validation
@@ -48,10 +72,10 @@ jobs:
     # only requirements.txt, then the AppTest smoke test.
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Set up Python 3.12
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v7
         with:
           python-version: "3.12"
 
@@ -59,6 +83,15 @@ jobs:
         run: |
           python -m venv /tmp/cloud
           /tmp/cloud/bin/pip install -r requirements.txt
+
+      - name: Restore downloaded databases
+        uses: actions/cache@v6
+        with:
+          path: data/tdb
+          key: tdb-${{ hashFiles('data/sources.json') }}
+
+      - name: Fetch and verify databases (fails the job if unavailable)
+        run: /tmp/cloud/bin/python scripts/fetch_tdb.py
 
       - name: App smoke test (records cold-start time)
         shell: bash  # with pipefail, so a failing test fails the step through tee

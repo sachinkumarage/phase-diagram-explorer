@@ -38,6 +38,24 @@ Each file records the SHA256 of its source data, the package version, the gas co
 
 Runtime dependencies go into both `pyproject.toml` and `requirements.txt` (with `~=` pins). Development and validation tools (`pytest`, `pycalphad`) never go into `requirements.txt`.
 
+## Data sources
+
+**Ag-Cu** is the assessed description from the NIST solder database (its Ag-Cu-Va subsystem):
+
+- Kattner, U.R. (2017), Phase Diagrams & Computational Thermodynamics - Solder Systems, NIST Standard Reference Database 139, National Institute of Standards and Technology, https://doi.org/10.18434/T4759N (Accessed 12 October 2026).
+- Ag-Cu assessment: F.H. Hayes, H.L. Lukas, G. Effenberg, G. Petzow, Z. Metallkd. 77 (1986) 749-754.
+- Unary data: A.T. Dinsdale, CALPHAD 15 (1991) 317-425.
+
+License: https://www.nist.gov/open/license. The database file is **downloaded from NIST** (https://www.metallurgy.nist.gov/phase/solder/NIST-solder.tdb) and verified by SHA256. It is not redistributed in this repository: `data/tdb/` is git-ignored. Fetch it with:
+
+```
+python scripts/fetch_tdb.py          # downloads to data/tdb/ and checks size and SHA256
+```
+
+The app and `load_system` also download it on first use. A failed download, or a file that doesn't match, is an error; there is no fallback to other data. Sources are registered in `data/sources.json`. The app shows each system's citations below the diagram, and `docs/validation/ag_cu.md` compares the computed Ag-Cu diagram with NIST's calculation, experiment and pycalphad.
+
+**Al-Cu** is still a provisional model, shown with a preview banner. The former provisional Ag-Cu model is kept as a test fixture, `tests/fixtures/ag_cu_provisional.json`.
+
 ## Command line
 
 ```
@@ -58,11 +76,13 @@ from phase_diagram_explorer.models import load_system
 from phase_diagram_explorer.builder import build_system
 from phase_diagram_explorer.tdb.writer import write_tdb
 
+definition = load_system("data/systems/ag_cu.meta.json")          # assessed Ag-Cu (downloads the NIST database if missing)
+definition = load_system("data/tdb/nist_solder.tdb", elements=["AG", "CU"])  # binary subsystem of a multicomponent database
 definition = load_system("tests/fixtures/ag_cu_provisional.tdb")   # element order from ag_cu_provisional.meta.json
 definition = load_system("fe_c.tdb", elements=["Fe", "C"])          # or given explicitly (x = mole fraction of C)
 definition = load_system("fe_c.tdb", elements=["Fe", "C"], gas_constant=8.3145)  # R defaults to 8.31451 for TDB
 system = build_system(definition)
-write_tdb(load_system("data/systems/ag_cu.json"), "ag_cu.tdb")
+write_tdb(load_system("data/systems/al_cu.json"), "al_cu.tdb")
 ```
 
 ## Validation against pycalphad

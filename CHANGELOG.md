@@ -1,5 +1,86 @@
 # Changelog
 
+## 0.3.0 - 2026-10-12
+
+### Added
+- **Assessed Ag-Cu system** (`data/systems/ag_cu.meta.json`): the Ag-Cu-Va
+  subsystem of the NIST solder database. It has a single FCC_A1 phase with
+  a miscibility gap, no provisional status and no preview banner. The app
+  shows its three citations, with links, below the diagram:
+  - Kattner, U.R. (2017), Phase Diagrams & Computational Thermodynamics -
+    Solder Systems, NIST Standard Reference Database 139, National
+    Institute of Standards and Technology, https://doi.org/10.18434/T4759N
+    (Accessed 12 October 2026);
+  - F.H. Hayes, H.L. Lukas, G. Effenberg, G. Petzow, Z. Metallkd. 77
+    (1986) 749-754;
+  - A.T. Dinsdale, CALPHAD 15 (1991) 317-425.
+- Downloaded databases, which are never committed:
+  - `data/sources.json` registers each database's official URL, SHA256,
+    size, citation, license mode and license URL
+    (https://www.nist.gov/open/license).
+  - `scripts/fetch_tdb.py` and `sources.py` download into `data/tdb/` (3
+    attempts with backoff) and accept a file only if its size and SHA256
+    match. Errors are clear and there is no silent fallback.
+  - `load_system` and the app download a missing database on first use. The
+    app shows a spinner, and a clear error if the download fails.
+  - `data/tdb/` is git-ignored.
+- Binary subsystems of multicomponent TDB files
+  (`load_system(path, elements=["AG", "CU"])`, `tdb.convert.extract_subsystem`):
+  - the requested elements plus VA and /- are kept;
+  - phases left with an empty sublattice and parameters involving other
+    elements (ternary ones included) are dropped;
+  - what was dropped is reported in `system.metadata["subsystem"]`.
+- A system can be a `.meta.json` naming a registered `source`, with its
+  `citations`.
+- Tests:
+  - `tests/test_ag_cu_assessed.py`:
+    - (a) NIST's calculated eutectic, 1052.25 K ± 0.2 K, with liquid, (Ag)
+      and (Cu) at x(Cu) = 0.40250, 0.13273, 0.95460 ± 0.0005;
+    - (b) experiment: 1052 ± 3 K, 0.399 ± 0.010, 0.141 ± 0.015,
+      0.950 ± 0.010, and Ag and Cu melting at 1234.93 K and 1357.77 K
+      ± 0.1 K;
+    - (d) exactly one invariant reaction in 500–1450 K;
+    - melting detected next to each pure end, and the pure-element Gibbs
+      crossing.
+  - (c) pycalphad cross-validation on the same file
+    (`tests/validation/`, case "Ag-Cu (NIST)").
+  - `tests/test_subsystem.py`: a synthetic A-B-C fixture.
+  - `tests/test_sources.py`: fetch, checksum and retry behaviour.
+  - App tests for citations, download on first use and a failed download.
+  - The NIST DATABASE_INFO block as a parser fixture.
+- `docs/validation/ag_cu.md`: engine vs NIST vs experiment vs pycalphad,
+  with an overlay plot.
+
+### Changed
+- `data/systems/ag_cu.json` (provisional, two FCC phases) moved to
+  `tests/fixtures/ag_cu_provisional.json`. The engine tests that used it now
+  use the fixture.
+- The Ag-Cu solvus tests in `tests/test_physics_regression.py` lost their
+  strict-xfail markers and pass with unchanged tolerances. The only
+  remaining xfails are the three Al-Cu tests.
+- Precomputed data are regenerated. For a downloaded database, the
+  staleness check uses the registered SHA256 of the TDB file.
+- The smoke test checks that Ag-Cu shows its citations and no banner, and
+  that Al-Cu still shows the banner.
+- GitHub Actions moved to `actions/checkout@v7`, `actions/setup-python@v7`
+  and `actions/cache@v6` (Node.js 24). Every job restores `data/tdb/` from
+  a cache keyed by `data/sources.json`, which holds the SHA256, then fetches
+  and verifies. A failed download with no cache fails the job.
+
+### Fixed
+- TDB parser: in `DATABASE_INFO`, `'` is Thermo-Calc's line-break marker,
+  not a quote. Single quotes now quote text only in `LIST_OF_REFERENCES` and
+  `ADD_REFERENCES`. The NIST solder database failed to load because of this.
+- Tie-line refinement next to a pure element. When the L + FCC field is
+  narrower than one Gibbs-curve grid cell (within about 1.7 K of Cu's
+  melting point), refinement failed and kept the hull's grid points. It now
+  retries from points inside the tie line and close to the pure end.
+  - Melting detection agrees with the pure-element Gibbs crossing to within
+    0.002 K (Ag and Cu).
+  - All equilibria recorded with 0.2.0 are unchanged.
+  - The traced Al-Cu boundary within 0.3 K of the Al melting point is now
+    resolved.
+
 ## 0.2.2 - 2026-10-10
 
 ### Added

@@ -1,0 +1,15 @@
+{
+  "nist_solder": {
+    "file": "nist_solder.tdb",
+    "url": "https://www.metallurgy.nist.gov/phase/solder/NIST-solder.tdb",
+    "sha256": "56a0b25021f5dd4d2efbb9ed89ad8ad06929796e963c40ede857fcc9f72df8f3",
+    "size": 19312,
+    "title": "Phase Diagrams & Computational Thermodynamics - Solder Systems, NIST Standard Reference Database 139",
+    "citation": "Kattner, U.R. (2017), Phase Diagrams & Computational Thermodynamics - Solder Systems, NIST Standard Reference Database 139, National Institute of Standards and Technology, https://doi.org/10.18434/T4759N (Accessed 12 October 2026).",
+    "doi": "https://doi.org/10.18434/T4759N",
+    "page": "https://www.metallurgy.nist.gov/phase/solder/solder.html",
+    "license_mode": "fetch",
+    "license_url": "https://www.nist.gov/open/license",
+    "note": "Downloaded from NIST and verified by SHA256; not redistributed in this repository."
+  }
+}
