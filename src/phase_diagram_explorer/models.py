@@ -157,6 +157,11 @@ class SystemDefinition(BaseModel):
     # from, and the citations to show with it.
     data_source: str | None = None
     citations: list[Citation] = []
+    # App defaults: {"temperature_unit": "K" | "°C", "composition_unit": "at%" | "wt%"}.
+    display: dict[str, str] = {}
+    # A short industrial context note shown by the app with the solidus,
+    # liquidus and melting range of the selected alloy.
+    industry_note: str | None = None
 
     @model_validator(mode="after")
     def check_t_range(self) -> "SystemDefinition":

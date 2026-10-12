@@ -29,7 +29,7 @@ REGENERATE = "regenerate with: python scripts/precompute.py"
 
 
 def test_app_systems_are_the_shipped_systems():
-    assert [path.name for path in APP_SYSTEMS] == ["ag_cu.meta.json", "al_cu.json"]
+    assert [path.name for path in APP_SYSTEMS] == ["ag_cu.meta.json", "al_cu.json", "pb_sn.meta.json"]
     assert default_systems_dir() == SYSTEMS_DIR
     assert default_precomputed_dir() == PRECOMPUTED_DIR
 

@@ -206,7 +206,7 @@ def test_selector_lists_only_systems_with_complete_gibbs_data(monkeypatch, tmp_p
 
 def test_shipped_selector_has_no_example_system():
     at = AppTest.from_file(str(APP_PATH), default_timeout=120).run()
-    assert at.selectbox[0].options == ["ag_cu", "al_cu"]
+    assert at.selectbox[0].options == ["ag_cu", "al_cu", "pb_sn"]
 
 
 def test_provisional_systems_show_banner():
@@ -330,13 +330,13 @@ def test_root_entry_point_runs_the_app():
     at = AppTest.from_file(str(ENTRY_POINT), default_timeout=120).run()
     assert not at.exception
     assert at.title[0].value == "Phase Diagram Explorer"
-    assert at.selectbox[0].options == ["ag_cu", "al_cu"]
+    assert at.selectbox[0].options == ["ag_cu", "al_cu", "pb_sn"]
 
 
-BANNERS = {"ag_cu": [], "al_cu": [PROVISIONAL_BANNER]}
+BANNERS = {"ag_cu": [], "al_cu": [PROVISIONAL_BANNER], "pb_sn": []}
 
 
-@pytest.mark.parametrize("system", ["ag_cu", "al_cu"])
+@pytest.mark.parametrize("system", ["ag_cu", "al_cu", "pb_sn"])
 def test_each_system_loads_from_precomputed_data(system):
     at = _run(system)
     assert any(caption.startswith(PRECOMPUTED_NOTE) for caption in _captions(at))
@@ -346,7 +346,7 @@ def test_each_system_loads_from_precomputed_data(system):
 
 def test_switching_systems_and_units_does_not_raise():
     at = AppTest.from_file(str(ENTRY_POINT), default_timeout=120).run()
-    for system in ["al_cu", "ag_cu", "al_cu"]:
+    for system in ["al_cu", "pb_sn", "ag_cu", "al_cu"]:
         at.selectbox[0].set_value(system)
         at.run()
         assert not at.exception
@@ -437,3 +437,43 @@ def test_failed_download_shows_a_clear_message(monkeypatch, tmp_path):
     assert not at.exception
     (error,) = [e.value for e in at.error]
     assert "could not be loaded" in error and "after 3 attempts" in error and "Download it manually" in error
+
+
+PB_SN_INFO = "63Sn-37Pb solder (63 wt% Sn) is near-eutectic"
+
+
+def test_pb_sn_opens_in_celsius_and_weight_percent_with_citations_and_info_box():
+    at = _run("pb_sn")
+    assert [radio.value for radio in at.radio] == ["°C", "wt%"]
+    assert len(at.warning) == 0
+    markdown = [element.value for element in at.markdown]
+    citations = markdown[markdown.index("**Data sources**") + 1]
+    assert "[H.J. Fecht, M.-X. Zhang, Y.A. Chang, J.H. Perepezko, Metall. Trans. A 20A (1989) 795-803.](" in citations
+    assert "https://www.metallurgy.nist.gov/phase/solder/pbsn.html" in citations
+    (info,) = [i.value for i in at.info if i.value.startswith(PB_SN_INFO)]
+    assert "Eutectic: 182.2 °C." in info
+    assert "melting (mushy) range" in info
+
+
+def test_pb_sn_info_box_follows_the_selected_alloy():
+    at = _run("pb_sn")
+    _slider(at, "Composition w(Sn) (wt%)").set_value(63.0)
+    at.run()
+    (info,) = [i.value for i in at.info if i.value.startswith(PB_SN_INFO)]
+    assert "Selected alloy (63.0 wt% Sn): solidus 182.2 °C, liquidus 183.2 °C, melting (mushy) range 0.9 K." in info
+
+
+def test_other_systems_have_no_info_box():
+    for system in ("ag_cu", "al_cu"):
+        at = _run(system)
+        assert not [i for i in at.info if i.value.startswith(PB_SN_INFO)]
+
+
+def test_units_default_per_system():
+    at = AppTest.from_file(str(ENTRY_POINT), default_timeout=120).run()
+    at.selectbox[0].set_value("ag_cu")
+    at.run()
+    assert [radio.value for radio in at.radio] == ["K", "at%"]
+    at.selectbox[0].set_value("pb_sn")
+    at.run()
+    assert [radio.value for radio in at.radio] == ["°C", "wt%"]

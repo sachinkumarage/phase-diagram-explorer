@@ -36,11 +36,13 @@ from phase_diagram_explorer.precomputed import (
     source_hash,
     status,
 )
+from phase_diagram_explorer.solidification import melting_range
 from phase_diagram_explorer.sources import SourceError, ensure, source, tdb_dir
 from phase_diagram_explorer.thermo.stoichiometric import StoichiometricPhase
 from phase_diagram_explorer.tracing import DEFAULT_LEVELS, trace_diagram
 from phase_diagram_explorer.units import (
     ATOMIC_PERCENT,
+    CELSIUS,
     COMPOSITION_UNITS,
     TEMPERATURE_UNITS,
     composition_from_display,
@@ -127,6 +129,35 @@ def _show_citations(definition: SystemDefinition) -> None:
 @st.cache_data(show_spinner=False)
 def _precomputed(system_path: str, data_hash: str, version: str, directory: str):
     return status(system_path, directory)
+
+
+@st.cache_data(show_spinner="Computing the melting range...")
+def _cached_melting_range(system_path: str, data_hash: str, version: str, x: float):
+    definition, system = _load(system_path, data_hash)
+    return melting_range(system, x, analysis_range(definition))
+
+
+def _default_index(options, preferred: str | None) -> int:
+    aliases = {"C": CELSIUS, "°C": CELSIUS}
+    preferred = aliases.get(preferred, preferred)
+    return list(options).index(preferred) if preferred in options else 0
+
+
+def _show_industry_note(definition, reactions, melting, to_T, T_unit: str, composition_text: str) -> None:
+    """Short context box: the note, the eutectic, and the melting (mushy)
+    range of the selected alloy."""
+    lines = [definition.industry_note]
+    for reaction in reactions:
+        if reaction.type == "eutectic":
+            lines.append(f"Eutectic: {to_T(reaction.temperature):.1f} {T_unit}.")
+    if melting.mushy_range is not None:
+        lines.append(
+            f"Selected alloy ({composition_text}): solidus {to_T(melting.solidus):.1f} {T_unit}, "
+            f"liquidus {to_T(melting.liquidus):.1f} {T_unit}, melting (mushy) range {melting.mushy_range:.1f} K."
+        )
+    else:
+        lines.append(f"Selected alloy ({composition_text}): no solidus and liquidus within the analysis range.")
+    st.info("\n\n".join(lines))
 
 
 @st.cache_data(show_spinner="Detecting invariant reactions...")
@@ -264,9 +295,16 @@ def main() -> None:
 
     with st.sidebar:
         st.header("Units")
-        T_unit = st.radio("Temperature unit", TEMPERATURE_UNITS, horizontal=True)
+        # One widget per system, so that each system opens in its own default units.
+        T_unit = st.radio(
+            "Temperature unit", TEMPERATURE_UNITS, horizontal=True, key=f"T_unit_{selected_name}",
+            index=_default_index(TEMPERATURE_UNITS, definition.display.get("temperature_unit")),
+        )
         available_composition_units = COMPOSITION_UNITS if None not in atomic_masses else (ATOMIC_PERCENT,)
-        x_unit = st.radio("Composition unit", available_composition_units, horizontal=True)
+        x_unit = st.radio(
+            "Composition unit", available_composition_units, horizontal=True, key=f"x_unit_{selected_name}",
+            index=_default_index(available_composition_units, definition.display.get("composition_unit")),
+        )
 
     def to_T(T_kelvin):
         return temperature_to_display(T_kelvin, T_unit)
@@ -352,6 +390,11 @@ def main() -> None:
     )
     st.caption(source_note)
     _show_citations(definition)
+    if definition.industry_note:
+        melting = _cached_melting_range(selected_path, data_hash, __version__, x_overall)
+        _show_industry_note(
+            definition, reactions, melting, to_T, T_unit, f"{x_display:.1f} {x_unit} {dependent.symbol}"
+        )
     export_columns = st.columns(len(EXPORT_FORMATS))
     settings = (T_range[0], T_range[1], n_T, n_points)
     for column, fmt in zip(export_columns, EXPORT_FORMATS):

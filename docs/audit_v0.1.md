@@ -553,6 +553,38 @@ and close to the pure end, and resolves these fields.
   resolved. It previously ran to the grid point x = 0.002 with the solid at
   x = 0.
 
+## Resolved in 0.3.1
+
+### Ag-Cu differences from pycalphad (about 4.5e-4)
+
+In the 0.3.0 cross-validation, all of the largest Ag-Cu differences from
+pycalphad were at the lowest grid temperature, 525 K. Phase fractions
+differed by up to 4.4e-4 and compositions by up to 4.8e-4.
+
+- **Where.** At 525 K the FCC_A1 miscibility gap spans x(Cu) = 0.0024831
+  to 0.9996607 (pycalphad). Both composition sets lie within the outermost
+  cells of the Gibbs-curve grid, which has a spacing of 0.002.
+- **Why.** This was an engine bug, not sampling noise. The common-tangent
+  refinement failed from the hull estimate (0.002004, 1.0). The fallbacks
+  added in 0.3.0 only moved both points towards one pure end, so the tie
+  line stayed at the grid points 0.002004 and 1.0.
+- **Fix.** Refinement now also tries starting pairs with each composition
+  set close to its own end. The 525 K tie line is (0.0024831, 0.9996607),
+  as in pycalphad. The largest Ag-Cu difference over the 30-point grid fell
+  from 4.4e-4 to 1.8e-6.
+- **Tests.** Two regression tests fail without the fix:
+  - the regular-solution binodal at 300–450 K against its analytical value;
+  - the Ag-Cu low-temperature solvus checked against the common-tangent
+    condition.
+- Every equilibrium recorded with 0.2.0 is unchanged.
+
+### Pb-Sn
+
+Pb-Sn from the NIST solder database (Fecht et al. 1989) is added as an
+assessed system. Its eutectic is 455.391 K (182.24 °C). NIST gives 182.2 °C,
+and pycalphad 455.392 K. The liquid, (Pb) and (Sn) compositions match
+NIST's 62.13, 18.91 and 96.59 mass % Sn to within 3e-5 in mole fraction.
+
 ## Still open
 
 - **Al-Cu data (provisional).** The model has no Cu-rich solid phases, so

@@ -14,6 +14,9 @@ Systems (see phase_diagram_explorer.validation.CASES):
   https://doi.org/10.18434/T4759N; Ag-Cu description of F.H. Hayes,
   H.L. Lukas, G. Effenberg, G. Petzow, Z. Metallkd. 77 (1986) 749-754.
   pycalphad reads the whole six-element file with components AG, CU, VA.
+  The Pb-Sn-Va subsystem of the same file (data/systems/pb_sn.meta.json):
+  H.J. Fecht, M.-X. Zhang, Y.A. Chang, J.H. Perepezko, Metall. Trans. A 20A
+  (1989) 795-803.
 - Literature databases from pycalphad's test databases:
   - pbsn.tdb, Pb-Sn: T.L. Ngai and Y.A. Chang, CALPHAD 5 (1981) 267-276
     (TDB file by T. Abe, K. Hashimoto and Y. Sawada, NIMS 2011).
@@ -70,6 +73,7 @@ EXPECTED_INVARIANTS = {
     "Interstitial (synthetic)": [("BCC_A2", "FCC_A1", "GRAPHITE"), ("FCC_A1", "LIQUID", "GRAPHITE")],
     "Magnetic (synthetic)": [("BCC_A2", "FCC_A1", "LIQUID")],
     "Ag-Cu (NIST)": [("FCC_A1#1", "LIQUID", "FCC_A1#2")],
+    "Pb-Sn (NIST)": [("FCC_A1", "LIQUID", "BCT_A5")],
     "Pb-Sn": [("FCC_A1", "LIQUID", "BCT_A5")],
     "Cu-Mg": [("CUMG2", "LIQUID", "HCP_A3"), ("CU2MG", "LIQUID", "CUMG2"), ("FCC_A1", "LIQUID", "CU2MG")],
     "Fe-C": [("BCC_A2", "FCC_A1", "GRAPHITE"), ("FCC_A1", "LIQUID", "GRAPHITE"), ("BCC_A2", "FCC_A1", "LIQUID")],

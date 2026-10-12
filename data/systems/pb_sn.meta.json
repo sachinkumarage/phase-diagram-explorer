@@ -1,0 +1,29 @@
+{
+  "name": "Pb-Sn",
+  "source": "nist_solder",
+  "elements": ["PB", "SN"],
+  "dependent_element": "SN",
+  "element_names": {"Pb": "Lead", "Sn": "Tin"},
+  "t_range_k": [300.0, 650.0],
+  "display": {"temperature_unit": "°C", "composition_unit": "wt%"},
+  "industry_note": "63Sn-37Pb solder (63 wt% Sn) is near-eutectic: it melts over a very narrow temperature range, close to the eutectic temperature.",
+  "_source": "Assessed Pb-Sn description (Fecht et al. 1989) from the NIST solder database, Pb-Sn subsystem.",
+  "citations": [
+    {
+      "text": "Kattner, U.R. (2017), Phase Diagrams & Computational Thermodynamics - Solder Systems, NIST Standard Reference Database 139, National Institute of Standards and Technology, https://doi.org/10.18434/T4759N (Accessed 12 October 2026).",
+      "url": "https://doi.org/10.18434/T4759N"
+    },
+    {
+      "text": "H.J. Fecht, M.-X. Zhang, Y.A. Chang, J.H. Perepezko, Metall. Trans. A 20A (1989) 795-803.",
+      "url": "https://www.metallurgy.nist.gov/phase/solder/pbsn.html"
+    },
+    {
+      "text": "A.T. Dinsdale, CALPHAD 15 (1991) 317-425.",
+      "url": "https://doi.org/10.1016/0364-5916(91)90030-N"
+    },
+    {
+      "text": "NIST Pb-Sn page: https://www.metallurgy.nist.gov/phase/solder/pbsn.html",
+      "url": "https://www.metallurgy.nist.gov/phase/solder/pbsn.html"
+    }
+  ]
+}

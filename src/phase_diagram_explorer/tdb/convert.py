@@ -245,6 +245,8 @@ def definition_from_database(
         metadata={**database.metadata, **({"subsystem": subsystem} if subsystem else {})},
         data_source=metadata.get("source"),
         citations=metadata.get("citations", []),
+        display=metadata.get("display", {}),
+        industry_note=metadata.get("industry_note"),
     )
 
 

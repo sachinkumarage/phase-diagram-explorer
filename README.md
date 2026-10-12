@@ -46,13 +46,22 @@ Runtime dependencies go into both `pyproject.toml` and `requirements.txt` (with 
 - Ag-Cu assessment: F.H. Hayes, H.L. Lukas, G. Effenberg, G. Petzow, Z. Metallkd. 77 (1986) 749-754.
 - Unary data: A.T. Dinsdale, CALPHAD 15 (1991) 317-425.
 
-License: https://www.nist.gov/open/license. The database file is **downloaded from NIST** (https://www.metallurgy.nist.gov/phase/solder/NIST-solder.tdb) and verified by SHA256. It is not redistributed in this repository: `data/tdb/` is git-ignored. Fetch it with:
+License: https://www.nist.gov/open/license. The database file is **downloaded from NIST** (https://www.metallurgy.nist.gov/phase/solder/NIST-solder.tdb) and verified by SHA256. The same file provides Ag-Cu and Pb-Sn. It is not redistributed in this repository: `data/tdb/` is git-ignored. Fetch it with:
 
 ```
 python scripts/fetch_tdb.py          # downloads to data/tdb/ and checks size and SHA256
 ```
 
 The app and `load_system` also download it on first use. A failed download, or a file that doesn't match, is an error; there is no fallback to other data. Sources are registered in `data/sources.json`. The app shows each system's citations below the diagram, and `docs/validation/ag_cu.md` compares the computed Ag-Cu diagram with NIST's calculation, experiment and pycalphad.
+
+**Pb-Sn** is the assessed description from the same NIST solder database (its Pb-Sn-Va subsystem). Its composition axis is x(Sn), and the app opens it in °C and wt% Sn:
+
+- Kattner, U.R. (2017), Phase Diagrams & Computational Thermodynamics - Solder Systems, NIST Standard Reference Database 139, National Institute of Standards and Technology, https://doi.org/10.18434/T4759N (Accessed 12 October 2026).
+- Pb-Sn assessment: H.J. Fecht, M.-X. Zhang, Y.A. Chang, J.H. Perepezko, Metall. Trans. A 20A (1989) 795-803.
+- Unary data: A.T. Dinsdale, CALPHAD 15 (1991) 317-425.
+- NIST Pb-Sn page: https://www.metallurgy.nist.gov/phase/solder/pbsn.html
+
+For Pb-Sn the app adds a short note on 63Sn-37Pb solder (near-eutectic), with the eutectic and the melting (mushy) range of the selected alloy, i.e. liquidus minus solidus. `docs/validation/pb_sn.md` compares the computed diagram with NIST's calculation, experiment and pycalphad. pycalphad's own Pb-Sn test database (Ngai and Chang 1981) is used only as a cross-validation fixture.
 
 **Al-Cu** is still a provisional model, shown with a preview banner. The former provisional Ag-Cu model is kept as a test fixture, `tests/fixtures/ag_cu_provisional.json`.
 

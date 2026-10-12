@@ -145,6 +145,7 @@ INTERIOR_STARTS = ((0.25, 0.75), (0.1, 0.9), (0.4, 0.6), (0.05, 0.5), (0.5, 0.95
 # Distances from a pure end used as alternative starting points when the
 # estimate touches that end (two-phase fields narrower than one grid cell).
 END_DISTANCES = tuple(np.geomspace(1e-3, 1e-12, 10))
+BOTH_ENDS_DISTANCES = tuple(np.geomspace(1e-2, 1e-10, 5))
 
 
 def _alternative_starts(x_left, x_right, range_left, range_right, left_free, right_free):
@@ -162,3 +163,9 @@ def _alternative_starts(x_left, x_right, range_left, range_right, left_free, rig
         end = range_left[0]
         for d in END_DISTANCES:
             yield (end + d, end + 4.0 * d if right_free else x_right)
+    # A tie line touching both ends (a miscibility gap with both composition
+    # sets nearly pure): each point close to its own end.
+    if left_free and right_free and x_left - range_left[0] <= width and range_right[1] - x_right <= width:
+        for d_left in BOTH_ENDS_DISTANCES:
+            for d_right in BOTH_ENDS_DISTANCES:
+                yield (range_left[0] + d_left, range_right[1] - d_right)

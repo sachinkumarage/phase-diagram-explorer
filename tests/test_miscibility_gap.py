@@ -153,3 +153,18 @@ def test_eutectic_into_two_composition_sets():
     assert below.stable_phases == ["ALPHA#1", "ALPHA#2"]
     above = compute_equilibrium(system, reaction.temperature + 5.0, 0.5, n_points=1001)
     assert above.stable_phases == ["LIQUID"]
+
+
+@pytest.mark.parametrize("T", [300.0, 350.0, 450.0])
+def test_gap_with_both_composition_sets_near_the_pure_ends(regular_solution, T):
+    """At low temperature both binodal compositions lie within the outermost
+    few cells of the Gibbs-curve grid (spacing 0.002 for the default 500
+    points). Regression test: the tie line used to stay at grid points such
+    as (0.002004, 1.0) because no starting point placed each composition set
+    near its own end."""
+    result = compute_equilibrium(regular_solution, T, 0.5)
+    x_binodal = _analytical_binodal(T)
+    assert x_binodal < 0.01
+    assert result.stable_phases == ["ALPHA#1", "ALPHA#2"]
+    assert result.phase_compositions["ALPHA#1"] == pytest.approx(x_binodal, rel=1e-7)
+    assert result.phase_compositions["ALPHA#2"] == pytest.approx(1.0 - x_binodal, rel=1e-9)

@@ -23,7 +23,10 @@ PROVISIONAL_BANNER = "Preview: provisional thermodynamic data, not yet validated
 EXPECTED = {
     "ag_cu": (False, "https://doi.org/10.18434/T4759N"),
     "al_cu": (True, None),
+    "pb_sn": (False, "https://www.metallurgy.nist.gov/phase/solder/pbsn.html"),
 }
+# Systems with an industrial-context info box, and how it starts.
+INFO_BOXES = {"pb_sn": "63Sn-37Pb solder (63 wt% Sn) is near-eutectic"}
 
 
 def check(at: AppTest, context: str) -> None:
@@ -55,7 +58,12 @@ def main() -> int:
             raise AssertionError(f"{system}: preview banner {'shown' if banner else 'missing'}")
         if citation and not (cited and citation in markdown[markdown.index("**Data sources**") + 1]):
             raise AssertionError(f"{system}: citation {citation} not shown")
+        info = [i.value for i in at.info if system in INFO_BOXES and i.value.startswith(INFO_BOXES[system])]
+        if system in INFO_BOXES and len(info) != 1:
+            raise AssertionError(f"{system}: info box not shown")
         notes = ["preview banner" if banner else "no banner", "citations" if cited else "no citations"]
+        if info:
+            notes.append("info box")
         print(f"load {system}: {elapsed:.2f} s ({', '.join(notes)})")
         for temperature_unit, composition_unit in [("°C", "wt%"), ("K", "at%")]:
             at.radio[0].set_value(temperature_unit)

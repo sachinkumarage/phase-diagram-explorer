@@ -169,3 +169,23 @@ def test_melting_detected_next_to_the_pure_elements(ag_cu, element, x, T_m):
     crossing = _pure_crossing(system, round(x), T_m - 20.0, T_m + 20.0)
     assert detected == pytest.approx(crossing, abs=DETECTION_TOLERANCE_K)
     assert detected == pytest.approx(T_m, abs=MELTING_TOLERANCE_K)
+
+
+@pytest.mark.parametrize("T", [300.0, 400.0, 525.0, 600.0])
+def test_low_temperature_solvus_is_a_common_tangent(ag_cu, T):
+    """Below about 600 K both FCC_A1 composition sets lie within the
+    outermost few cells of the Gibbs-curve grid (spacing 0.002). Regression
+    test: they used to be reported at the grid points 0.002004 and 1.0
+    (4.4e-4 from pycalphad at 525 K); now both satisfy the common-tangent
+    condition."""
+    _, system = ag_cu
+    result = compute_equilibrium(system, T, 0.5)
+    x1, x2 = (result.phase_compositions[p] for p in result.stable_phases)
+    assert 0.0 < x1 < 0.01 and 0.99 < x2 < 1.0
+    assert (x1, x2) != (pytest.approx(1.0 / 499), 1.0)
+    fcc = system["FCC_A1"]
+    slope = (fcc.molar_gibbs(T, x2) - fcc.molar_gibbs(T, x1)) / (x2 - x1)
+    assert fcc.molar_gibbs_derivative(T, x1) == pytest.approx(slope, abs=1e-3)
+    assert fcc.molar_gibbs_derivative(T, x2) == pytest.approx(slope, abs=1e-3)
+    if T == 525.0:  # pycalphad on the same file: 0.0024831, 0.9996607
+        assert (x1, x2) == (pytest.approx(0.0024831, abs=1e-6), pytest.approx(0.9996607, abs=1e-6))

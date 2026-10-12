@@ -1,5 +1,58 @@
 # Changelog
 
+## 0.3.1 - 2026-10-13
+
+### Added
+- **Assessed Pb-Sn system** (`data/systems/pb_sn.meta.json`): the Pb-Sn-Va
+  subsystem of the NIST solder database (same file and SHA256 as Ag-Cu).
+  - The composition axis is x(Sn), and the default view is 300–650 K in °C
+    and wt% Sn.
+  - It has no preview banner. The app shows the citations: Kattner (2017),
+    NIST SRD 139; H.J. Fecht, M.-X. Zhang, Y.A. Chang, J.H. Perepezko,
+    Metall. Trans. A 20A (1989) 795-803; A.T. Dinsdale, CALPHAD 15 (1991)
+    317-425; and the NIST Pb-Sn page.
+  - Eutectic at 455.391 K (182.24 °C): liquid x(Sn) = 0.74119, (Pb) 0.28929,
+    (Sn) 0.98021. NIST: 182.2 °C, 62.13, 18.91 and 96.59 wt% Sn.
+- Industrial context box for Pb-Sn: 63Sn-37Pb solder is near-eutectic. The
+  box shows the eutectic temperature and the solidus, liquidus and melting
+  (mushy) range of the selected alloy, for example 0.9 K at 63 wt% Sn.
+  - Systems define the note with an `industry_note` field.
+  - The solidus and liquidus come from the new `solidification.melting_range`.
+- Per-system default display units (`"display"` in the `.meta.json`). The
+  unit selectors reset to each system's defaults when you switch systems.
+- `tests/test_pb_sn_assessed.py`:
+  - (a) NIST's eutectic, 455.35 K ± 0.2 K, and compositions ± 0.0005, with
+    the mass % to mole fraction conversion in the docstring;
+  - (b) experiment: 183 ± 2 °C, 61.9 ± 1.5 wt% Sn, about 19 ± 2 wt% Sn in
+    (Pb), about 2.5 ± 1.5 wt% Pb in (Sn), and Pb and Sn melting at
+    600.61 K and 505.08 K ± 0.1 K;
+  - (d) exactly one invariant, a eutectic;
+  - (e) the app uses the NIST data, and pycalphad's Pb-Sn test database
+    stays a test fixture only.
+- (c) pycalphad cross-validation of Pb-Sn on the same file (case
+  "Pb-Sn (NIST)").
+- `docs/validation/pb_sn.md`: engine vs NIST vs experiment vs pycalphad,
+  with an overlay plot. `python -m phase_diagram_explorer.validation
+  --systems` writes both per-system pages.
+- The smoke test checks that Pb-Sn loads with citations, the info box and
+  no banner.
+
+### Fixed
+- **Miscibility gaps with both composition sets near the pure ends.** The
+  tie line stayed at grid points (for Ag-Cu at 525 K: 0.002004 and 1.0,
+  instead of 0.0024831 and 0.9996607).
+  - The common-tangent refinement now also tries each composition set close
+    to its own end.
+  - This was the cause of the largest Ag-Cu differences from pycalphad in
+    0.3.0 (4.4e-4); the largest is now 1.8e-6.
+  - New regression tests cover the regular-solution binodal at 300–450 K
+    (analytical) and the Ag-Cu low-temperature solvus (common-tangent
+    condition).
+  - Every equilibrium recorded with 0.2.0 is unchanged.
+
+### Changed
+- Precomputed data regenerated for all systems. Pb-Sn is new, at 14.9 KiB.
+
 ## 0.3.0 - 2026-10-12
 
 ### Added
