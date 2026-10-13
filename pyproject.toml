@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "phase-diagram-explorer"
-version = "0.3.1"
+version = "0.3.2"
 description = "Interactive exploration and visualization of thermodynamic phase diagrams"
 readme = "README.md"
 requires-python = ">=3.11"
@@ -33,9 +33,10 @@ where = ["src"]
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 # Fast local default; run everything with: pytest -m ""
-addopts = ["--strict-markers", "-m", "not slow and not validation"]
+addopts = ["--strict-markers", "-m", "not slow and not validation and not network"]
 markers = [
     "slow: full-range invariant detection and headless Streamlit app tests (deselected by default; run in CI)",
     "validation: cross-validation against pycalphad (needs .[validation]; deselected by default; own CI job)",
+    "network: downloads from official URLs (deselected by default; run with -m network; CI runs them)",
 ]
 filterwarnings = ["ignore::DeprecationWarning:pycalphad.*"]

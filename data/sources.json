@@ -1,5 +1,6 @@
 {
   "nist_solder": {
+    "short_name": "NIST",
     "file": "nist_solder.tdb",
     "url": "https://www.metallurgy.nist.gov/phase/solder/NIST-solder.tdb",
     "sha256": "56a0b25021f5dd4d2efbb9ed89ad8ad06929796e963c40ede857fcc9f72df8f3",

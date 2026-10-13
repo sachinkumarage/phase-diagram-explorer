@@ -1,5 +1,81 @@
 # Changelog
 
+## 0.3.2 - 2026-10-13
+
+### Fixed
+- **Database download refused with HTTP 403** (the live app's Ag-Cu
+  failure).
+  - `sources.fetch`, used by `scripts/fetch_tdb.py` and the app, sent
+    Python's default User-Agent (`Python-urllib/3.x`), which NIST's server
+    refuses from any network.
+  - Downloads now send `phase-diagram-explorer/<version>
+    (+https://github.com/sachinkumarage/phase-diagram-explorer)`. SHA256 and
+    size verification and the 3 retries are unchanged, and no mirror is used.
+  - **CI was red** for `67697b4` (Ag-Cu) and `bdf4aad` (Pb-Sn): the fetch
+    step got HTTP 403 and those commits' tests never ran in CI.
+  - **Local runs did not catch it** because the database file had been
+    downloaded beforehand with curl (so it was only verified, never
+    fetched), and the fetch tests used `file://` URLs.
+  - See `docs/audit_v0.1.md`.
+- **Trivial common tangents for miscibility gaps.** When the first
+  refinement failed, a fallback start inside the gap could converge to two
+  nearby points near the spinodal: a 2e-6 wide FCC_A1 gap tie line at
+  504.25 K in Ag-Cu, instead of 0.0018 to 0.9998. Such solutions are now
+  rejected, and a regression test covers this case. Every equilibrium
+  recorded with 0.2.0 is unchanged.
+
+### Added
+- **The app works without the database.** If a system's database cannot be
+  downloaded, it renders everything except the Gibbs energy curves from
+  precomputed data, with no database access:
+  - the diagram, invariant table, citations and unit toggles;
+  - the equilibrium at the selected (T, x), from the new
+    `lookup.equilibrium_from_trace`;
+  - Pb-Sn's melting range.
+
+  Only the Gibbs energy section says "Gibbs energy curves need the NIST
+  database, which could not be downloaded right now." The total Gibbs
+  energy shows "Needs the NIST database." A failed download is retried at
+  most every 5 minutes, and `PHASE_DIAGRAM_DISABLE_DOWNLOADS=1` disables
+  downloads.
+- **Precomputed files now also hold:**
+  - an equilibrium table: the diagram traced 0.25 K apart, with extra levels
+    around the start and end of each two-phase field. It matches
+    `compute_equilibrium` to 4.9e-7 (Ag-Cu) and 9.3e-6 (Pb-Sn) over 1,120
+    points each.
+  - a summary of the system definition (names, elements, phase names,
+    citations, display settings; no thermodynamic parameters).
+
+  The staleness check no longer needs the database. File sizes: Ag-Cu
+  162 KiB, Al-Cu 168 KiB, Pb-Sn 72 KiB.
+- **Public defaults:** only validated systems are listed, and Ag-Cu is
+  selected. The sidebar checkbox "Show preview systems (provisional data)",
+  off by default, adds Al-Cu with its banner.
+- **Tests:**
+  - `tests/test_lookup.py`: 20 points each for Ag-Cu and Pb-Sn, within
+    1e-4 of `compute_equilibrium`, covering the gap, the eutectic and the
+    pure ends; no stored gap tie line is degenerate.
+  - `tests/test_network.py` (marker `network`, deselected by default): a real
+    download from the official URL through the fetch code path, with SHA256
+    verification. CI runs it.
+  - User-Agent and disabled-download tests.
+  - AppTests for a failed download, the public defaults and Pb-Sn without
+    the database.
+- `scripts/smoke_test.py --offline`, and a `cloud-smoke` CI step that runs
+  it with downloads disabled and no database before the normal run. Both
+  runs check the public defaults and both preview states.
+- `trace_diagram(..., extra_levels=...)`.
+- README: "Live demo" and CI status badges, and the live app URL
+  https://phase-diagram-explorer.streamlit.app/.
+
+### Changed
+- `tests/fixtures/nist_database_info.tdb` is replaced by the synthetic
+  `tests/fixtures/database_info_line_breaks.tdb`, which keeps the
+  apostrophe line-break test. The expression tests use a synthetic unary
+  function, and no tracked file contains text from the NIST database file.
+- `melting_range` accepts an `equilibrium` callable, so it can run on the
+  precomputed table.
+
 ## 0.3.1 - 2026-10-13
 
 ### Added

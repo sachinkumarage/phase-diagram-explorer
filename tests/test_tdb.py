@@ -136,16 +136,17 @@ ADD_REFERENCES
 
 
 def test_database_info_apostrophes_are_line_breaks():
-    """The DATABASE_INFO block of the NIST solder database (four lines copied
-    into tests/fixtures/nist_database_info.tdb): "'" ends a line, as in
-    Thermo-Calc, and is not a quote."""
-    text = HEADER + (FIXTURES_DIR / "nist_database_info.tdb").read_text()
+    """A DATABASE_INFO block in Thermo-Calc's format, where "'" ends a line
+    and is not a quote (synthetic text in
+    tests/fixtures/database_info_line_breaks.tdb, laid out like the header of
+    the NIST solder database)."""
+    text = HEADER + (FIXTURES_DIR / "database_info_line_breaks.tdb").read_text()
     database = parse_tdb(text)
     assert database.metadata["database_info"].splitlines() == [
-        "Database for solder alloys under development",
-        "Compiled by Ursula R. Kattner, NIST, Gaithersburg, MD, USA",
-        "Last update: 04-Aug-2017",
-        "Previous update: 30-Nov-1999",
+        "Synthetic parser fixture for line breaks",
+        "Written for the phase-diagram-explorer test suite",
+        "Revision 3 of the example header",
+        "No thermodynamic data in this block",
     ]
     # the command ends at the "!" on its fourth line; parsing continues
     database = parse_tdb(text + "PHASE LIQUID % 1 1 !\nCONSTITUENT LIQUID :AG,CU: !\n")

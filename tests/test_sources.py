@@ -140,3 +140,25 @@ def test_fetch_script_fails_clearly(tmp_path):
     )
     assert result.returncode == 1
     assert "ERROR test_db" in result.stderr and "after 3 attempts" in result.stderr
+
+
+def test_downloads_send_a_descriptive_user_agent(tmp_path, monkeypatch):
+    """NIST's server refuses Python's default User-Agent with HTTP 403."""
+    real_urlopen = urllib.request.urlopen
+    sent = []
+
+    def recording_urlopen(request, timeout):
+        sent.append(request.get_header("User-agent"))
+        return real_urlopen(request, timeout=timeout)
+
+    monkeypatch.setattr(urllib.request, "urlopen", recording_urlopen)
+    fetch(_local_source(tmp_path), tmp_path / "tdb")
+    from phase_diagram_explorer import __version__
+
+    assert sent == [f"phase-diagram-explorer/{__version__} (+https://github.com/sachinkumarage/phase-diagram-explorer)"]
+
+
+def test_downloads_can_be_disabled(tmp_path, monkeypatch):
+    monkeypatch.setenv("PHASE_DIAGRAM_DISABLE_DOWNLOADS", "1")
+    with pytest.raises(SourceError, match="downloads are disabled"):
+        fetch(_local_source(tmp_path), tmp_path / "tdb")

@@ -4,7 +4,16 @@ repository root (or "streamlit run src/phase_diagram_explorer/app.py").
 At the default settings the diagram and invariants come from
 data/precomputed (see precomputed.py), so the app starts quickly on a small
 cloud machine; anything else is computed live and cached. The equilibrium
-at the selected (T, x) is always computed live.
+at the selected (T, x) is computed live.
+
+If a system's database cannot be downloaded, the page still works from the
+precomputed data alone: the diagram, invariant table, citations and unit
+toggles, and the equilibrium at the selected (T, x) read from the
+precomputed equilibrium table (lookup.py). Only the Gibbs energy curves and
+the total Gibbs energy need the database; that section then shows a notice.
+
+Public defaults: only validated systems are listed until "Show preview
+systems (provisional data)" is ticked; Ag-Cu is selected first.
 """
 import json
 from pathlib import Path
@@ -37,7 +46,8 @@ from phase_diagram_explorer.precomputed import (
     status,
 )
 from phase_diagram_explorer.solidification import melting_range
-from phase_diagram_explorer.sources import SourceError, ensure, source, tdb_dir
+from phase_diagram_explorer.lookup import equilibrium_from_trace
+from phase_diagram_explorer.sources import SourceError, ensure, registry_path, source, tdb_dir
 from phase_diagram_explorer.thermo.stoichiometric import StoichiometricPhase
 from phase_diagram_explorer.tracing import DEFAULT_LEVELS, trace_diagram
 from phase_diagram_explorer.units import (
@@ -55,6 +65,12 @@ from phase_diagram_explorer.units import (
 from phase_diagram_explorer.visualization import COMPOSITION_FORMAT, TEMPERATURE_FORMAT, plot_diagram
 
 PROVISIONAL_BANNER = "Preview: provisional thermodynamic data, not yet validated."
+PREVIEW_LABEL = "Show preview systems (provisional data)"
+DEFAULT_SYSTEM = "ag_cu"
+GIBBS_NOTICE = "Gibbs energy curves need the {name} database, which could not be downloaded right now."
+TOTAL_GIBBS_NOTICE = "Needs the {name} database."
+# A failed download is not retried for this long (s), so that reruns stay fast.
+FAILED_DOWNLOAD_TTL_S = 300
 PRECOMPUTED_NOTE = "Diagram and invariant reactions from precomputed data"
 LIVE_NOTICE = "Precomputed data not used ({reason}); computing the diagram live."
 
@@ -96,22 +112,52 @@ def _is_computable(system_path: str, data_hash: str) -> bool:
     return is_sourced_system(system_path) or is_computable(load_system(system_path))
 
 
-def _ensure_database(system_path: str) -> None:
-    """Download a sourced system's database on first use (verified and kept
-    in data/tdb/), stopping the app with a clear message if that fails."""
+@st.cache_data(show_spinner=False)
+def _is_preview(system_path: str, data_hash: str) -> bool:
+    """Provisional data, read without loading a sourced system's database."""
+    if is_sourced_system(system_path):
+        return json.loads(Path(system_path).read_text()).get("_status") == "provisional"
+    return load_system(system_path).is_provisional
+
+
+@st.cache_data(show_spinner=False, ttl=FAILED_DOWNLOAD_TTL_S)
+def _failed_download(name: str, directory: str, registry: str) -> str:
+    """Download a database (verified), returning "" on success or the error
+    message. Results are cached, so a failure is retried only after the TTL."""
+    entry = source(name)
+    try:
+        with st.spinner(f"Downloading {entry.title or name} from {entry.url} (first use only)..."):
+            ensure(name, directory)
+    except SourceError as error:
+        return str(error)
+    return ""
+
+
+def _database_error(system_path: str) -> str | None:
+    """None if the system's thermodynamic data are available (downloading a
+    sourced system's database on first use), else why not."""
     if not is_sourced_system(system_path):
-        return
+        return None
     name = json.loads(Path(system_path).read_text())["source"]
     entry = source(name)
     try:
-        if not (tdb_dir() / entry.file).exists():
-            with st.spinner(f"Downloading {entry.title or name} from {entry.url} (first use only)..."):
-                ensure(name)
-        else:
+        if (tdb_dir() / entry.file).exists():
             ensure(name, download=False)
+            return None
     except SourceError as error:
-        st.error(f"The database for this system could not be loaded: {error}")
-        st.stop()
+        return str(error)
+    error = _failed_download(name, str(tdb_dir()), str(registry_path()))
+    if not error and not (tdb_dir() / entry.file).exists():
+        _failed_download.clear()  # cached success, but the file is gone: fetch again
+        error = _failed_download(name, str(tdb_dir()), str(registry_path()))
+    return error or None
+
+
+def _database_name(system_path: str) -> str:
+    if is_sourced_system(system_path):
+        entry = source(json.loads(Path(system_path).read_text())["source"])
+        return entry.short_name or entry.name
+    return "thermodynamic"
 
 
 def _show_citations(definition: SystemDefinition) -> None:
@@ -135,6 +181,12 @@ def _precomputed(system_path: str, data_hash: str, version: str, directory: str)
 def _cached_melting_range(system_path: str, data_hash: str, version: str, x: float):
     definition, system = _load(system_path, data_hash)
     return melting_range(system, x, analysis_range(definition))
+
+
+@st.cache_data(show_spinner="Computing the melting range...")
+def _table_melting_range(system_path: str, data_hash: str, version: str, x: float, _table):
+    """Melting range from the precomputed equilibrium table (no database)."""
+    return melting_range(None, x, _table.T_range, equilibrium=lambda T, x: equilibrium_from_trace(_table, T, x))
 
 
 def _default_index(options, preferred: str | None) -> int:
@@ -271,12 +323,34 @@ def main() -> None:
         st.error(f"No system definitions with complete Gibbs energy data found in {systems_dir}")
         st.stop()
 
+    with st.sidebar:
+        show_preview = st.checkbox(PREVIEW_LABEL, value=False)
+    if not show_preview:
+        system_paths = [path for path in system_paths if not _is_preview(str(path), _data_hash(str(path)))]
+    if not system_paths:
+        st.info(f"No validated systems are available; tick \"{PREVIEW_LABEL}\" in the sidebar.")
+        st.stop()
+
     system_names = _system_names(system_paths)
-    selected_name = st.selectbox("System", system_names)
+    selected_name = st.selectbox(
+        "System", system_names, index=system_names.index(DEFAULT_SYSTEM) if DEFAULT_SYSTEM in system_names else 0
+    )
     selected_path = str(system_paths[system_names.index(selected_name)])
     data_hash = _data_hash(selected_path)
-    _ensure_database(selected_path)
-    definition, system = _load(selected_path, data_hash)
+    precomputed, stale_reason = _precomputed(selected_path, data_hash, __version__, precomputed_dir)
+    database_error = _database_error(selected_path)
+    if database_error is None:
+        definition, system = _load(selected_path, data_hash)
+    elif precomputed is not None:
+        # The database is unavailable: everything below except the Gibbs
+        # energy curves works from the precomputed data.
+        definition, system = precomputed.definition, None
+    else:
+        st.error(
+            f"The database for this system could not be loaded, and no precomputed data are available: {database_error}"
+        )
+        st.stop()
+    database_name = _database_name(selected_path)
 
     if definition.is_provisional:
         st.warning(PROVISIONAL_BANNER)
@@ -349,21 +423,25 @@ def main() -> None:
     def is_displayed(reaction) -> bool:
         return T_range[0] <= reaction.temperature <= T_range[1]
 
-    precomputed, stale_reason = _precomputed(selected_path, data_hash, __version__, precomputed_dir)
     default_settings = n_T == DEFAULT_LEVELS and n_points == DEFAULT_POINTS
     full_range = np.allclose(T_range, analysis_range_K, atol=1e-6)
 
-    if precomputed is not None and default_settings:
+    if precomputed is not None and (default_settings or system is None):
         reactions = precomputed.invariants
     else:
         reactions = _cached_invariants(selected_path, data_hash, __version__, n_points)
 
-    if precomputed is not None and default_settings and full_range:
+    if precomputed is not None and ((default_settings and full_range) or system is None):
         traced = precomputed.traced
         source_note = (
             f"{PRECOMPUTED_NOTE} (version {precomputed.metadata['package_version']}, "
             f"computed in {precomputed.metadata['computation_time_s']:.1f} s)."
         )
+        if system is None and not (default_settings and full_range):
+            st.info(
+                f"Other temperature ranges and resolutions need the {database_name} database, which could not "
+                "be downloaded right now; showing the precomputed diagram over the selected range."
+            )
     else:
         if precomputed is None:
             st.info(LIVE_NOTICE.format(reason=stale_reason))
@@ -380,18 +458,21 @@ def main() -> None:
         source_note = "Diagram computed live for these settings."
 
     st.subheader("Phase diagram")
-    st.plotly_chart(
-        plot_diagram(
-            traced, definition.name,
-            dependent_symbol=dependent.symbol, temperature_unit=T_unit,
-            composition_unit=x_unit, atomic_masses=atomic_masses,
-        ),
-        width="stretch",
+    figure = plot_diagram(
+        traced, definition.name,
+        dependent_symbol=dependent.symbol, temperature_unit=T_unit,
+        composition_unit=x_unit, atomic_masses=atomic_masses,
     )
+    if not np.allclose(traced.T_range, T_range, atol=1e-6):
+        figure.update_yaxes(range=[to_T(T_range[0]), to_T(T_range[1])])
+    st.plotly_chart(figure, width="stretch")
     st.caption(source_note)
     _show_citations(definition)
     if definition.industry_note:
-        melting = _cached_melting_range(selected_path, data_hash, __version__, x_overall)
+        if system is not None:
+            melting = _cached_melting_range(selected_path, data_hash, __version__, x_overall)
+        else:
+            melting = _table_melting_range(selected_path, data_hash, __version__, x_overall, precomputed.table)
         _show_industry_note(
             definition, reactions, melting, to_T, T_unit, f"{x_display:.1f} {x_unit} {dependent.symbol}"
         )
@@ -411,35 +492,52 @@ def main() -> None:
 
     T_selected_text = f"{T_selected_display:.1f} {T_unit}"
     st.subheader(f"Equilibrium at T = {T_selected_text}, {x_title} = {x_display:.1f}")
-    result = compute_equilibrium(system, T_selected, x_overall, n_points=n_points)
+    if system is not None:
+        result = compute_equilibrium(system, T_selected, x_overall, n_points=n_points)
+    else:
+        try:
+            result = equilibrium_from_trace(precomputed.table, T_selected, x_overall)
+        except ValueError:
+            result = None
+            st.info(
+                f"Without the {database_name} database, equilibria are available only within "
+                f"{to_T(analysis_range_K[0]):.0f}–{to_T(analysis_range_K[1]):.0f} {T_unit}."
+            )
 
     col1, col2 = st.columns(2)
-    with col1:
-        st.markdown("**Stable phases**")
-        st.write(", ".join(result.stable_phases))
-        st.markdown("**Phase fractions**")
-        st.table(
-            {
-                "phase": list(result.phase_fractions.keys()),
-                "fraction": [f"{f:{FRACTION_FORMAT}}" for f in result.phase_fractions.values()],
-            }
-        )
-    with col2:
-        st.markdown("**Phase compositions**")
-        st.table(
-            {
-                "phase": list(result.phase_compositions.keys()),
-                x_title: [f"{to_x(x):{COMPOSITION_FORMAT}}" for x in result.phase_compositions.values()],
-            }
-        )
-        st.markdown(f"**Molar Gibbs energy ({GIBBS_UNIT})**")
-        st.write(f"{result.total_gibbs:.2f}")
+    if result is not None:
+        with col1:
+            st.markdown("**Stable phases**")
+            st.write(", ".join(result.stable_phases))
+            st.markdown("**Phase fractions**")
+            st.table(
+                {
+                    "phase": list(result.phase_fractions.keys()),
+                    "fraction": [f"{f:{FRACTION_FORMAT}}" for f in result.phase_fractions.values()],
+                }
+            )
+        with col2:
+            st.markdown("**Phase compositions**")
+            st.table(
+                {
+                    "phase": list(result.phase_compositions.keys()),
+                    x_title: [f"{to_x(x):{COMPOSITION_FORMAT}}" for x in result.phase_compositions.values()],
+                }
+            )
+            st.markdown(f"**Molar Gibbs energy ({GIBBS_UNIT})**")
+            if np.isfinite(result.total_gibbs):
+                st.write(f"{result.total_gibbs:.2f}")
+            else:
+                st.caption(TOTAL_GIBBS_NOTICE.format(name=database_name))
 
     st.subheader("Gibbs energy curves and common tangent")
-    st.plotly_chart(
-        _tangent_line_figure(system, T_selected, x_overall, n_points, to_x, x_title, T_selected_text),
-        width="stretch",
-    )
+    if system is not None:
+        st.plotly_chart(
+            _tangent_line_figure(system, T_selected, x_overall, n_points, to_x, x_title, T_selected_text),
+            width="stretch",
+        )
+    else:
+        st.info(GIBBS_NOTICE.format(name=database_name))
 
     st.subheader("Invariant reactions")
     st.caption(

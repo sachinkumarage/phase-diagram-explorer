@@ -39,10 +39,26 @@ def _systems_dir(monkeypatch, tmp_path: Path, *files: Path) -> None:
     monkeypatch.setenv("PHASE_DIAGRAM_SYSTEMS_DIR", str(tmp_path))
 
 
+PREVIEW_LABEL = "Show preview systems (provisional data)"
+
+
+def _checkbox(at: AppTest, label: str):
+    (box,) = [checkbox for checkbox in at.checkbox if checkbox.label == label]
+    return box
+
+
+def _show_preview_systems(at: AppTest) -> None:
+    _checkbox(at, PREVIEW_LABEL).check()
+    at.run()
+    assert not at.exception
+
+
 def _run(system: str = "ag_cu", **radios) -> AppTest:
     at = AppTest.from_file(str(APP_PATH), default_timeout=120)
     at.run()
     assert not at.exception
+    if system not in at.selectbox[0].options:
+        _show_preview_systems(at)
     at.selectbox[0].set_value(system)
     for radio in at.radio:
         if radio.label in radios:
@@ -206,7 +222,24 @@ def test_selector_lists_only_systems_with_complete_gibbs_data(monkeypatch, tmp_p
 
 def test_shipped_selector_has_no_example_system():
     at = AppTest.from_file(str(APP_PATH), default_timeout=120).run()
+    _show_preview_systems(at)
     assert at.selectbox[0].options == ["ag_cu", "al_cu", "pb_sn"]
+
+
+def test_public_defaults_list_only_validated_systems_with_ag_cu_selected():
+    at = AppTest.from_file(str(APP_PATH), default_timeout=120).run()
+    assert not at.exception
+    assert _checkbox(at, PREVIEW_LABEL).value is False
+    assert at.selectbox[0].options == ["ag_cu", "pb_sn"]
+    assert at.selectbox[0].value == "ag_cu"
+    assert len(at.warning) == 0
+
+    _show_preview_systems(at)
+    assert at.selectbox[0].options == ["ag_cu", "al_cu", "pb_sn"]
+    assert at.selectbox[0].value == "ag_cu"
+    at.selectbox[0].set_value("al_cu")
+    at.run()
+    assert [warning.value for warning in at.warning] == [PROVISIONAL_BANNER]
 
 
 def test_provisional_systems_show_banner():
@@ -330,7 +363,7 @@ def test_root_entry_point_runs_the_app():
     at = AppTest.from_file(str(ENTRY_POINT), default_timeout=120).run()
     assert not at.exception
     assert at.title[0].value == "Phase Diagram Explorer"
-    assert at.selectbox[0].options == ["ag_cu", "al_cu", "pb_sn"]
+    assert at.selectbox[0].options == ["ag_cu", "pb_sn"]
 
 
 BANNERS = {"ag_cu": [], "al_cu": [PROVISIONAL_BANNER], "pb_sn": []}
@@ -346,6 +379,7 @@ def test_each_system_loads_from_precomputed_data(system):
 
 def test_switching_systems_and_units_does_not_raise():
     at = AppTest.from_file(str(ENTRY_POINT), default_timeout=120).run()
+    _show_preview_systems(at)
     for system in ["al_cu", "pb_sn", "ag_cu", "al_cu"]:
         at.selectbox[0].set_value(system)
         at.run()
@@ -391,7 +425,7 @@ def test_other_settings_are_computed_live_without_a_notice():
 
 def test_high_resolution_warns_with_an_estimated_time_before_running():
     at = _run()
-    at.checkbox[0].check()
+    _checkbox(at, "High resolution").check()
     at.run()
     assert not at.exception
     (warning,) = [w.value for w in at.warning if w.value.startswith("High resolution")]
@@ -426,17 +460,80 @@ def test_database_is_downloaded_on_first_use(monkeypatch, tmp_path):
     assert list(_invariant_table(at)["type"]) == ["eutectic"]
 
 
-def test_failed_download_shows_a_clear_message(monkeypatch, tmp_path):
+GIBBS_NOTICE = "Gibbs energy curves need the NIST database, which could not be downloaded right now."
+
+
+def _offline(monkeypatch, tmp_path) -> list:
+    """No database file, and every download fails (sources.fetch raises)."""
     from phase_diagram_explorer import sources
 
-    monkeypatch.setattr(sources, "BACKOFF_S", 0.0)
-    _local_registry(monkeypatch, tmp_path, (tmp_path / "unreachable.tdb").as_uri())
-    at = AppTest.from_file(str(APP_PATH), default_timeout=120).run()
-    at.selectbox[0].set_value("ag_cu")
+    attempts = []
+
+    def failing_fetch(entry, *args, **kwargs):
+        attempts.append(entry.name)
+        raise sources.SourceError(f"could not download {entry.name} from {entry.url} after 3 attempts (simulated)")
+
+    monkeypatch.setattr(sources, "fetch", failing_fetch)
+    monkeypatch.setenv("PHASE_DIAGRAM_TDB_DIR", str(tmp_path / "empty"))
+    return attempts
+
+
+def test_failed_download_keeps_the_page_working(monkeypatch, tmp_path):
+    """With the database unavailable, the diagram, invariant table, citations
+    and point equilibrium come from precomputed data; only the Gibbs energy
+    curves section shows a notice."""
+    attempts = _offline(monkeypatch, tmp_path)
+    at = _run("ag_cu")
+    assert attempts == ["nist_solder"]
+    assert not at.exception and not at.error
+
+    diagram = _figure(at, 0)
+    regions = {trace["name"] for trace in diagram["data"] if trace.get("fill") == "toself"}
+    assert regions == {"FCC_A1", "LIQUID", "LIQUID + FCC_A1", "FCC_A1#1 + FCC_A1#2"}
+    assert len(at.get("plotly_chart")) == 1  # no Gibbs energy curves
+    assert list(_invariant_table(at)["type"]) == ["eutectic"]
+    markdown = [element.value for element in at.markdown]
+    assert "**Data sources**" in markdown
+    assert markdown[markdown.index("**Stable phases**") + 1] == "FCC_A1#1, FCC_A1#2"
+    assert list(at.table[1].value["phase"]) == ["FCC_A1#1", "FCC_A1#2"]
+    assert [info.value for info in at.info] == [GIBBS_NOTICE]
+    assert "Needs the NIST database." in _captions(at)
+
+    # point equilibrium follows the selected (T, x) without the database
+    _slider(at, "Temperature (K) for equilibrium and Gibbs curves").set_value(1300.0)
+    _slider(at, "Composition x(Cu) (at%)").set_value(10.0)
     at.run()
     assert not at.exception
-    (error,) = [e.value for e in at.error]
-    assert "could not be loaded" in error and "after 3 attempts" in error and "Download it manually" in error
+    markdown = [element.value for element in at.markdown]
+    assert markdown[markdown.index("**Stable phases**") + 1] == "LIQUID"
+    for temperature_unit, composition_unit in [("°C", "wt%"), ("K", "at%")]:
+        at.radio[0].set_value(temperature_unit)
+        at.radio[1].set_value(composition_unit)
+        at.run()
+        assert not at.exception and not at.error
+
+
+def test_failed_download_is_not_retried_on_every_rerun(monkeypatch, tmp_path):
+    attempts = _offline(monkeypatch, tmp_path)
+    at = _run("ag_cu")
+    _slider(at, "Composition x(Cu) (at%)").set_value(30.0)
+    at.run()
+    at.selectbox[0].set_value("pb_sn")
+    at.run()
+    assert attempts == ["nist_solder"]  # cached failure for both systems
+
+
+def test_pb_sn_without_the_database(monkeypatch, tmp_path):
+    _offline(monkeypatch, tmp_path)
+    at = _run("pb_sn")
+    assert not at.exception and not at.error
+    _slider(at, "Composition w(Sn) (wt%)").set_value(63.0)
+    at.run()
+    infos = [info.value for info in at.info]
+    assert GIBBS_NOTICE in infos
+    (note,) = [info for info in infos if info.startswith("63Sn-37Pb")]
+    assert "solidus 182.2 °C, liquidus 183.2 °C" in note
+    assert list(_invariant_table(at)["type"]) == ["eutectic"]
 
 
 PB_SN_INFO = "63Sn-37Pb solder (63 wt% Sn) is near-eutectic"

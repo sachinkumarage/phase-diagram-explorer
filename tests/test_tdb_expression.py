@@ -14,20 +14,18 @@ from phase_diagram_explorer.tdb.expression import (
 )
 from phase_diagram_explorer.thermo.constants import DATABASE_GAS_CONSTANT
 
-# Unary Ag (SGTE, Dinsdale 1991) as a realistic piecewise function.
-GHSERAG = (
-    "298.15 -7209.512+118.200733*T-23.8463314*T*LN(T)-.001790585*T**2-3.98587E-07*T**3-12011*T**(-1); "
-    "1234.93 Y -15095.252+190.266404*T-33.472*T*LN(T)+1.411773E+29*T**(-9); 3000.00 N REF0"
+# A synthetic unary function with the structure of an SGTE pure-element
+# description (two ranges, T*LN(T), T**2, T**3, T**(-1) and T**(-9) terms).
+GSYNTH = (
+    "298.15 -7100.0+117.5*T-23.5*T*LN(T)-.0017*T**2-4.0E-07*T**3-12000*T**(-1); "
+    "1200.0 Y -15000.0+190.0*T-33.0*T*LN(T)+1.4E+29*T**(-9); 3000.00 N REF0"
 )
 
 
-def _ghserag(T: float) -> float:
-    if T < 1234.93:
-        return (
-            -7209.512 + 118.200733 * T - 23.8463314 * T * math.log(T) - 0.001790585 * T**2
-            - 3.98587e-07 * T**3 - 12011 / T
-        )
-    return -15095.252 + 190.266404 * T - 33.472 * T * math.log(T) + 1.411773e29 * T**-9
+def _gsynth(T: float) -> float:
+    if T < 1200.0:
+        return -7100.0 + 117.5 * T - 23.5 * T * math.log(T) - 0.0017 * T**2 - 4.0e-07 * T**3 - 12000 / T
+    return -15000.0 + 190.0 * T - 33.0 * T * math.log(T) + 1.4e29 * T**-9
 
 
 def evaluate(text: str, T: float = 1000.0, functions: FunctionTable | None = None) -> float:
@@ -85,9 +83,9 @@ def test_malicious_or_malformed_expressions_are_rejected(text):
 
 
 def test_unknown_names_are_function_references_and_must_be_defined():
-    assert Expression("GHSERAG+1").references == {"GHSERAG"}
-    with pytest.raises(ValueError, match="undefined function 'GHSERAG'"):
-        evaluate("GHSERAG+1", functions=FunctionTable())
+    assert Expression("GSYNTH+1").references == {"GSYNTH"}
+    with pytest.raises(ValueError, match="undefined function 'GSYNTH'"):
+        evaluate("GSYNTH+1", functions=FunctionTable())
 
 
 def test_expression_evaluation_does_not_use_eval(monkeypatch):
@@ -108,25 +106,25 @@ def test_vectorised_evaluation():
 
 
 def test_piecewise_breakpoints_and_terminator():
-    model = parse_piecewise(GHSERAG)
-    assert [(i.T_min, i.T_max) for i in model.intervals] == [(298.15, 1234.93), (1234.93, 3000.0)]
+    model = parse_piecewise(GSYNTH)
+    assert [(i.T_min, i.T_max) for i in model.intervals] == [(298.15, 1200.0), (1200.0, 3000.0)]
 
     gibbs = PiecewiseGibbs(model)
-    for T in (298.15, 500.0, 1234.92, 1234.93, 1500.0, 3000.0):
-        assert gibbs.G(T) == pytest.approx(_ghserag(T), rel=1e-12)
+    for T in (298.15, 500.0, 1199.99, 1200.0, 1500.0, 3000.0):
+        assert gibbs.G(T) == pytest.approx(_gsynth(T), rel=1e-12)
     T = np.array([400.0, 2000.0])
-    assert np.allclose(gibbs.G(T), [_ghserag(400.0), _ghserag(2000.0)], rtol=1e-12)
+    assert np.allclose(gibbs.G(T), [_gsynth(400.0), _gsynth(2000.0)], rtol=1e-12)
 
 
 @pytest.mark.parametrize("T", [298.0, 3000.01, 0.0])
 def test_evaluation_outside_all_ranges_raises(T):
-    gibbs = PiecewiseGibbs(parse_piecewise(GHSERAG))
+    gibbs = PiecewiseGibbs(parse_piecewise(GSYNTH))
     with pytest.raises(ValueError, match="outside every temperature range"):
         gibbs.G(T)
 
 
 def test_evaluation_outside_ranges_raises_for_arrays():
-    gibbs = PiecewiseGibbs(parse_piecewise(GHSERAG))
+    gibbs = PiecewiseGibbs(parse_piecewise(GSYNTH))
     with pytest.raises(ValueError, match="outside"):
         gibbs.G(np.array([500.0, 5000.0]))
 
@@ -157,15 +155,15 @@ def test_thermo_calc_range_defaults():
 def test_nested_function_references():
     functions = FunctionTable(
         {
-            "GHSERAG": parse_piecewise(GHSERAG),
-            "GLIQAG": parse_piecewise("298.15 +11025.076-8.89102*T+GHSERAG#; 3000 N"),
-            "GDOUBLE": parse_piecewise("298.15 2*GLIQAG-GHSERAG; 3000 N"),
+            "GSYNTH": parse_piecewise(GSYNTH),
+            "GLIQS": parse_piecewise("298.15 +11000.0-8.9*T+GSYNTH#; 3000 N"),
+            "GDOUBLE": parse_piecewise("298.15 2*GLIQS-GSYNTH; 3000 N"),
         }
     )
     T = 1100.0
-    assert functions.evaluate("GLIQAG", T)[0] == pytest.approx(11025.076 - 8.89102 * T + _ghserag(T), rel=1e-12)
+    assert functions.evaluate("GLIQS", T)[0] == pytest.approx(11000.0 - 8.9 * T + _gsynth(T), rel=1e-12)
     assert functions.evaluate("gdouble", T)[0] == pytest.approx(
-        2 * (11025.076 - 8.89102 * T + _ghserag(T)) - _ghserag(T), rel=1e-12
+        2 * (11000.0 - 8.9 * T + _gsynth(T)) - _gsynth(T), rel=1e-12
     )
     gibbs = PiecewiseGibbs(parse_piecewise("298.15 GDOUBLE+1; 3000 N"), functions)
     assert gibbs.G(T) == pytest.approx(functions.evaluate("GDOUBLE", T)[0] + 1.0)
@@ -189,6 +187,6 @@ def test_circular_and_undefined_function_references_are_rejected():
 
 
 def test_piecewise_from_model_round_trips():
-    model = parse_piecewise(GHSERAG)
+    model = parse_piecewise(GSYNTH)
     assert PiecewiseExpression.model_validate(model.model_dump()) == model
     assert Piecewise.from_model(model).references == frozenset()

@@ -1,5 +1,8 @@
 # Phase Diagram Explorer
 
+[![Live demo](https://img.shields.io/badge/Live%20demo-Streamlit-FF4B4B?logo=streamlit&logoColor=white)](https://phase-diagram-explorer.streamlit.app/)
+[![Tests](https://github.com/sachinkumarage/phase-diagram-explorer/actions/workflows/tests.yml/badge.svg?branch=main)](https://github.com/sachinkumarage/phase-diagram-explorer/actions/workflows/tests.yml)
+
 Phase Diagram Explorer is a scientific Python toolkit for computing and visualizing the thermodynamic phase diagrams of materials and chemical systems, using CALPHAD-style thermodynamic models to map regions of pressure, temperature, and composition space to the equilibrium phases (solid, liquid, gas, and their polymorphs) that are stable under those conditions, and rendering the resulting phase boundaries, triple points, and critical points as interactive plots for materials engineers, metallurgists, and researchers.
 
 ## Running the web app
@@ -8,11 +11,11 @@ An interactive Streamlit app is included for exploring computed phase diagrams. 
 
 Phase boundaries are traced from exact equilibrium tie lines, and invariant reactions are located by root-finding, so neither depends on a composition grid. The diagram can be exported as a vector figure (SVG or PDF) with the "Export figure" buttons, and the invariant reactions can be downloaded as CSV at full precision.
 
-Only systems in `data/systems/` whose every phase can be evaluated are listed: JSON files, or TDB databases with a `<name>.meta.json` that gives the element order. Systems whose data are marked `"_status": "provisional"` are shown with the banner "Preview: provisional thermodynamic data, not yet validated."
+Only systems in `data/systems/` whose every phase can be evaluated are listed: JSON files, or TDB databases with a `<name>.meta.json` that gives the element order. By default the app lists only validated systems and opens Ag-Cu. Ticking "Show preview systems (provisional data)" in the sidebar adds systems marked `"_status": "provisional"`, such as Al-Cu, which are shown with the banner "Preview: provisional thermodynamic data, not yet validated."
 
 ### Run online
 
-The app is deployed on Streamlit Community Cloud: https://<subdomain>.streamlit.app
+The app is deployed on Streamlit Community Cloud: https://phase-diagram-explorer.streamlit.app/
 
 ### Run locally
 
@@ -23,7 +26,7 @@ streamlit run streamlit_app.py
 
 `streamlit_app.py` at the repository root is the entry point used by Streamlit Community Cloud. `streamlit run src/phase_diagram_explorer/app.py` also works with the package installed. Settings are in `.streamlit/config.toml`. The theme follows the viewer's light or dark mode. No secrets are needed, and `.streamlit/secrets.toml` is git-ignored.
 
-At the default settings, the diagram and invariant reactions are loaded from `data/precomputed/`, so the app starts quickly on a small machine. Other temperature ranges and resolutions are computed live and cached. "High resolution" shows an estimated time before it runs. The equilibrium at the selected temperature and composition is always computed live.
+At the default settings, the diagram and invariant reactions are loaded from `data/precomputed/`, so the app starts quickly on a small machine. If a system's database cannot be downloaded (for example if NIST is unreachable), the page still works from the precomputed data. That covers the diagram, invariant table, citations, unit toggles, and the equilibrium at the selected temperature and composition, which is read from a precomputed equilibrium table to within 1e-4. Only the Gibbs energy curves and the total Gibbs energy need the database, and that section says so. Other temperature ranges and resolutions are computed live and cached. "High resolution" shows an estimated time before it runs. The equilibrium at the selected temperature and composition is always computed live.
 
 ### Regenerating precomputed data
 
@@ -106,10 +109,14 @@ python -m phase_diagram_explorer.validation     # regenerate the report and plot
 
 ## Running the tests
 
-Install the test runner with `pip install -e ".[dev]"`. Slow tests (full-range tracing, export and headless Streamlit app tests) are marked `slow`, and the pycalphad cross-validation tests are marked `validation`. Both are skipped by default, so a plain local run is fast:
+Install the test runner with `pip install -e ".[dev]"`. Three markers are skipped by default, so a plain local run is fast:
+
+- `slow`: full-range tracing, export and headless Streamlit app tests;
+- `validation`: the pycalphad cross-validation tests;
+- `network`: real downloads from the official database URLs, run with `pytest -m network`.
 
 ```
-pytest                         # same as: pytest -m "not slow and not validation"
+pytest                         # same as: pytest -m "not slow and not validation and not network"
 ```
 
 Run everything (validation tests skip with a reason if pycalphad is not installed) with:
@@ -119,6 +126,10 @@ pytest -m ""
 ```
 
 CI does the following:
-- runs the full suite on Python 3.11 and 3.12, after `python scripts/precompute.py --check`;
+- runs the full suite, including the network tests, on Python 3.11 and 3.12, after fetching the databases and running `python scripts/precompute.py --check`;
 - runs the validation tests in a separate job with `.[validation]` installed;
-- runs a cloud smoke test: a fresh virtual environment with only `pip install -r requirements.txt`, then `python scripts/smoke_test.py`. That script starts the app with Streamlit's AppTest, loads every system from precomputed data, toggles units, and records the cold-start time in the job summary.
+- runs a cloud smoke test in a fresh virtual environment with only `pip install -r requirements.txt`:
+  - first with no database and downloads disabled (`python scripts/smoke_test.py --offline`);
+  - then after fetching the databases (`python scripts/smoke_test.py`).
+
+  Each run starts the app with Streamlit's AppTest and checks the public defaults and both preview states. It loads every system from precomputed data, toggles units, and records the cold-start time in the job summary.

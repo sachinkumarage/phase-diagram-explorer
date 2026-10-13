@@ -5,7 +5,9 @@ size, citation and license. fetch() downloads a database into data/tdb/
 (3 attempts with backoff), and accepts it only if both the size and the
 SHA256 match; ensure() returns the local file, fetching it if it is
 missing. A mismatch or a failed download raises SourceError; nothing falls
-back silently to other data.
+back silently to other data. Requests carry a descriptive User-Agent
+(user_agent()): NIST's server refuses Python's default one with HTTP 403.
+Setting PHASE_DIAGRAM_DISABLE_DOWNLOADS=1 refuses all downloads.
 
     python scripts/fetch_tdb.py      # fetch and verify every registered database
 """
@@ -22,6 +24,17 @@ ROOT = Path(__file__).resolve().parents[2]
 RETRIES = 3
 BACKOFF_S = 2.0
 TIMEOUT_S = 60.0
+PROJECT_URL = "https://github.com/sachinkumarage/phase-diagram-explorer"
+# Set to "1" to refuse all downloads (only files already in data/tdb/ are used).
+DISABLE_DOWNLOADS_ENV = "PHASE_DIAGRAM_DISABLE_DOWNLOADS"
+
+
+def user_agent() -> str:
+    """Descriptive User-Agent for downloads. Some servers (NIST's among
+    them) refuse Python's default "Python-urllib/3.x" with HTTP 403."""
+    from phase_diagram_explorer import __version__
+
+    return f"phase-diagram-explorer/{__version__} (+{PROJECT_URL})"
 
 
 class SourceError(RuntimeError):
@@ -39,6 +52,7 @@ class Source:
     license_mode: str
     license_url: str
     title: str = ""
+    short_name: str = ""  # e.g. "NIST", for messages
     doi: str = ""
     page: str = ""
     note: str = ""
@@ -91,9 +105,12 @@ def fetch(
     directory.mkdir(parents=True, exist_ok=True)
     target = directory / entry.file
     errors = []
+    if os.environ.get(DISABLE_DOWNLOADS_ENV) == "1":
+        raise SourceError(f"downloads are disabled ({DISABLE_DOWNLOADS_ENV}=1); {entry.name} not fetched from {entry.url}")
+    request = urllib.request.Request(entry.url, headers={"User-Agent": user_agent()})
     for attempt in range(1, retries + 1):
         try:
-            with urllib.request.urlopen(entry.url, timeout=TIMEOUT_S) as response:
+            with urllib.request.urlopen(request, timeout=TIMEOUT_S) as response:
                 content = response.read()
         except OSError as error:
             errors.append(f"attempt {attempt}: {error}")

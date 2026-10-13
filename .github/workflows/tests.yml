@@ -8,7 +8,9 @@ on:
 # (data/sources.json) and verified by SHA256; they are never committed.
 # data/tdb/ is cached under a key derived from data/sources.json, which holds
 # each file's SHA256. If a download fails and nothing is cached, the fetch
-# step fails the job with the error from scripts/fetch_tdb.py.
+# step fails the job with the error from scripts/fetch_tdb.py. The test jobs
+# also run the "network" tests, which download from the official URL through
+# the real fetch code path.
 
 jobs:
   test:
@@ -39,7 +41,7 @@ jobs:
       - name: Check precomputed diagrams are up to date
         run: python scripts/precompute.py --check
 
-      - name: Run full test suite (including slow tests)
+      - name: Run full test suite (including slow and network tests)
         run: pytest -q -m "not validation"
 
   validation:
@@ -83,6 +85,12 @@ jobs:
         run: |
           python -m venv /tmp/cloud
           /tmp/cloud/bin/pip install -r requirements.txt
+
+      - name: App smoke test with the database unavailable (downloads disabled)
+        shell: bash  # with pipefail, so a failing test fails the step through tee
+        run: |
+          /tmp/cloud/bin/python scripts/smoke_test.py --offline | tee smoke_offline.txt
+          { echo '### App smoke test without the database'; echo '```'; cat smoke_offline.txt; echo '```'; } >> "$GITHUB_STEP_SUMMARY"
 
       - name: Restore downloaded databases
         uses: actions/cache@v6

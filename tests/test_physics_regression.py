@@ -67,6 +67,10 @@ def _slider(at: AppTest, label: str):
 def _run_app(T_range: tuple[float, float], n_T: int | None = None, system: str = "ag_cu") -> AppTest:
     at = AppTest.from_file(str(APP_PATH), default_timeout=120)
     at.run()
+    if system not in at.selectbox[0].options:  # provisional systems are listed on request
+        (preview,) = [box for box in at.checkbox if box.label == "Show preview systems (provisional data)"]
+        preview.check()
+        at.run()
     at.selectbox[0].set_value(system)
     _slider(at, T_RANGE_LABEL).set_value(T_range)
     if n_T is not None:

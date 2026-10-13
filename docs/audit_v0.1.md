@@ -585,6 +585,84 @@ assessed system. Its eutectic is 455.391 K (182.24 °C). NIST gives 182.2 °C,
 and pycalphad 455.392 K. The liquid, (Pb) and (Sn) compositions match
 NIST's 62.13, 18.91 and 96.59 mass % Sn to within 3e-5 in mole fraction.
 
+## Resolved in 0.3.2
+
+### Incident: the NIST database download failed with HTTP 403
+
+**What happened.** On Streamlit Community Cloud, Ag-Cu showed only an
+error: "could not download nist_solder from
+https://www.metallurgy.nist.gov/phase/solder/NIST-solder.tdb after 3 attempts
+(HTTP Error 403: Forbidden)". The same URL downloaded fine with curl.
+
+**Cause: User-Agent filtering.** The download code (`sources.fetch`) sent
+Python's default User-Agent, `Python-urllib/3.12`. NIST's server, behind
+Cloudflare, refuses that with HTTP 403 from any network, a home connection
+included. It accepts curl's User-Agent and a descriptive one such as
+`phase-diagram-explorer/0.3.2 (+https://github.com/sachinkumarage/phase-diagram-explorer)`,
+in both cases with the verified 19,312-byte file. IP-based blocking of
+cloud hosts was not observed, but the cloud attempts could not rule it out,
+because they all used the refused User-Agent.
+
+**CI was red and the tests never ran.** The CI runs for the Ag-Cu and Pb-Sn
+commits, `67697b4` (run 38251767920) and `bdf4aad` (run 38307802189),
+failed at "Fetch and verify databases". There was no cache yet, every
+download got HTTP 403, and the remaining steps and jobs did not run. Their
+tests passed only locally, and the CI failures were not followed up after
+those pushes.
+
+**Why the local tests did not catch it.**
+- Locally, `data/tdb/nist_solder.tdb` had been downloaded with curl before
+  the fetch code existed. `scripts/fetch_tdb.py` and `load_system` found
+  the file and only verified it, so they never downloaded anything.
+- The fetch tests used `file://` URLs and a patched `urlopen`, so no test
+  ever made an HTTP request to NIST.
+
+**Fixes.**
+1. Every download sends the descriptive User-Agent (`sources.user_agent()`).
+   SHA256 and size verification and the 3 retries are unchanged, and no
+   mirror is used.
+2. A `network` test downloads the real file from the official URL into a
+   temporary directory through the same code path, and checks its SHA256.
+   CI runs it in the test jobs.
+3. The app works without the database. Everything except the Gibbs energy
+   curves comes from precomputed data, including the point equilibrium,
+   read from a stored equilibrium table to within 1e-4 (see below). A
+   failed download is retried at most every 5 minutes.
+4. CI also runs the cloud smoke test with downloads disabled and no
+   database.
+
+### Engine: trivial common tangent for a miscibility gap
+
+Building the equilibrium table on 0.25 K levels exposed a level (Ag-Cu,
+504.25 K) where the FCC_A1#1 + FCC_A1#2 tie line was 2e-6 wide (0.113679 to
+0.113681) instead of 0.0018 to 0.9998.
+
+- **Cause.** The hull estimate failed to refine, and a fallback start inside
+  the gap (added in 0.3.0) converged to the trivial solution of the tangent
+  equations: two nearby points near the spinodal, which have equal slopes.
+- **Fix.** For two composition sets of one phase, a solution is now accepted
+  only if the Gibbs curve between the points lies above the tangent, as it
+  does in a real gap.
+- **Tests.** A regression test fails without the fix. Every equilibrium
+  recorded with 0.2.0 is unchanged.
+
+### Point equilibrium without the database
+
+`lookup.equilibrium_from_trace` reads phases, compositions and lever-rule
+fractions from the precomputed equilibrium table. The table holds levels
+0.25 K apart, plus levels clustered around each two-phase field's start and
+end, where the lever rule amplifies interpolation errors.
+
+Against `compute_equilibrium`, with the same phases at every point:
+
+| System | Points | Largest difference (compositions and fractions) |
+|---|---|---|
+| Ag-Cu | 1,120 | 4.9e-7 |
+| Pb-Sn | 1,120 | 9.3e-6 |
+
+The tests use 20 points per system, including the gap, the eutectic and
+the pure ends.
+
 ## Still open
 
 - **Al-Cu data (provisional).** The model has no Cu-rich solid phases, so

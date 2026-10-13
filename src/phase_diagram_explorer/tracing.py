@@ -203,12 +203,14 @@ def trace_diagram(
     invariants: list[InvariantReaction] | None = None,
     n_levels: int = DEFAULT_LEVELS,
     n_points: int = 500,
+    extra_levels=(),
 ) -> TracedDiagram:
     """Trace every phase field of a binary system over T_range.
 
     `invariants` (e.g. found over the system's full range) are reused if
     given; otherwise they are found over T_range. Only those inside T_range
-    are kept on the result.
+    are kept on the result. `extra_levels` (K) are added to the starting
+    levels (those outside T_range are ignored).
     """
     T_min, T_max = float(T_range[0]), float(T_range[1])
     assemble = assemblage_function(system, n_points)
@@ -217,6 +219,7 @@ def trace_diagram(
     invariants = [r for r in invariants if T_min <= r.temperature <= T_max]
 
     levels = set(np.linspace(T_min, T_max, max(n_levels, 2)).tolist())
+    levels.update(float(T) for T in extra_levels if T_min <= T <= T_max)
     for reaction in invariants:
         for T in (reaction.temperature - INVARIANT_OFFSET_K, reaction.temperature + INVARIANT_OFFSET_K):
             if T_min <= T <= T_max:

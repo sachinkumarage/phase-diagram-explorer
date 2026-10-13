@@ -15,6 +15,9 @@ from phase_diagram_explorer.thermo.stoichiometric import StoichiometricPhase
 # range, kept this far (relative to the range) from its ends.
 COMPOSITION_FLOOR = 1e-14
 TANGENT_RESIDUAL_TOLERANCE = 1e-6  # J/mol
+# A common tangent of two composition sets must lie this far (J/mol) below
+# the phase's Gibbs curve midway between them.
+GAP_DEPTH_TOLERANCE = 1e-6
 # Phases with internal degrees of freedom: a coarse search whose best point
 # lies more than this (J/mol) above the line is taken as above it without
 # refinement.
@@ -129,6 +132,13 @@ def common_tangent(phase_left, phase_right, T: float, x_left: float, x_right: fl
             and xr - xl > 1e-9
             and max(abs(r) for r in residual(solution.x)) * scale < TANGENT_RESIDUAL_TOLERANCE
         )
+        if valid and phase_left is phase_right:
+            # Two composition sets of one phase: the equations also hold for
+            # the trivial pair of nearby points (near the spinodal); in a real
+            # miscibility gap the curve between the points lies above the tangent.
+            slope, intercept = tangent_line(phase_left, phase_right, T, xl, xr)
+            x_mid = (xl + xr) / 2.0
+            valid = gibbs(phase_left, T, x_mid) - (slope * x_mid + intercept) > GAP_DEPTH_TOLERANCE
         return (xl, xr) if valid else None
 
     result = solve(x_left, x_right)

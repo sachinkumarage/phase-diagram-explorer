@@ -35,15 +35,32 @@ def _is_liquid(label: str, liquid_phases: set[str]) -> bool:
 
 
 def melting_range(
-    system: dict, x: float, T_range: tuple[float, float], liquid_phases: set[str] | None = None, n_points: int = 500
+    system: dict | None,
+    x: float,
+    T_range: tuple[float, float],
+    liquid_phases: set[str] | None = None,
+    n_points: int = 500,
+    equilibrium=None,
 ) -> MeltingRange:
-    """Solidus and liquidus at composition x within T_range."""
-    liquid_phases = liquid_phases or {name for name in system if "liquid" in name.lower()}
+    """Solidus and liquidus at composition x within T_range.
+
+    Equilibria come from compute_equilibrium on `system`, or from
+    `equilibrium(T, x)` if given (e.g. lookup.equilibrium_from_trace, which
+    needs no database). Liquid phases default to names containing "liquid".
+    """
+    if equilibrium is None:
+        def equilibrium(T, x):
+            return compute_equilibrium(system, T, x, n_points=n_points)
+
+    def is_liquid(label: str) -> bool:
+        if liquid_phases is not None:
+            return _is_liquid(label, liquid_phases)
+        return "liquid" in base_phase_name(label).lower()
 
     def state(T: float) -> tuple[bool, bool]:
-        phases = compute_equilibrium(system, T, x, n_points=n_points).stable_phases
-        any_liquid = any(_is_liquid(p, liquid_phases) for p in phases)
-        return any_liquid, any_liquid and all(_is_liquid(p, liquid_phases) for p in phases)
+        phases = equilibrium(T, x).stable_phases
+        any_liquid = any(is_liquid(p) for p in phases)
+        return any_liquid, any_liquid and all(is_liquid(p) for p in phases)
 
     T_min, T_max = T_range
     levels = np.linspace(T_min, T_max, max(int(np.ceil((T_max - T_min) / SCAN_STEP_K)) + 1, 2))

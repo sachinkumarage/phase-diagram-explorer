@@ -189,3 +189,16 @@ def test_low_temperature_solvus_is_a_common_tangent(ag_cu, T):
     assert fcc.molar_gibbs_derivative(T, x2) == pytest.approx(slope, abs=1e-3)
     if T == 525.0:  # pycalphad on the same file: 0.0024831, 0.9996607
         assert (x1, x2) == (pytest.approx(0.0024831, abs=1e-6), pytest.approx(0.9996607, abs=1e-6))
+
+
+def test_gap_tangent_is_not_the_trivial_solution(ag_cu):
+    """At 504.25 K the hull estimate (0.002004, 1.0) needs the fallback
+    starting points; a start inside the gap used to converge to two nearby
+    points near the spinodal (0.113679, 0.113681), which also satisfy the
+    tangent equations. Both composition sets must be near the pure ends."""
+    from phase_diagram_explorer.equilibrium.equilibrium import phase_assemblage
+
+    _, system = ag_cu
+    (tie,) = [f for f in phase_assemblage(system, 504.25).fields if f.is_two_phase]
+    assert tie.phases == ("FCC_A1#1", "FCC_A1#2")
+    assert tie.x_min < 0.003 and tie.x_max > 0.999
