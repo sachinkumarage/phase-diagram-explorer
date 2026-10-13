@@ -1,6 +1,6 @@
 """App smoke test for the cloud runtime, using only requirements.txt
 (no pytest): start the app with Streamlit's AppTest, check the public
-defaults (validated systems only, Ag-Cu selected) and both states of the
+defaults (validated systems only, Ag-Cu selected, °C and at%) and both states of the
 preview checkbox, that every system loads from precomputed data, that
 assessed systems show their citations and no preview banner while
 provisional ones show the banner, switch systems and unit toggles, and
@@ -30,6 +30,7 @@ PRECOMPUTED_NOTE = "Diagram and invariant reactions from precomputed data"
 PROVISIONAL_BANNER = "Preview: provisional thermodynamic data, not yet validated."
 PREVIEW_LABEL = "Show preview systems (provisional data)"
 VALIDATED = ["ag_cu", "pb_sn"]
+DEFAULT_UNITS = ["°C", "at%"]
 ALL_SYSTEMS = ["ag_cu", "al_cu", "pb_sn"]
 GIBBS_NOTICE = "Gibbs energy curves need the NIST database, which could not be downloaded right now."
 SOURCED = {"ag_cu", "pb_sn"}
@@ -75,10 +76,12 @@ def main(argv=None) -> int:
     check(at, "cold start", offline, at.selectbox[0].value)
     print(f"cold start ({at.selectbox[0].value}): {cold_start:.2f} s")
 
-    # public defaults: validated systems only, Ag-Cu selected
+    # public defaults: validated systems only, Ag-Cu selected, in °C and at%
     (preview,) = [box for box in at.checkbox if box.label == PREVIEW_LABEL]
     if preview.value or list(at.selectbox[0].options) != VALIDATED or at.selectbox[0].value != "ag_cu":
         raise AssertionError(f"public defaults: {list(at.selectbox[0].options)}, selected {at.selectbox[0].value}")
+    if [radio.value for radio in at.radio] != DEFAULT_UNITS:
+        raise AssertionError(f"public default units: {[radio.value for radio in at.radio]}")
     print(f"preview off: {list(at.selectbox[0].options)}")
     run_systems(at, VALIDATED, offline)
 

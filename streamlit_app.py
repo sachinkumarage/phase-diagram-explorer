@@ -20,6 +20,6 @@ except ImportError:
 os.environ.setdefault("PHASE_DIAGRAM_SYSTEMS_DIR", str(ROOT / "data" / "systems"))
 os.environ.setdefault("PHASE_DIAGRAM_PRECOMPUTED_DIR", str(ROOT / "data" / "precomputed"))
 
-from phase_diagram_explorer.app import main  # noqa: E402
+from phase_diagram_explorer.app import run  # noqa: E402
 
-main()
+run()

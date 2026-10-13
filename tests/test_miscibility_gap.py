@@ -133,8 +133,8 @@ def test_diagram_has_gap_field_and_continuous_single_phase_field(regular_solutio
     assert {region.label for region in traced.regions} == {"ALPHA", "ALPHA#1 + ALPHA#2"}
     figure = plot_diagram(traced, "A-B", dependent_symbol="B")
     assert {trace.name for trace in figure.data} >= {"ALPHA", "ALPHA#1 + ALPHA#2"}
-    labels = next(trace for trace in figure.data if trace.name == "field labels")
-    assert "ALPHA#1 + ALPHA#2" in labels.text
+    labels = [annotation.text for annotation in figure.layout.annotations if annotation.name == "field label"]
+    assert "ALPHA#1 + ALPHA#2" in labels
     assert "ALPHA + ALPHA" not in {region.label for region in traced.regions}
 
 

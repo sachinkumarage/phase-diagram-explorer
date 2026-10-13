@@ -166,6 +166,7 @@ def definition_summary(definition: SystemDefinition) -> dict:
         "citations": [citation.model_dump() for citation in definition.citations],
         "display": definition.display,
         "industry_note": definition.industry_note,
+        "display_names": definition.display_names,
     }
 
 

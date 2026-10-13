@@ -52,6 +52,7 @@ def _plot(arguments) -> None:
             dependent_symbol=definition.dependent_element.symbol,
             temperature_unit=CELSIUS if arguments.unit == "C" else KELVIN,
             footnote=f"Data source: {path.name} ({definition.name}).",
+            display_names=definition.display_names,
         )
     )
     print(output)

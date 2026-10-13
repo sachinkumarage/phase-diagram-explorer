@@ -162,6 +162,9 @@ class SystemDefinition(BaseModel):
     # A short industrial context note shown by the app with the solidus,
     # liquidus and melting range of the selected alloy.
     industry_note: str | None = None
+    # Textbook names for phases (labels.PhaseNames), e.g. {"LIQUID": "L",
+    # "FCC_A1": {"base_side": "(Ag)", "dependent_side": "(Cu)"}}.
+    display_names: dict[str, str | dict[str, str]] = {}
 
     @model_validator(mode="after")
     def check_t_range(self) -> "SystemDefinition":

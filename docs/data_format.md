@@ -310,6 +310,8 @@ are read from a metadata file next to the TDB file: `ag_cu.meta.json` for
 | `citations` | `[{"text": ..., "url": ...}]`, shown by the app below the diagram. |
 | `gas_constant` | R for this system. Optional; the TDB default is 8.31451. |
 | `pressure_pa` | Pressure for `P` in expressions. Optional; the default is 101325. |
+| `display` | Optional default units in the app, e.g. `{"temperature_unit": "C", "composition_unit": "wt%"}`. Without it the app opens in °C and at%. |
+| `display_names` | Optional textbook names for phases, used in field labels, tables and the invariant table, e.g. `{"LIQUID": "L", "FCC_A1": "(Pb)"}`. A phase with a miscibility gap between two terminal solutions gets one name per side, `{"FCC_A1": {"base_side": "(Ag)", "dependent_side": "(Cu)"}}`; a composition set is named by its side of the gap, not by #1/#2. The CALPHAD name is still shown in the legend, tables and hover text. |
 | `name`, `element_names`, `t_range_k`, `_source`, `_status`, `_status_reason` | As in JSON. Optional. `name` defaults to "Base-Dependent". |
 
 Arguments to `load_system(path, elements=[...])` or

@@ -53,13 +53,18 @@ def _show_preview_systems(at: AppTest) -> None:
     assert not at.exception
 
 
-def _run(system: str = "ag_cu", **radios) -> AppTest:
+def _run(system: str = "ag_cu", *, default_units: bool = False, **radios) -> AppTest:
+    """The app with `system` selected, in K (the public default is °C) unless
+    radios give other units or `default_units` keeps the system's defaults."""
+    if not default_units:
+        radios.setdefault("Temperature unit", "K")
     at = AppTest.from_file(str(APP_PATH), default_timeout=120)
     at.run()
     assert not at.exception
     if system not in at.selectbox[0].options:
         _show_preview_systems(at)
     at.selectbox[0].set_value(system)
+    at.run()  # unit radios are per system
     for radio in at.radio:
         if radio.label in radios:
             radio.set_value(radios[radio.label])
@@ -85,6 +90,24 @@ def _values(array) -> list:
 
 def _invariant_table(at: AppTest):
     return at.table[-1].value
+
+
+def _annotations(figure: dict, name: str) -> list[dict]:
+    return [a for a in figure["layout"].get("annotations", []) if a.get("name") == name]
+
+
+def _captions(at: AppTest) -> list[str]:
+    return [caption.value for caption in at.caption]
+
+
+MOLE_FRACTION_CAPTION = (
+    "Gibbs energy curves are shown against mole fraction, where the common tangent construction is valid."
+)
+AG_CU_LEGEND = {
+    "(Ag) FCC_A1", "(Cu) FCC_A1", "L LIQUID", "L + (Ag) (LIQUID + FCC_A1)", "L + (Cu) (LIQUID + FCC_A1)",
+    "(Ag) + (Cu) (FCC_A1#1 + FCC_A1#2)",
+}
+AG_CU_FIELD_LABELS = ["(Ag)", "(Cu)", "L", "L + (Ag)", "L + (Cu)", "(Ag) + (Cu)"]
 
 
 def test_app_does_not_construct_gibbs_energy_models():
@@ -139,7 +162,7 @@ def test_app_system_comes_from_build_system(monkeypatch, isolated_cache):
 
     assert "Ag-Cu" in calls
     markdown = [element.value for element in at.markdown]
-    assert markdown[markdown.index("**Stable phases**") + 1] == "FCC_A1"
+    assert markdown[markdown.index("**Stable phases**") + 1] == "(Ag) FCC_A1"
 
 
 def test_ag_cu_default_display_range_includes_both_melting_points():
@@ -188,8 +211,10 @@ def test_axes_markers_and_tables_share_units(temperature_unit, composition_unit)
     assert diagram["layout"]["yaxis"]["title"]["text"] == T_title
 
     gibbs = _figure(at, 1)
-    assert gibbs["layout"]["xaxis"]["title"]["text"] == x_title
+    # always mole fraction, where the common tangent construction is valid
+    assert gibbs["layout"]["xaxis"]["title"]["text"] == "x(Cu) (at%)"
     assert gibbs["layout"]["yaxis"]["title"]["text"] == "Molar Gibbs energy (J/mol)"
+    assert (MOLE_FRACTION_CAPTION in _captions(at)) == (composition_unit == "wt%")
 
     T_min_display, _ = _slider(at, f"Temperature range ({temperature_unit})").value
     offset = CELSIUS_OFFSET if temperature_unit == "°C" else 0.0
@@ -205,7 +230,7 @@ def test_axes_markers_and_tables_share_units(temperature_unit, composition_unit)
     assert _values(marker["y"])[0] == pytest.approx(float(table[T_title][0]), abs=0.05)
     assert marker["text"][0].endswith(f" {temperature_unit}")
     liquid_in_table = next(
-        part for part in table[x_title][0].split(", ") if part.startswith("LIQUID ")
+        part for part in table[x_title][0].split(", ") if part.startswith("L ")
     )
     assert _values(marker["x"])[0] == pytest.approx(float(liquid_in_table.split()[1]), abs=0.05)
 
@@ -273,6 +298,7 @@ def test_validated_systems_show_no_banner(monkeypatch, tmp_path):
 def test_composition_sets_in_tables_and_plots(monkeypatch, tmp_path):
     _systems_dir(monkeypatch, tmp_path, FIXTURES_DIR / "regular_solution.json")
     at = AppTest.from_file(str(APP_PATH), default_timeout=120).run()
+    at.radio[0].set_value("K").run()
     _slider(at, "Temperature (K) for equilibrium and Gibbs curves").set_value(1000.0)
     at.run()
     assert not at.exception
@@ -299,10 +325,10 @@ def test_diagram_is_drawn_from_traced_polygons_not_a_heatmap():
     assert "heatmap" not in types and "contour" not in types
 
     regions = [trace for trace in diagram["data"] if trace.get("fill") == "toself"]
-    # assessed Ag-Cu: one FCC_A1 phase with a miscibility gap
-    assert {trace["name"] for trace in regions} == {"FCC_A1", "LIQUID", "LIQUID + FCC_A1", "FCC_A1#1 + FCC_A1#2"}
-    labels = _trace(diagram, "field labels")
-    assert set(labels["text"]) == {trace["name"] for trace in regions}
+    # assessed Ag-Cu: one FCC_A1 phase with a miscibility gap; legend with both names
+    assert {trace["name"] for trace in regions} == AG_CU_LEGEND
+    labels = _annotations(diagram, "field label")
+    assert sorted(label["text"] for label in labels) == sorted(AG_CU_FIELD_LABELS)
 
 
 def test_narrow_al_cu_reaction_is_in_invariant_table_at_default_grid():
@@ -334,7 +360,7 @@ def test_display_precision(temperature_unit):
         assert _decimals(part.split()[1]) == 1
 
     fractions, compositions = at.table[0].value, at.table[1].value
-    assert all(_decimals(value) == 3 for value in fractions["fraction"])
+    assert all(_decimals(value) == 3 for value in fractions["phase fraction (mol)"])
     assert all(_decimals(value) == 1 for value in compositions["x(Cu) (at%)"])
 
     diagram = _figure(at, 0)
@@ -344,7 +370,7 @@ def test_display_precision(temperature_unit):
 
 def test_invariant_csv_has_full_precision():
     at = _run()
-    (button,) = [b for b in at.get("download_button") if "CSV" in b.proto.label]
+    (button,) = [b for b in at.get("download_button") if "invariant" in b.proto.label]
     assert "full precision" in button.proto.label
 
 
@@ -353,10 +379,6 @@ def test_invariant_csv_has_full_precision():
 PRECOMPUTED_NOTE = "Diagram and invariant reactions from precomputed data"
 LIVE_NOTICE = "computing the diagram live"
 ENTRY_POINT = ROOT / "streamlit_app.py"
-
-
-def _captions(at: AppTest) -> list[str]:
-    return [caption.value for caption in at.caption]
 
 
 def test_root_entry_point_runs_the_app():
@@ -489,13 +511,14 @@ def test_failed_download_keeps_the_page_working(monkeypatch, tmp_path):
 
     diagram = _figure(at, 0)
     regions = {trace["name"] for trace in diagram["data"] if trace.get("fill") == "toself"}
-    assert regions == {"FCC_A1", "LIQUID", "LIQUID + FCC_A1", "FCC_A1#1 + FCC_A1#2"}
+    assert regions == AG_CU_LEGEND
     assert len(at.get("plotly_chart")) == 1  # no Gibbs energy curves
     assert list(_invariant_table(at)["type"]) == ["eutectic"]
     markdown = [element.value for element in at.markdown]
     assert "**Data sources**" in markdown
-    assert markdown[markdown.index("**Stable phases**") + 1] == "FCC_A1#1, FCC_A1#2"
-    assert list(at.table[1].value["phase"]) == ["FCC_A1#1", "FCC_A1#2"]
+    assert markdown[markdown.index("**Stable phases**") + 1] == "(Ag) FCC_A1#1, (Cu) FCC_A1#2"
+    assert list(at.table[1].value["CALPHAD phase"]) == ["FCC_A1#1", "FCC_A1#2"]
+    assert list(at.table[1].value["phase"]) == ["(Ag)", "(Cu)"]
     assert [info.value for info in at.info] == [GIBBS_NOTICE]
     assert "Needs the NIST database." in _captions(at)
 
@@ -505,7 +528,7 @@ def test_failed_download_keeps_the_page_working(monkeypatch, tmp_path):
     at.run()
     assert not at.exception
     markdown = [element.value for element in at.markdown]
-    assert markdown[markdown.index("**Stable phases**") + 1] == "LIQUID"
+    assert markdown[markdown.index("**Stable phases**") + 1] == "L LIQUID"
     for temperature_unit, composition_unit in [("°C", "wt%"), ("K", "at%")]:
         at.radio[0].set_value(temperature_unit)
         at.radio[1].set_value(composition_unit)
@@ -525,7 +548,7 @@ def test_failed_download_is_not_retried_on_every_rerun(monkeypatch, tmp_path):
 
 def test_pb_sn_without_the_database(monkeypatch, tmp_path):
     _offline(monkeypatch, tmp_path)
-    at = _run("pb_sn")
+    at = _run("pb_sn", default_units=True)
     assert not at.exception and not at.error
     _slider(at, "Composition w(Sn) (wt%)").set_value(63.0)
     at.run()
@@ -540,7 +563,7 @@ PB_SN_INFO = "63Sn-37Pb solder (63 wt% Sn) is near-eutectic"
 
 
 def test_pb_sn_opens_in_celsius_and_weight_percent_with_citations_and_info_box():
-    at = _run("pb_sn")
+    at = _run("pb_sn", default_units=True)
     assert [radio.value for radio in at.radio] == ["°C", "wt%"]
     assert len(at.warning) == 0
     markdown = [element.value for element in at.markdown]
@@ -553,7 +576,7 @@ def test_pb_sn_opens_in_celsius_and_weight_percent_with_citations_and_info_box()
 
 
 def test_pb_sn_info_box_follows_the_selected_alloy():
-    at = _run("pb_sn")
+    at = _run("pb_sn", default_units=True)
     _slider(at, "Composition w(Sn) (wt%)").set_value(63.0)
     at.run()
     (info,) = [i.value for i in at.info if i.value.startswith(PB_SN_INFO)]
@@ -570,7 +593,212 @@ def test_units_default_per_system():
     at = AppTest.from_file(str(ENTRY_POINT), default_timeout=120).run()
     at.selectbox[0].set_value("ag_cu")
     at.run()
-    assert [radio.value for radio in at.radio] == ["K", "at%"]
+    assert [radio.value for radio in at.radio] == ["°C", "at%"]
     at.selectbox[0].set_value("pb_sn")
     at.run()
     assert [radio.value for radio in at.radio] == ["°C", "wt%"]
+
+
+# --- 0.3.3: fraction basis, Gibbs chart axis, textbook labels, errors ----------
+
+PB_SN_T = 474.95  # K, in L + (Pb)
+PB_SN_W = 36.4  # wt% Sn
+
+
+def _pb_sn_point(at: AppTest, composition_unit: str = "wt%") -> AppTest:
+    at.radio[1].set_value(composition_unit).run()
+    _slider(at, "Temperature (K) for equilibrium and Gibbs curves").set_value(PB_SN_T)
+    _slider(at, f"Composition {'w' if composition_unit == 'wt%' else 'x'}(Sn) ({composition_unit})").set_value(PB_SN_W)
+    at.run()
+    assert not at.exception
+    return at
+
+
+def test_phase_fraction_header_follows_composition_unit():
+    at = _pb_sn_point(_run("pb_sn"))
+    fractions = at.table[0].value
+    assert "phase fraction (mass)" in fractions.columns
+    assert list(fractions["phase"]) == ["(Pb)", "L"]
+    at.radio[1].set_value("at%").run()
+    assert "phase fraction (mol)" in at.table[0].value.columns
+
+
+def test_mass_fractions_satisfy_the_lever_rule_in_weight_percent():
+    at = _pb_sn_point(_run("pb_sn"))
+    fractions = dict(zip(at.table[0].value["CALPHAD phase"], at.table[0].value["phase fraction (mass)"]))
+    compositions = dict(zip(at.table[1].value["CALPHAD phase"], at.table[1].value["w(Sn) (wt%)"]))
+    w_L, w_fcc = float(compositions["LIQUID"]), float(compositions["FCC_A1"])
+    # table values are rounded (0.1 wt%, 0.001), so compare loosely here;
+    # test_presentation checks the 1e-4 tolerance at full precision
+    assert float(fractions["FCC_A1"]) == pytest.approx((w_L - PB_SN_W) / (w_L - w_fcc), abs=5e-3)
+
+
+def test_fallback_fractions_match_the_live_path(monkeypatch, tmp_path):
+    live = _pb_sn_point(_run("pb_sn")).table[0].value
+    st.cache_data.clear()
+    st.cache_resource.clear()
+    _offline(monkeypatch, tmp_path)
+    offline = _pb_sn_point(_run("pb_sn"))
+    assert GIBBS_NOTICE in [info.value for info in offline.info]
+    assert offline.table[0].value.equals(live)
+    st.cache_data.clear()
+    st.cache_resource.clear()
+
+
+def test_gibbs_chart_uses_mole_fraction_in_weight_percent_mode():
+    at = _pb_sn_point(_run("pb_sn"))
+    assert at.radio[1].value == "wt%"
+    assert MOLE_FRACTION_CAPTION in _captions(at)
+    gibbs = _figure(at, 1)
+    assert gibbs["layout"]["xaxis"]["title"]["text"] == "x(Sn) (at%)"
+
+    tangent = _trace(gibbs, "common tangent")
+    line_x, line_y = np.array(_values(tangent["x"])), np.array(_values(tangent["y"]))
+    slope, intercept = np.polyfit(line_x, line_y, 1)
+    # a straight line in the plotted coordinates ...
+    assert np.max(np.abs(line_y - (slope * line_x + intercept))) < 1e-6 * np.max(np.abs(line_y))
+    # ... through both tangent points
+    points = _trace(gibbs, "tangent points")
+    for x, y in zip(_values(points["x"]), _values(points["y"])):
+        assert y == pytest.approx(slope * x + intercept, rel=1e-9, abs=1e-6)
+
+
+def _curve_names(gibbs: dict) -> set[str]:
+    return {t["name"] for t in gibbs["data"] if t["name"] not in ("common tangent", "tangent points")}
+
+
+@pytest.mark.parametrize(
+    "system, stable", [("pb_sn", ["LIQUID", "FCC_A1", "BCT_A5"]), ("ag_cu", ["LIQUID", "FCC_A1"])]
+)
+def test_gibbs_chart_shows_only_stable_phases_by_default(system, stable):
+    at = _run(system)
+    assert _checkbox(at, "Show metastable phases").value is False
+    assert _curve_names(_figure(at, 1)) == set(stable)
+    _checkbox(at, "Show metastable phases").check()
+    at.run()
+    assert _curve_names(_figure(at, 1)) > set(stable)
+
+    (info,) = [c for c in _captions(at) if c.startswith("Elements:")]
+    assert f"· Stable phases: {', '.join(stable)} · Metastable in this database: " in info
+
+
+def test_textbook_names_in_tables_legend_and_hover():
+    at = _run("ag_cu")
+    table = _invariant_table(at)
+    assert list(table["reaction"]) == ["L -> (Ag) + (Cu)"]
+    assert list(table["phases"]) == ["(Ag)+L+(Cu)"]
+    assert list(table["CALPHAD phases"]) == ["FCC_A1#1+LIQUID+FCC_A1#2"]
+    assert [part.split()[0] for part in table["x(Cu) (at%)"][0].split(", ")] == ["(Ag)", "L", "(Cu)"]
+
+    diagram = _figure(at, 0)
+    assert "(Ag) FCC_A1" in {trace.get("name") for trace in diagram["data"]}
+    hovers = {label["text"]: label["hovertext"] for label in _annotations(diagram, "field label")}
+    assert hovers["(Ag) + (Cu)"] == "FCC_A1#1 + FCC_A1#2"
+    assert hovers["L + (Ag)"] == "LIQUID + FCC_A1"
+    (invariant,) = _annotations(diagram, "invariant label")
+    assert invariant["hovertext"] == "L -> (Ag) + (Cu)"
+
+
+def test_pb_sn_textbook_names():
+    at = _run("pb_sn")
+    assert list(_invariant_table(at)["reaction"]) == ["L -> (Pb) + (Sn)"]
+    labels = {label["text"] for label in _annotations(_figure(at, 0), "field label")}
+    assert labels == {"L", "(Pb)", "(Sn)", "L + (Pb)", "L + (Sn)", "(Pb) + (Sn)"}
+
+
+def _label_box(annotation: dict, x_range, y_range, width_px=760.0, height_px=470.0):
+    from phase_diagram_explorer.labels import PlotBox, text_box_px
+
+    plot = PlotBox(tuple(x_range), tuple(y_range), width_px, height_px)
+    x, y = (annotation["ax"], annotation["ay"]) if annotation.get("showarrow") else (annotation["x"], annotation["y"])
+    px, py = plot.to_px(x, y)
+    return text_box_px(annotation["text"], (float(px), float(py))), plot
+
+
+@pytest.mark.parametrize("system", ["ag_cu", "pb_sn"])
+@pytest.mark.parametrize("units", [("°C", "at%"), ("K", "wt%")])
+def test_every_label_lies_inside_the_plot_area(system, units):
+    at = _run(system, **{"Temperature unit": units[0], "Composition unit": units[1]})
+    diagram = _figure(at, 0)
+    x_range, y_range = diagram["layout"]["xaxis"]["range"], diagram["layout"]["yaxis"]["range"]
+    annotations = diagram["layout"]["annotations"]
+    assert annotations
+    for annotation in annotations:
+        (left, bottom, right, top), plot = _label_box(annotation, x_range, y_range)
+        assert left >= 0 and bottom >= 0 and right <= plot.width_px and top <= plot.height_px, annotation["text"]
+
+
+@pytest.mark.parametrize("system", ["ag_cu", "pb_sn"])
+def test_invariant_label_sits_above_its_line_clear_of_boundaries(system):
+    from phase_diagram_explorer.labels import _hits_lines
+
+    at = _run(system, **{"Temperature unit": "°C"})
+    diagram = _figure(at, 0)
+    x_range, y_range = diagram["layout"]["xaxis"]["range"], diagram["layout"]["yaxis"]["range"]
+    (invariant,) = _annotations(diagram, "invariant label")
+    box, plot = _label_box(invariant, x_range, y_range)
+    T_px = float(plot.to_px(x_range[0], float(_invariant_table(at)["Temperature (°C)"][0]))[1])
+    assert box[1] > T_px  # above the invariant line
+    lines = [
+        plot.to_px(_values(t["x"]), _values(t["y"]))
+        for t in diagram["data"] if t.get("mode") == "lines" and t.get("fill") != "toself"
+    ]
+    assert not _hits_lines(box, lines)
+
+
+def test_molar_gibbs_energy_is_an_integer_with_full_precision_csv():
+    at = _run("ag_cu")
+    markdown = [element.value for element in at.markdown]
+    value = markdown[markdown.index("**Molar Gibbs energy (J/mol)**") + 1]
+    assert value.lstrip("-").isdigit()
+    (button,) = [b for b in at.get("download_button") if "equilibrium" in b.proto.label]
+    assert "full precision" in button.proto.label
+
+
+def test_lever_rule_expander_uses_the_fraction_basis():
+    at = _pb_sn_point(_run("pb_sn"))
+    (expander,) = [e for e in at.expander if e.label == "Show lever-rule calculation"]
+    (code,) = expander.code
+    fractions = dict(zip(at.table[0].value["phase"], at.table[0].value["phase fraction (mass)"]))
+    assert "w0 = 36.40 wt%" in code.value
+    assert f"f(L) = (w0 − w_(Pb)) / (w_L − w_(Pb)) = " in code.value
+    assert code.value.splitlines()[2].endswith(f"= {fractions['L']}")
+    assert code.value.splitlines()[1].endswith(f"= {fractions['(Pb)']}")
+
+    at.radio[1].set_value("at%").run()
+    (expander,) = [e for e in at.expander if e.label == "Show lever-rule calculation"]
+    assert "x0 = " in expander.code[0].value and " at%" in expander.code[0].value
+
+
+def test_single_phase_has_no_lever_rule():
+    at = _run("ag_cu")
+    _slider(at, "Composition x(Cu) (at%)").set_value(0.0)
+    at.run()
+    assert not [e for e in at.expander if e.label == "Show lever-rule calculation"]
+
+
+FRIENDLY_ERROR = "Something went wrong while loading this system. Please try another system or reload the page."
+
+
+def test_unexpected_errors_show_a_friendly_message_without_a_traceback(monkeypatch, caplog):
+    from phase_diagram_explorer import app
+
+    def broken(*args, **kwargs):
+        raise RuntimeError("simulated failure in plot_diagram")
+
+    # the entry point runs app.run() from the (cached) app module
+    monkeypatch.setattr(app, "plot_diagram", broken)
+    at = AppTest.from_file(str(ENTRY_POINT), default_timeout=120).run()
+    assert not at.exception
+    assert [error.value for error in at.error] == [FRIENDLY_ERROR]
+    shown = " ".join(str(element.value) for kind in ("markdown", "caption", "text", "code", "error", "info")
+                     for element in getattr(at, kind))
+    assert "Traceback" not in shown and "simulated failure" not in shown
+    assert "simulated failure in plot_diagram" in caplog.text
+
+
+def test_streamlit_config_hides_error_details():
+    import tomllib
+
+    config = tomllib.loads((ROOT / ".streamlit" / "config.toml").read_text())
+    assert config["client"]["showErrorDetails"] == "none"

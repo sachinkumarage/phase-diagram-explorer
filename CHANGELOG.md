@@ -1,5 +1,65 @@
 # Changelog
 
+## 0.3.3 - 2026-10-13
+
+Presentation fixes and textbook-style labels. No thermodynamic parameters
+and no engine code changed; the precomputed data were regenerated for the
+new version and the stored display names.
+
+### Fixed
+- **Phase fractions now match the composition unit.**
+  - In at% the app shows mole fractions of the phases. In wt% it shows mass
+    fractions, w_i = n_i M_i / Σ n_j M_j, with M_i the molar mass of phase i
+    from its composition.
+  - The column header says which: "phase fraction (mol)" or "phase fraction
+    (mass)".
+  - Previously, mole fractions were shown in wt% mode as well, so they did
+    not satisfy the lever rule in the displayed wt% compositions.
+  - The precomputed (no-database) path gives the same fractions as the live
+    path.
+- **The Gibbs energy chart always uses mole fraction.** Its x axis is x (at%)
+  even in wt% mode, where it shows "Gibbs energy curves are shown against
+  mole fraction, where the common tangent construction is valid." The
+  common tangent is now a straight line in the plotted coordinates.
+- **No tracebacks for visitors.** `showErrorDetails = "none"` is set in
+  `.streamlit/config.toml`. Unexpected errors show "Something went wrong
+  while loading this system. Please try another system or reload the page."
+  and are logged in full.
+
+### Changed
+- **Textbook phase-field labels.**
+  - Systems can give display names in their `.meta.json`
+    (`"display_names"`):
+    - Ag-Cu: L, (Ag) and (Cu), the two sides of the FCC_A1 gap.
+    - Pb-Sn: L, (Pb) for FCC_A1 and (Sn) for BCT_A5.
+  - A composition set is named by its side of the gap, not by #1/#2.
+  - Field labels, the equilibrium tables and the invariant table use these
+    names, e.g. "L + (Ag)", "(Ag) + (Cu)", "L -> (Ag) + (Cu)".
+  - The legend, the tables and the hover text also show the CALPHAD names,
+    e.g. "(Ag) FCC_A1".
+- **Label placement.**
+  - A field label goes inside its field where it fits. Otherwise it goes
+    outside, with a short leader line.
+  - The invariant temperature label sits above its line, clear of boundary
+    lines.
+  - No label is clipped by the plot area. The SVG/PDF export (app and
+    `phase-diagram-explorer plot`) uses the same names and layout.
+- **Gibbs energy chart.**
+  - By default, only phases that are stable somewhere in the system's
+    default diagram are shown. "Show metastable phases" adds the others.
+  - The system info line lists stable phases first, then "Metastable in this
+    database: ...".
+- **Public default temperature unit is °C** (composition stays at%), unless
+  a system sets its own.
+- **Molar Gibbs energy** is shown as an integer in J/mol. "Download
+  equilibrium (CSV, full precision)" gives it at full precision, together
+  with the mole and mass fractions and the phase compositions.
+
+### Added
+- "Show lever-rule calculation" below the phase fractions in two-phase
+  fields: the formula and the numbers in the current composition unit, on
+  the same basis (mol or mass) as the table.
+
 ## 0.3.2 - 2026-10-13
 
 ### Fixed

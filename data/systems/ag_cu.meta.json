@@ -1,10 +1,26 @@
 {
   "name": "Ag-Cu",
   "source": "nist_solder",
-  "elements": ["AG", "CU"],
+  "elements": [
+    "AG",
+    "CU"
+  ],
   "dependent_element": "CU",
-  "element_names": {"Ag": "Silver", "Cu": "Copper"},
-  "t_range_k": [500.0, 1450.0],
+  "element_names": {
+    "Ag": "Silver",
+    "Cu": "Copper"
+  },
+  "t_range_k": [
+    500.0,
+    1450.0
+  ],
+  "display_names": {
+    "LIQUID": "L",
+    "FCC_A1": {
+      "base_side": "(Ag)",
+      "dependent_side": "(Cu)"
+    }
+  },
   "_source": "Assessed Ag-Cu description (Hayes et al. 1986, adapted for SGTE compatibility by U.R. Kattner, NIST, 1999) from the NIST solder database, Ag-Cu subsystem.",
   "citations": [
     {

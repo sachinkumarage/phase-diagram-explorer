@@ -11,6 +11,8 @@ An interactive Streamlit app is included for exploring computed phase diagrams. 
 
 Phase boundaries are traced from exact equilibrium tie lines, and invariant reactions are located by root-finding, so neither depends on a composition grid. The diagram can be exported as a vector figure (SVG or PDF) with the "Export figure" buttons, and the invariant reactions can be downloaded as CSV at full precision.
 
+Phase fields are labelled with textbook names such as L, (Ag) and "L + (Ag)"; the legend, tables and hover text also give the CALPHAD phase names. Phase fractions are mole fractions in at% and mass fractions in wt%, and "Show lever-rule calculation" shows the lever rule in the current unit. The Gibbs energy curves are always plotted against mole fraction, where the common tangent construction is valid, and show only the phases stable somewhere in the diagram unless "Show metastable phases" is ticked. The app opens in °C and at% unless a system sets its own units.
+
 Only systems in `data/systems/` whose every phase can be evaluated are listed: JSON files, or TDB databases with a `<name>.meta.json` that gives the element order. By default the app lists only validated systems and opens Ag-Cu. Ticking "Show preview systems (provisional data)" in the sidebar adds systems marked `"_status": "provisional"`, such as Al-Cu, which are shown with the banner "Preview: provisional thermodynamic data, not yet validated."
 
 ### Run online

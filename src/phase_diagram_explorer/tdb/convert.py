@@ -247,6 +247,7 @@ def definition_from_database(
         citations=metadata.get("citations", []),
         display=metadata.get("display", {}),
         industry_note=metadata.get("industry_note"),
+        display_names=metadata.get("display_names", {}),
     )
 
 

@@ -72,6 +72,9 @@ def _run_app(T_range: tuple[float, float], n_T: int | None = None, system: str =
         preview.check()
         at.run()
     at.selectbox[0].set_value(system)
+    at.run()
+    at.radio[0].set_value("K")  # the public default is °C
+    at.run()
     _slider(at, T_RANGE_LABEL).set_value(T_range)
     if n_T is not None:
         _slider(at, N_T_LABEL).set_value(n_T)
@@ -92,7 +95,8 @@ def _stable_phases_at(T: float, x: float) -> list[str]:
 
     markdown = [element.value for element in at.markdown]
     stable = markdown[markdown.index("**Stable phases**") + 1]
-    return [phase.strip() for phase in stable.split(",")]
+    # "(Ag) FCC_A1#1": textbook name, then the CALPHAD label
+    return [phase.split()[-1] for phase in stable.split(",")]
 
 
 def _invariant_markers(at: AppTest) -> list[tuple[float, float, str]]:
@@ -106,18 +110,18 @@ def _invariant_markers(at: AppTest) -> list[tuple[float, float, str]]:
 
 
 def _eutectic_from_table(system: str = "ag_cu") -> tuple[float, dict[str, float]]:
-    """(T in K, {phase: x(Cu)}) of the single eutectic in the app's invariant
-    reaction table (K and at% by default)."""
+    """(T in K, {CALPHAD phase: x(Cu)}) of the single eutectic in the app's
+    invariant reaction table (in K and at%)."""
     at = _run_app(T_range=(500.0, 1450.0), system=system)
     table = at.table[-1].value
     eutectics = table[table["type"] == "eutectic"]
     assert len(eutectics) == 1
 
     row = eutectics.iloc[0]
-    compositions = {}
-    for entry in row["x(Cu) (at%)"].split(", "):
-        phase, at_percent = entry.rsplit(" ", 1)
-        compositions[phase] = float(at_percent) / 100.0
+    entries = [entry.rsplit(" ", 1) for entry in row["x(Cu) (at%)"].split(", ")]
+    # compositions are listed under textbook names, in the order of "CALPHAD phases"
+    phases = row["CALPHAD phases"].split("+") if "CALPHAD phases" in row else [phase for phase, _ in entries]
+    compositions = {phase: float(at_percent) / 100.0 for phase, (_, at_percent) in zip(phases, entries)}
     return float(row["Temperature (K)"]), compositions
 
 

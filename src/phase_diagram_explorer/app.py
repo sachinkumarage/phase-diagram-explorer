@@ -13,14 +13,26 @@ precomputed equilibrium table (lookup.py). Only the Gibbs energy curves and
 the total Gibbs energy need the database; that section then shows a notice.
 
 Public defaults: only validated systems are listed until "Show preview
-systems (provisional data)" is ticked; Ag-Cu is selected first.
+systems (provisional data)" is ticked; Ag-Cu is selected first, in °C and
+at% unless a system sets its own display units.
+
+Phase fractions are mole fractions in at% and mass fractions in wt%
+(presentation.py). The Gibbs energy curves are always plotted against mole
+fraction, where the common tangent construction is valid.
+
+Visitors never see a traceback: run() shows a short message and logs the
+exception (with showErrorDetails = "none" in .streamlit/config.toml).
 """
+import csv
+import io
 import json
+import logging
 from pathlib import Path
 
 import numpy as np
 import plotly.graph_objects as go
 import streamlit as st
+from streamlit.runtime.scriptrunner_utils.exceptions import ScriptControlException
 
 from phase_diagram_explorer import __version__
 from phase_diagram_explorer.builder import build_system, is_computable
@@ -28,6 +40,7 @@ from phase_diagram_explorer.equilibrium.curves import evaluate_phase_curves
 from phase_diagram_explorer.equilibrium.equilibrium import base_phase_name, compute_equilibrium
 from phase_diagram_explorer.export import EXPORT_FORMATS, export_figure, invariants_csv
 from phase_diagram_explorer.invariants import detect_invariants_over_range
+from phase_diagram_explorer.labels import PhaseNames, gap_split
 from phase_diagram_explorer.models import (
     SystemDefinition,
     default_systems_dir,
@@ -45,6 +58,7 @@ from phase_diagram_explorer.precomputed import (
     source_hash,
     status,
 )
+from phase_diagram_explorer.presentation import fraction_header, lever_rule_lines, phase_fractions
 from phase_diagram_explorer.solidification import melting_range
 from phase_diagram_explorer.lookup import equilibrium_from_trace
 from phase_diagram_explorer.sources import SourceError, ensure, registry_path, source, tdb_dir
@@ -55,6 +69,7 @@ from phase_diagram_explorer.units import (
     CELSIUS,
     COMPOSITION_UNITS,
     TEMPERATURE_UNITS,
+    WEIGHT_PERCENT,
     composition_from_display,
     composition_label,
     composition_to_display,
@@ -62,7 +77,15 @@ from phase_diagram_explorer.units import (
     temperature_label,
     temperature_to_display,
 )
-from phase_diagram_explorer.visualization import COMPOSITION_FORMAT, TEMPERATURE_FORMAT, plot_diagram
+from phase_diagram_explorer.visualization import (
+    COMPOSITION_FORMAT,
+    TEMPERATURE_FORMAT,
+    plot_diagram,
+    reaction_names,
+    reaction_text,
+)
+
+LOGGER = logging.getLogger(__name__)
 
 PROVISIONAL_BANNER = "Preview: provisional thermodynamic data, not yet validated."
 PREVIEW_LABEL = "Show preview systems (provisional data)"
@@ -81,6 +104,13 @@ TANGENT_POINTS = 200
 FRACTION_FORMAT = ".3f"
 # "High resolution": tracer levels and Gibbs-curve points.
 HIGH_RESOLUTION = (240, 2000)
+DEFAULT_TEMPERATURE_UNIT = CELSIUS
+FRIENDLY_ERROR = "Something went wrong while loading this system. Please try another system or reload the page."
+METASTABLE_LABEL = "Show metastable phases"
+MOLE_FRACTION_CAPTION = (
+    "Gibbs energy curves are shown against mole fraction, where the common tangent construction is valid."
+)
+LEVER_RULE_LABEL = "Show lever-rule calculation"
 
 
 def _system_names(paths: list[Path]) -> list[str]:
@@ -245,7 +275,7 @@ def _cached_export(
         _traced, definition.name, fmt,
         dependent_symbol=definition.dependent_element.symbol, temperature_unit=T_unit, composition_unit=x_unit,
         atomic_masses=(definition.base_element.atomic_mass, definition.dependent_element.atomic_mass),
-        footnote=_footnote(definition, system_path),
+        footnote=_footnote(definition, system_path), display_names=definition.display_names,
     )
 
 
@@ -257,12 +287,34 @@ def estimated_seconds(base_seconds: float, n_T: int, n_points: int) -> float:
     return base_seconds * (n_points / DEFAULT_POINTS) ** 0.5 * (n_T / DEFAULT_LEVELS) ** 0.5
 
 
-def _tangent_line_figure(system, T: float, x_overall: float, n_points: int, to_x, x_title: str, T_text: str) -> go.Figure:
+def stable_phase_names(definition: SystemDefinition, traced) -> tuple[list[str], list[str]]:
+    """(stable, metastable) phase names: stable somewhere in the traced
+    diagram, or not; both in the order of the system definition."""
+    stable = {phase for region in traced.regions for phase in region.phases}
+    names = [phase.name for phase in definition.phases]
+    return [name for name in names if name in stable], [name for name in names if name not in stable]
+
+
+def _system_info(definition: SystemDefinition, stable: list[str], metastable: list[str]) -> str:
+    base, dependent = definition.base_element, definition.dependent_element
+    info = f"Elements: {base.symbol} (x = 0), {dependent.symbol} (x = 1) · Stable phases: {', '.join(stable)}"
+    if metastable:
+        info += f" · Metastable in this database: {', '.join(metastable)}"
+    return info
+
+
+def _tangent_line_figure(
+    system, T: float, x_overall: float, n_points: int, to_x, x_title: str, T_text: str, phases=None
+) -> go.Figure:
+    """Gibbs energy curves of `phases` (default: all) and the common tangent.
+    `to_x` must be linear in mole fraction (the tangent is a straight line)."""
     x, curves = evaluate_phase_curves(system, T, n_points=n_points)
     x_display = to_x(x)
     fig = go.Figure()
 
     for name, curve in curves.items():
+        if phases is not None and name not in phases:
+            continue
         finite = np.isfinite(curve)
         if finite.sum() == 1:
             fig.add_trace(
@@ -281,8 +333,6 @@ def _tangent_line_figure(system, T: float, x_overall: float, n_points: int, to_x
         g2 = phase2.molar_gibbs(T) if isinstance(phase2, StoichiometricPhase) else float(phase2.molar_gibbs(T, x2))
 
         if x2 != x1:
-            # The tangent is a straight line in mole fraction; sample it densely
-            # so it is drawn correctly on a non-linear (wt%) axis as well.
             slope = (g2 - g1) / (x2 - x1)
             line_x = np.linspace(0.0, 1.0, TANGENT_POINTS)
             line_y = g1 + slope * (line_x - x1)
@@ -306,6 +356,37 @@ def _tangent_line_figure(system, T: float, x_overall: float, n_points: int, to_x
         yaxis_title=f"Molar Gibbs energy ({GIBBS_UNIT})",
     )
     return fig
+
+
+def _equilibrium_csv(result, names: dict[str, str], masses, dependent_symbol: str) -> str:
+    """The equilibrium at full precision: per phase its display and CALPHAD
+    names, mole and mass fractions and composition; then the molar Gibbs energy."""
+    buffer = io.StringIO()
+    writer = csv.writer(buffer, lineterminator="\n")
+    writer.writerow(["temperature_K", repr(float(result.T)), f"x_{dependent_symbol}", repr(float(result.x_overall))])
+    writer.writerow(["phase", "calphad_phase", "mole_fraction", "mass_fraction", f"x_{dependent_symbol}"])
+    mass_fractions = phase_fractions(result, WEIGHT_PERCENT, masses) if None not in masses else {}
+    for phase, fraction in result.phase_fractions.items():
+        writer.writerow([
+            names[phase], phase, repr(float(fraction)),
+            repr(float(mass_fractions[phase])) if phase in mass_fractions else "",
+            repr(float(result.phase_compositions[phase])),
+        ])
+    writer.writerow(["molar_gibbs_energy_J_per_mol", repr(float(result.total_gibbs))])
+    return buffer.getvalue()
+
+
+def run() -> None:
+    """main(), showing visitors a short message instead of a traceback; the
+    full exception is logged. Streamlit's own control flow (st.stop,
+    st.rerun) passes through."""
+    try:
+        main()
+    except ScriptControlException:
+        raise
+    except Exception:
+        LOGGER.exception("Unhandled error in the Phase Diagram Explorer app")
+        st.error(FRIENDLY_ERROR)
 
 
 def main() -> None:
@@ -362,17 +443,18 @@ def main() -> None:
     atomic_masses = (base.atomic_mass, dependent.atomic_mass)
     analysis_range_K = analysis_range(definition)
 
-    st.caption(
-        f"Elements: {base.symbol} (x = 0), {dependent.symbol} (x = 1) · "
-        f"Phases: {', '.join(phase.name for phase in definition.phases)}"
-    )
+    names = PhaseNames(definition.display_names)
+    # Filled in once the diagram is known (stable phases come from it).
+    system_info = st.empty()
 
     with st.sidebar:
         st.header("Units")
         # One widget per system, so that each system opens in its own default units.
         T_unit = st.radio(
             "Temperature unit", TEMPERATURE_UNITS, horizontal=True, key=f"T_unit_{selected_name}",
-            index=_default_index(TEMPERATURE_UNITS, definition.display.get("temperature_unit")),
+            index=_default_index(
+                TEMPERATURE_UNITS, definition.display.get("temperature_unit") or DEFAULT_TEMPERATURE_UNIT
+            ),
         )
         available_composition_units = COMPOSITION_UNITS if None not in atomic_masses else (ATOMIC_PERCENT,)
         x_unit = st.radio(
@@ -457,14 +539,17 @@ def main() -> None:
         )
         source_note = "Diagram computed live for these settings."
 
+    # Stable phases of the system's default diagram (Gibbs chart filter, info line).
+    stable, metastable = stable_phase_names(definition, precomputed.traced if precomputed is not None else traced)
+    system_info.caption(_system_info(definition, stable, metastable))
+
     st.subheader("Phase diagram")
     figure = plot_diagram(
         traced, definition.name,
         dependent_symbol=dependent.symbol, temperature_unit=T_unit,
         composition_unit=x_unit, atomic_masses=atomic_masses,
+        display_names=definition.display_names, T_range_k=T_range,
     )
-    if not np.allclose(traced.T_range, T_range, atol=1e-6):
-        figure.update_yaxes(range=[to_T(T_range[0]), to_T(T_range[1])])
     st.plotly_chart(figure, width="stretch")
     st.caption(source_note)
     _show_citations(definition)
@@ -506,36 +591,65 @@ def main() -> None:
 
     col1, col2 = st.columns(2)
     if result is not None:
+        labels = list(result.phase_fractions)
+        # A lone composition set is named by its side of the gap at this T.
+        split = gap_split(traced, base_phase_name(labels[0]), T_selected) if len(labels) == 1 else 0.5
+        shown = dict(zip(labels, names.names([(label, result.phase_compositions[label]) for label in labels], split)))
+
+        def phase_columns(phases) -> dict:
+            columns = {"phase": [shown[p] for p in phases]}
+            if names:
+                columns["CALPHAD phase"] = list(phases)
+            return columns
+
+        fractions = phase_fractions(result, x_unit, atomic_masses)
         with col1:
             st.markdown("**Stable phases**")
-            st.write(", ".join(result.stable_phases))
+            st.write(", ".join(names.legend(shown[p], p) for p in result.stable_phases))
             st.markdown("**Phase fractions**")
             st.table(
                 {
-                    "phase": list(result.phase_fractions.keys()),
-                    "fraction": [f"{f:{FRACTION_FORMAT}}" for f in result.phase_fractions.values()],
+                    **phase_columns(fractions),
+                    fraction_header(x_unit): [f"{f:{FRACTION_FORMAT}}" for f in fractions.values()],
                 }
             )
+            lever_rule = lever_rule_lines(result, x_unit, atomic_masses, shown)
+            if lever_rule:
+                with st.expander(LEVER_RULE_LABEL):
+                    st.code("\n".join(lever_rule), language=None)
         with col2:
             st.markdown("**Phase compositions**")
             st.table(
                 {
-                    "phase": list(result.phase_compositions.keys()),
+                    **phase_columns(result.phase_compositions),
                     x_title: [f"{to_x(x):{COMPOSITION_FORMAT}}" for x in result.phase_compositions.values()],
                 }
             )
             st.markdown(f"**Molar Gibbs energy ({GIBBS_UNIT})**")
             if np.isfinite(result.total_gibbs):
-                st.write(f"{result.total_gibbs:.2f}")
+                st.write(f"{result.total_gibbs:.0f}")
             else:
                 st.caption(TOTAL_GIBBS_NOTICE.format(name=database_name))
+        st.download_button(
+            "Download equilibrium (CSV, full precision)",
+            data=_equilibrium_csv(result, shown, atomic_masses, dependent.symbol),
+            file_name=f"{selected_name}_equilibrium.csv",
+            mime="text/csv",
+        )
 
     st.subheader("Gibbs energy curves and common tangent")
     if system is not None:
+        show_metastable = st.checkbox(METASTABLE_LABEL, value=False)
         st.plotly_chart(
-            _tangent_line_figure(system, T_selected, x_overall, n_points, to_x, x_title, T_selected_text),
+            _tangent_line_figure(
+                system, T_selected, x_overall, n_points,
+                lambda x_b: composition_to_display(x_b, ATOMIC_PERCENT), composition_label(dependent.symbol, ATOMIC_PERCENT),
+                T_selected_text, phases=None if show_metastable else stable,
+            ),
             width="stretch",
         )
+        if x_unit != ATOMIC_PERCENT:
+            st.caption(MOLE_FRACTION_CAPTION)
     else:
         st.info(GIBBS_NOTICE.format(name=database_name))
 
@@ -549,9 +663,14 @@ def main() -> None:
             {
                 "type": [r.type for r in reactions],
                 T_title: [f"{to_T(r.temperature):{TEMPERATURE_FORMAT}}" for r in reactions],
-                "phases": ["+".join(r.phases) for r in reactions],
+                "reaction": [reaction_text(r, names) for r in reactions],
+                "phases": ["+".join(reaction_names(r, names)) for r in reactions],
+                **({"CALPHAD phases": ["+".join(r.phases) for r in reactions]} if names else {}),
                 x_title: [
-                    ", ".join(f"{phase} {to_x(x):{COMPOSITION_FORMAT}}" for phase, x in r.composition.items())
+                    ", ".join(
+                        f"{name} {to_x(r.composition[phase]):{COMPOSITION_FORMAT}}"
+                        for phase, name in zip(r.phases, reaction_names(r, names))
+                    )
                     for r in reactions
                 ],
                 "note": ["" if is_displayed(r) else "outside displayed temperature range" for r in reactions],
@@ -568,4 +687,4 @@ def main() -> None:
 
 
 if __name__ == "__main__":
-    main()
+    run()

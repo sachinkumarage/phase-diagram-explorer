@@ -19,7 +19,8 @@ from phase_diagram_explorer.units import (
     temperature_label,
     temperature_to_display,
 )
-from phase_diagram_explorer.visualization import MIN_LABELLED_AREA_FRACTION
+from phase_diagram_explorer.labels import PhaseNames, PlotBox
+from phase_diagram_explorer.visualization import MIN_LABELLED_AREA_FRACTION, diagram_labels
 
 EXPORT_FORMATS = ("svg", "pdf")
 
@@ -34,6 +35,11 @@ def _pyplot():
 
     return plt
 FOOTNOTE_WIDTH = 110
+FIGURE_SIZE_IN = (6.5, 5.2)
+LABEL_FONT_SIZE = 9
+# The label layout's pixel model (labels.CHAR_WIDTH_PX) is for 12 px text;
+# axes sizes in points are scaled by this factor for 9 pt labels.
+LAYOUT_SCALE = 1.3
 STYLE = {
     "font.family": "DejaVu Serif",
     "font.size": 10,
@@ -59,6 +65,7 @@ def publication_figure(
     composition_unit: str = ATOMIC_PERCENT,
     atomic_masses: tuple[float | None, float | None] = (None, None),
     footnote: str = "",
+    display_names: dict | None = None,
 ):
     plt = _pyplot()
     mass_a, mass_b = atomic_masses
@@ -70,7 +77,7 @@ def publication_figure(
         return temperature_to_display(T, temperature_unit)
 
     with plt.rc_context(STYLE):
-        fig, ax = plt.subplots(figsize=(6.5, 5.2))
+        fig, ax = plt.subplots(figsize=FIGURE_SIZE_IN)
         for boundary in traced.boundaries:
             ax.plot(to_x(boundary.x), to_T(boundary.T), color="black", linewidth=1.0)
 
@@ -79,20 +86,28 @@ def publication_figure(
             compositions = list(reaction.composition.values())
             T = to_T(reaction.temperature)
             ax.plot([to_x(min(compositions)), to_x(max(compositions))], [T, T], color="black", linewidth=1.0)
-            ax.annotate(
-                f"{T:.1f} {temperature_unit}", xy=(to_x(max(compositions)), T),
-                xytext=(4, 2), textcoords="offset points", fontsize=8, ha="left", va="bottom",
-            )
-
-        total_area = traced.T_range[1] - traced.T_range[0]
-        for region in traced.regions:
-            if region.area < MIN_LABELLED_AREA_FRACTION * total_area:
-                continue
-            x, T = region.label_position()
-            ax.text(to_x(x), to_T(T), region.label, ha="center", va="center", fontsize=9)
 
         ax.set_xlim(to_x(0.0), x_right)
         ax.set_ylim(to_T(traced.T_range[0]), to_T(traced.T_range[1]))
+        fig.canvas.draw()
+        size = ax.get_window_extent().transformed(fig.dpi_scale_trans.inverted())
+        plot = PlotBox(
+            (float(to_x(0.0)), float(x_right)), (float(to_T(traced.T_range[0])), float(to_T(traced.T_range[1]))),
+            width_px=size.width * 72 * LAYOUT_SCALE, height_px=size.height * 72 * LAYOUT_SCALE,
+        )
+        labels = diagram_labels(
+            traced, PhaseNames(display_names), to_x, to_T, traced.T_range, temperature_unit, plot,
+            min_area_fraction=MIN_LABELLED_AREA_FRACTION,
+        )
+        for label in labels:
+            text = f"{label.anchor[1]:.1f} {temperature_unit}" if label.kind == "invariant" else label.text
+            if label.leader:
+                ax.annotate(
+                    text, xy=label.anchor, xytext=label.position, ha="center", va="center", fontsize=LABEL_FONT_SIZE,
+                    arrowprops=dict(arrowstyle="-", linewidth=0.6, color="black", shrinkA=0, shrinkB=1),
+                )
+            else:
+                ax.text(*label.position, text, ha="center", va="center", fontsize=LABEL_FONT_SIZE)
         ax.set_xlabel(composition_label(dependent_symbol, composition_unit))
         ax.set_ylabel(temperature_label(temperature_unit))
         ax.set_title(system_name)

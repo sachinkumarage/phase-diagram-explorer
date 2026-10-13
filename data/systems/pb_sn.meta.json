@@ -1,11 +1,28 @@
 {
   "name": "Pb-Sn",
   "source": "nist_solder",
-  "elements": ["PB", "SN"],
+  "elements": [
+    "PB",
+    "SN"
+  ],
   "dependent_element": "SN",
-  "element_names": {"Pb": "Lead", "Sn": "Tin"},
-  "t_range_k": [300.0, 650.0],
-  "display": {"temperature_unit": "°C", "composition_unit": "wt%"},
+  "element_names": {
+    "Pb": "Lead",
+    "Sn": "Tin"
+  },
+  "t_range_k": [
+    300.0,
+    650.0
+  ],
+  "display": {
+    "temperature_unit": "°C",
+    "composition_unit": "wt%"
+  },
+  "display_names": {
+    "LIQUID": "L",
+    "FCC_A1": "(Pb)",
+    "BCT_A5": "(Sn)"
+  },
   "industry_note": "63Sn-37Pb solder (63 wt% Sn) is near-eutectic: it melts over a very narrow temperature range, close to the eutectic temperature.",
   "_source": "Assessed Pb-Sn description (Fecht et al. 1989) from the NIST solder database, Pb-Sn subsystem.",
   "citations": [
