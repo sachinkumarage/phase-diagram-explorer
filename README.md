@@ -13,7 +13,7 @@ Phase boundaries are traced from exact equilibrium tie lines, and invariant reac
 
 Phase fields are labelled with textbook names such as L, (Ag) and "L + (Ag)"; the legend, tables and hover text also give the CALPHAD phase names. Phase fractions are mole fractions in at% and mass fractions in wt%, and "Show lever-rule calculation" shows the lever rule in the current unit. The Gibbs energy curves are always plotted against mole fraction, where the common tangent construction is valid, and show only the phases stable somewhere in the diagram unless "Show metastable phases" is ticked. The app opens in °C and at% unless a system sets its own units.
 
-Only systems in `data/systems/` whose every phase can be evaluated are listed: JSON files, or TDB databases with a `<name>.meta.json` that gives the element order. By default the app lists only validated systems and opens Ag-Cu. Ticking "Show preview systems (provisional data)" in the sidebar adds systems marked `"_status": "provisional"`, such as Al-Cu, which are shown with the banner "Preview: provisional thermodynamic data, not yet validated."
+Only systems in `data/systems/` whose every phase can be evaluated are listed: JSON files, or TDB databases with a `<name>.meta.json` that gives the element order. By default the app lists only validated systems (Ag-Cu, Fe-C and Pb-Sn) and opens Ag-Cu. Ticking "Show preview systems (provisional data)" in the sidebar adds systems marked `"_status": "provisional"`, such as Al-Cu, which are shown with the banner "Preview: provisional thermodynamic data, not yet validated."
 
 ### Run online
 
@@ -28,7 +28,7 @@ streamlit run streamlit_app.py
 
 `streamlit_app.py` at the repository root is the entry point used by Streamlit Community Cloud. `streamlit run src/phase_diagram_explorer/app.py` also works with the package installed. Settings are in `.streamlit/config.toml`. The theme follows the viewer's light or dark mode. No secrets are needed, and `.streamlit/secrets.toml` is git-ignored.
 
-At the default settings, the diagram and invariant reactions are loaded from `data/precomputed/`, so the app starts quickly on a small machine. If a system's database cannot be downloaded (for example if NIST is unreachable), the page still works from the precomputed data. That covers the diagram, invariant table, citations, unit toggles, and the equilibrium at the selected temperature and composition, which is read from a precomputed equilibrium table to within 1e-4. Only the Gibbs energy curves and the total Gibbs energy need the database, and that section says so. Other temperature ranges and resolutions are computed live and cached. "High resolution" shows an estimated time before it runs. The equilibrium at the selected temperature and composition is always computed live.
+At the default settings, the diagram and invariant reactions are loaded from `data/precomputed/` (one file per diagram mode for Fe-C), so the app starts quickly on a small machine. If a system's database cannot be downloaded (for example if NIST is unreachable), the page still works from the precomputed data. That covers the diagram, invariant table, citations, unit toggles, and the equilibrium at the selected temperature and composition, which is read from a precomputed equilibrium table to within 1e-4. Only the Gibbs energy curves and the total Gibbs energy need the database, and that section says so. Other temperature ranges and resolutions are computed live and cached. "High resolution" shows an estimated time before it runs. The equilibrium at the selected temperature and composition is always computed live.
 
 ### Regenerating precomputed data
 
@@ -67,6 +67,21 @@ The app and `load_system` also download it on first use. A failed download, or a
 - NIST Pb-Sn page: https://www.metallurgy.nist.gov/phase/solder/pbsn.html
 
 For Pb-Sn the app adds a short note on 63Sn-37Pb solder (near-eutectic), with the eutectic and the melting (mushy) range of the selected alloy, i.e. liquidus minus solidus. `docs/validation/pb_sn.md` compares the computed diagram with NIST's calculation, experiment and pycalphad. pycalphad's own Pb-Sn test database (Ngai and Chang 1981) is used only as a cross-validation fixture.
+
+**Fe-C** is the assessed description in pycalphad's test database `cfe_broshe.tdb` (release 0.11.2). The app shows two diagrams, chosen with "Diagram": the metastable Fe-Fe3C diagram of steel practice (graphite suspended, the default) and the stable Fe-graphite diagram. Both run from 0 to 6.69 wt% C (Fe3C, x(C) = 0.25) and 400 to 1600 °C, in °C and wt% by default. Fields carry textbook names (alpha and delta ferrite by temperature region, gamma austenite, Fe3C cementite, graphite). The A1, A3 and Acm lines are labelled, and the steel / cast iron division at 2.14 wt% C is a dashed line. Invariant labels show this database's values (eutectoid 726.5 °C, eutectic 1148.2 °C, peritectic 1494.6 °C; stable eutectoid 738.0 °C, eutectic 1153.4 °C), which may differ slightly from older textbook figures:
+
+- B. Hallstedt, D. Djurovic, J. von Appen, R. Dronskowski, A. Dick, F. Koermann, T. Hickel, J. Neugebauer, Calphad 34 (2010) 129-133.
+- A.T. Dinsdale, CALPHAD 15 (1991) 317-425.
+- Brosh et al., CALPHAD 31 (2007) 173-185 (equation of state; not used at 1 atm beyond its contribution at that pressure).
+- Database file: pycalphad 0.11.2 test database cfe_broshe.tdb.
+
+The file is **fetched from the pycalphad repository** at the 0.11.2 release tag (https://raw.githubusercontent.com/pycalphad/pycalphad/0.11.2/pycalphad/tests/databases/cfe_broshe.tdb) and verified by SHA256, like the NIST file; it is not redistributed here. It carries no license text of its own; the pycalphad repository is MIT-licensed.
+
+Two phases of the file are left out, as the app also notes:
+- **M7C3_D101** (Fe7C3): its parameters are attributed only to an unidentified "This work" in the file. Below x(C) = 0.25 it is never stable, so leaving it out changes nothing in the displayed diagram (a test checks this to 1e-8).
+- **DIAMOND_A4**: stable only at high pressure. With graphite suspended, ferrite + diamond would replace ferrite + Fe3C below 589 °C, so it must stay out of the metastable diagram.
+
+`docs/validation/fe_c.md` compares both diagrams with pycalphad on the same file, this database's reference values and literature values.
 
 **Al-Cu** is still a provisional model, shown with a preview banner. The former provisional Ag-Cu model is kept as a test fixture, `tests/fixtures/ag_cu_provisional.json`.
 

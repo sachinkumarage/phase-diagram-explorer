@@ -12,5 +12,19 @@
     "license_mode": "fetch",
     "license_url": "https://www.nist.gov/open/license",
     "note": "Downloaded from NIST and verified by SHA256; not redistributed in this repository."
+  },
+  "pycalphad_cfe_broshe": {
+    "short_name": "pycalphad Fe-C",
+    "file": "cfe_broshe.tdb",
+    "url": "https://raw.githubusercontent.com/pycalphad/pycalphad/0.11.2/pycalphad/tests/databases/cfe_broshe.tdb",
+    "sha256": "e59f9a8fe5dce6edada0c7dbf8a0d11603806c06ec3c1a464e44a19acd73116f",
+    "size": 48297,
+    "title": "pycalphad 0.11.2 test database cfe_broshe.tdb (Fe-C)",
+    "citation": "Database file: pycalphad 0.11.2 test database cfe_broshe.tdb, https://github.com/pycalphad/pycalphad/blob/0.11.2/pycalphad/tests/databases/cfe_broshe.tdb.",
+    "page": "https://github.com/pycalphad/pycalphad/blob/0.11.2/pycalphad/tests/databases/cfe_broshe.tdb",
+    "license_mode": "fetch",
+    "license_url": "https://github.com/pycalphad/pycalphad/blob/0.11.2/LICENSE.txt",
+    "license_note": "The file carries no license text of its own. It is fetched from the pycalphad repository (an MIT-licensed repository) at the 0.11.2 release tag and verified by SHA256, rather than redistributed here.",
+    "note": "Fetched from the pycalphad repository at tag 0.11.2 and verified by SHA256; not redistributed in this repository."
   }
 }

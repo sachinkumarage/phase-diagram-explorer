@@ -248,19 +248,19 @@ def test_selector_lists_only_systems_with_complete_gibbs_data(monkeypatch, tmp_p
 def test_shipped_selector_has_no_example_system():
     at = AppTest.from_file(str(APP_PATH), default_timeout=120).run()
     _show_preview_systems(at)
-    assert at.selectbox[0].options == ["ag_cu", "al_cu", "pb_sn"]
+    assert at.selectbox[0].options == ["ag_cu", "al_cu", "fe_c", "pb_sn"]
 
 
 def test_public_defaults_list_only_validated_systems_with_ag_cu_selected():
     at = AppTest.from_file(str(APP_PATH), default_timeout=120).run()
     assert not at.exception
     assert _checkbox(at, PREVIEW_LABEL).value is False
-    assert at.selectbox[0].options == ["ag_cu", "pb_sn"]
+    assert at.selectbox[0].options == ["ag_cu", "fe_c", "pb_sn"]
     assert at.selectbox[0].value == "ag_cu"
     assert len(at.warning) == 0
 
     _show_preview_systems(at)
-    assert at.selectbox[0].options == ["ag_cu", "al_cu", "pb_sn"]
+    assert at.selectbox[0].options == ["ag_cu", "al_cu", "fe_c", "pb_sn"]
     assert at.selectbox[0].value == "ag_cu"
     at.selectbox[0].set_value("al_cu")
     at.run()
@@ -385,13 +385,13 @@ def test_root_entry_point_runs_the_app():
     at = AppTest.from_file(str(ENTRY_POINT), default_timeout=120).run()
     assert not at.exception
     assert at.title[0].value == "Phase Diagram Explorer"
-    assert at.selectbox[0].options == ["ag_cu", "pb_sn"]
+    assert at.selectbox[0].options == ["ag_cu", "fe_c", "pb_sn"]
 
 
-BANNERS = {"ag_cu": [], "al_cu": [PROVISIONAL_BANNER], "pb_sn": []}
+BANNERS = {"ag_cu": [], "al_cu": [PROVISIONAL_BANNER], "fe_c": [], "pb_sn": []}
 
 
-@pytest.mark.parametrize("system", ["ag_cu", "al_cu", "pb_sn"])
+@pytest.mark.parametrize("system", ["ag_cu", "al_cu", "fe_c", "pb_sn"])
 def test_each_system_loads_from_precomputed_data(system):
     at = _run(system)
     assert any(caption.startswith(PRECOMPUTED_NOTE) for caption in _captions(at))
@@ -761,7 +761,7 @@ def test_lever_rule_expander_uses_the_fraction_basis():
     (code,) = expander.code
     fractions = dict(zip(at.table[0].value["phase"], at.table[0].value["phase fraction (mass)"]))
     assert "w0 = 36.40 wt%" in code.value
-    assert f"f(L) = (w0 − w_(Pb)) / (w_L − w_(Pb)) = " in code.value
+    assert "f(L) = (w0 − w_(Pb)) / (w_L − w_(Pb)) = " in code.value
     assert code.value.splitlines()[2].endswith(f"= {fractions['L']}")
     assert code.value.splitlines()[1].endswith(f"= {fractions['(Pb)']}")
 
@@ -802,3 +802,140 @@ def test_streamlit_config_hides_error_details():
 
     config = tomllib.loads((ROOT / ".streamlit" / "config.toml").read_text())
     assert config["client"]["showErrorDetails"] == "none"
+
+
+# --- 0.4.0: assessed Fe-C, metastable and stable diagrams -----------------------
+
+METASTABLE, STABLE = "metastable", "stable"
+FE_C_NOTE = "Temperatures and compositions are this assessed database's values"
+FE_C_GIBBS_NOTICE = "Gibbs energy curves need the pycalphad Fe-C database, which could not be downloaded right now."
+
+
+def _radio(at: AppTest, label: str):
+    (match,) = [radio for radio in at.radio if radio.label == label]
+    return match
+
+
+def _fe_c(mode: str = METASTABLE, **radios) -> AppTest:
+    at = _run("fe_c", default_units=not radios, **radios)
+    if mode != METASTABLE:
+        _radio(at, "Diagram").set_value(mode).run()
+    assert not at.exception
+    return at
+
+
+def test_fe_c_opens_in_metastable_mode_with_its_defaults():
+    at = _run("fe_c", default_units=True)
+    assert _radio(at, "Diagram").value == METASTABLE
+    assert list(_radio(at, "Diagram").options) == [
+        "Metastable Fe-Fe3C (steel practice)", "Stable Fe-graphite",
+    ]
+    assert (_radio(at, "Temperature unit").value, _radio(at, "Composition unit").value) == ("°C", "wt%")
+    composition = _slider(at, "Composition w(C) (wt%)")
+    assert composition.max == pytest.approx(6.69) and composition.value == pytest.approx(0.8)
+    assert _slider(at, "Temperature range (°C)").value == pytest.approx((400.0, 1600.0))
+    assert len(at.warning) == 0
+
+
+@pytest.mark.parametrize("mode", [METASTABLE, STABLE])
+def test_fe_c_modes_load_from_precomputed_data(mode):
+    at = _fe_c(mode)
+    assert any(caption.startswith(PRECOMPUTED_NOTE) for caption in _captions(at))
+    assert not [info for info in at.info if LIVE_NOTICE in info.value]
+    assert list(_invariant_table(at)["type"]) == ["eutectoid", "eutectic", "peritectic"]
+
+
+def test_fe_c_metastable_diagram_labels_and_marks():
+    at = _fe_c()
+    diagram = _figure(at, 0)
+    fields = {label["text"] for label in _annotations(diagram, "field label")}
+    assert {
+        "L", "alpha (ferrite)", "gamma (austenite)", "delta (ferrite)", "alpha (ferrite) + Fe3C (cementite)",
+        "gamma (austenite) + Fe3C (cementite)", "L + gamma (austenite)", "L + Fe3C (cementite)",
+        "alpha (ferrite) + gamma (austenite)",
+    } <= fields
+    assert not any("graphite" in text for text in fields)
+    assert sorted(label["text"] for label in _annotations(diagram, "line label")) == ["A1", "A3", "Acm"]
+    assert [label["text"] for label in _annotations(diagram, "composition label")] == ["Steels", "Cast irons"]
+    invariants = [label["text"] for label in _annotations(diagram, "invariant label")]
+    assert invariants == ["Eutectoid 726.5 °C", "Eutectic 1148.2 °C", "Peritectic 1494.6 °C"]
+    (division,) = [trace for trace in diagram["data"] if trace.get("name") == "Steels / Cast irons"]
+    assert division["line"]["dash"] == "dash"
+    assert _values(division["x"]) == pytest.approx([2.14, 2.14])
+    assert diagram["layout"]["xaxis"]["range"] == pytest.approx([0.0, 6.69], abs=0.005)
+    assert any(caption.startswith(FE_C_NOTE) for caption in _captions(at))
+
+
+def test_fe_c_stable_diagram_has_graphite_and_no_cementite():
+    at = _fe_c(STABLE)
+    diagram = _figure(at, 0)
+    fields = {label["text"] for label in _annotations(diagram, "field label")}
+    assert {"gamma (austenite) + graphite", "alpha (ferrite) + graphite", "L + graphite"} <= fields
+    assert not any("Fe3C" in text for text in fields)
+    invariants = [label["text"] for label in _annotations(diagram, "invariant label")]
+    assert invariants == ["Eutectoid 738.0 °C", "Eutectic 1153.4 °C", "Peritectic 1494.6 °C"]
+    assert list(_invariant_table(at)["reaction"])[:2] == [
+        "gamma (austenite) -> alpha (ferrite) + graphite", "L -> gamma (austenite) + graphite",
+    ]
+
+
+def test_fe_c_names_alpha_and_delta_by_temperature():
+    table = _invariant_table(_fe_c())
+    assert list(table["reaction"]) == [
+        "gamma (austenite) -> alpha (ferrite) + Fe3C (cementite)",
+        "L -> gamma (austenite) + Fe3C (cementite)",
+        "delta (ferrite) + L -> gamma (austenite)",
+    ]
+    assert list(table["CALPHAD phases"])[0] == "BCC_A2+FCC_A1+CEMENTITE_D011"
+    # compositions to 0.001 wt%
+    assert table["w(C) (wt%)"][0] == "alpha (ferrite) 0.019, gamma (austenite) 0.762, Fe3C (cementite) 6.689"
+
+
+def test_fe_c_shows_citations_and_the_phases_left_out():
+    at = _fe_c()
+    markdown = [element.value for element in at.markdown]
+    citations = markdown[markdown.index("**Data sources**") + 1]
+    assert "Hallstedt, D. Djurovic" in citations and "Calphad 34 (2010) 129-133" in citations
+    assert "Dinsdale" in citations and "Brosh et al., CALPHAD 31 (2007) 173-185" in citations
+    assert "pycalphad 0.11.2 test database cfe_broshe.tdb" in citations
+    assert "Gustafson" not in " ".join(markdown)
+    left_out = markdown[markdown.index("**Phases left out**") + 1]
+    assert "M7C3_D101" in left_out and "This work" in left_out and "DIAMOND_A4" in left_out
+    (info,) = [c for c in _captions(at) if c.startswith("Elements:")]
+    assert "Stable phases: LIQUID, BCC_A2, CEMENTITE_D011, FCC_A1" in info
+    assert "Left out: M7C3_D101, DIAMOND_A4, GRAPHITE" in info
+
+
+@pytest.mark.parametrize("mode", [METASTABLE, STABLE])
+def test_fe_c_point_equilibrium_without_the_database(monkeypatch, tmp_path, mode):
+    """The precomputed equilibrium table of each mode gives the same tables
+    as the live computation."""
+    def point(at):
+        _slider(at, "Temperature (°C) for equilibrium and Gibbs curves").set_value(800.0)
+        _slider(at, "Composition w(C) (wt%)").set_value(1.2)
+        at.run()
+        assert not at.exception
+        return at, at.table[0].value, at.table[1].value
+
+    _, live_fractions, live_compositions = point(_fe_c(mode))
+    st.cache_data.clear()
+    st.cache_resource.clear()
+    _offline(monkeypatch, tmp_path)
+    at, fractions, compositions = point(_fe_c(mode))
+    assert FE_C_GIBBS_NOTICE in [info.value for info in at.info]
+    assert fractions.equals(live_fractions) and compositions.equals(live_compositions)
+    second = "Fe3C (cementite)" if mode == METASTABLE else "graphite"
+    assert list(live_fractions["phase"]) == ["gamma (austenite)", second]
+    st.cache_data.clear()
+    st.cache_resource.clear()
+
+
+@pytest.mark.parametrize("mode", [METASTABLE, STABLE])
+@pytest.mark.parametrize("units", [("°C", "wt%"), ("K", "at%")])
+def test_fe_c_labels_lie_inside_the_plot_area(mode, units):
+    at = _fe_c(mode, **{"Temperature unit": units[0], "Composition unit": units[1]})
+    diagram = _figure(at, 0)
+    x_range, y_range = diagram["layout"]["xaxis"]["range"], diagram["layout"]["yaxis"]["range"]
+    for annotation in diagram["layout"]["annotations"]:
+        (left, bottom, right, top), plot = _label_box(annotation, x_range, y_range)
+        assert left >= 0 and bottom >= 0 and right <= plot.width_px and top <= plot.height_px, annotation["text"]

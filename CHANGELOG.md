@@ -1,5 +1,48 @@
 # Changelog
 
+## 0.4.0 - 2026-10-22
+
+### Added
+- **Assessed Fe-C system** (`data/systems/fe_c.meta.json`), listed by default.
+  - Data: pycalphad's test database `cfe_broshe.tdb` (release 0.11.2): Hallstedt et al., Calphad 34 (2010)
+    129-133, with Dinsdale (1991) and the equation of state of Brosh et al. (2007).
+  - Fetched from the pycalphad repository at the 0.11.2 tag and verified by SHA256
+    (`data/sources.json`, `pycalphad_cfe_broshe`); never committed. The file carries no license text of its
+    own; the pycalphad repository is MIT-licensed.
+  - Gustafson (1985) is not cited: the abstract of Hallstedt et al. (2010) does not say that its solution
+    phases come from it, and the full text could not be checked.
+- **Diagram modes**: "Metastable Fe-Fe3C (steel practice)" (default, GRAPHITE suspended) and "Stable
+  Fe-graphite". Each mode has its own precomputed file (`fe_c.metastable.npz`, `fe_c.stable.npz`), covered by
+  the stale-data check, and works without the database (diagram, invariants, point equilibrium).
+- **Suspended phases**: M7C3_D101 (parameters attributed only to an unidentified "This work") and
+  DIAMOND_A4, with the reasons shown in the app and the docs.
+  - A test checks that results with and without M7C3_D101 are identical within 1e-8 below x(C) = 0.25.
+  - DIAMOND_A4 must stay out of the metastable diagram: with graphite suspended, ferrite + diamond would
+    replace ferrite + Fe3C below 589 °C.
+- **Fe-C display**:
+  - 0 to 6.69 wt% C (x = 0.25, Fe3C) and 400 to 1600 °C, in °C and wt% by default; compositions in the
+    tables to 0.001 wt%.
+  - Textbook names: L, alpha (ferrite) and delta (ferrite) by temperature region, gamma (austenite),
+    Fe3C (cementite), graphite.
+  - A1, A3 and Acm labelled; the 2.14 wt% C steel / cast iron division as a dashed line with "Steels" and
+    "Cast irons".
+  - Invariant labels with this database's values, and a note that they may differ slightly from older
+    textbook figures.
+- **Validation** (`tests/test_fe_c.py`, `tests/validation/test_fe_c_vs_pycalphad.py`,
+  `docs/validation/fe_c.md` with an overlay plot):
+  - against pycalphad on the same file, both modes: invariant temperatures within 0.01 K, compositions
+    within 1e-4 in x;
+  - against this database's reference values: 0.05 K and 0.0005 wt%;
+  - against literature values, with tolerances from the spread between published assessments;
+  - exactly three invariant reactions in each mode over 400-1600 °C (eutectoid, eutectic, peritectic).
+- Metadata fields `suspended_phases`, `modes`, `x_range`, `diagram_note` and `diagram_marks`
+  (docs/data_format.md); `load_system(..., include_suspended=True)`.
+
+### Changed
+- Field labels are placed in the part of each field inside the displayed composition range, and a field
+  traced as several strips is labelled once.
+- The smoke test loads Fe-C in both modes, offline and online, and selects unit radios by label.
+
 ## 0.3.3 - 2026-10-13
 
 Presentation fixes and textbook-style labels. No thermodynamic parameters

@@ -128,5 +128,5 @@ def test_is_computable():
 
 def test_shipped_systems_all_have_complete_gibbs_data():
     paths = system_files(SYSTEMS_DIR)
-    assert [system_name(path) for path in paths] == ["ag_cu", "al_cu", "pb_sn"]
+    assert [system_name(path) for path in paths] == ["ag_cu", "al_cu", "fe_c", "pb_sn"]
     assert all(is_computable(load_system(path)) for path in paths)

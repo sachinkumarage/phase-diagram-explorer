@@ -121,6 +121,16 @@ class Phase(BaseModel):
 PROVISIONAL = "provisional"
 
 
+class DiagramMode(BaseModel):
+    """One way of drawing a system's diagram, e.g. the metastable Fe-Fe3C
+    diagram (graphite suspended) or the stable Fe-graphite diagram. The
+    phases in `suspended_phases` are left out in this mode."""
+
+    key: str
+    label: str
+    suspended_phases: list[str] = []
+
+
 class Citation(BaseModel):
     text: str
     url: str | None = None
@@ -157,14 +167,30 @@ class SystemDefinition(BaseModel):
     # from, and the citations to show with it.
     data_source: str | None = None
     citations: list[Citation] = []
-    # App defaults: {"temperature_unit": "K" | "°C", "composition_unit": "at%" | "wt%"}.
-    display: dict[str, str] = {}
+    # App defaults: {"temperature_unit": "K" | "°C", "composition_unit": "at%" | "wt%",
+    # "default_x": mole fraction of the equilibrium readout, "composition_decimals":
+    # decimals of compositions in the app's tables (default 1)}.
+    display: dict[str, str | float] = {}
     # A short industrial context note shown by the app with the solidus,
     # liquidus and melting range of the selected alloy.
     industry_note: str | None = None
     # Textbook names for phases (labels.PhaseNames), e.g. {"LIQUID": "L",
     # "FCC_A1": {"base_side": "(Ag)", "dependent_side": "(Cu)"}}.
-    display_names: dict[str, str | dict[str, str]] = {}
+    display_names: dict[str, str | dict] = {}
+    # Phases of the database left out of every calculation, with the reason
+    # ({"M7C3_D101": "..."}); they are removed when the system is loaded.
+    suspended_phases: dict[str, str] = {}
+    # Diagram modes (the first is the default); empty for a single diagram.
+    modes: list[DiagramMode] = []
+    # Composition range (mole fraction of the dependent element) shown on the
+    # diagram's x axis and offered by the composition slider; None: 0 to 1.
+    x_range: tuple[float, float] | None = None
+    # Short note shown under the diagram.
+    diagram_note: str | None = None
+    # Extra marks on the diagram (labels.py): "composition_lines" (dashed
+    # vertical lines at a wt% with a label on each side) and
+    # "critical_lines" (named boundaries such as A1, A3 and Acm).
+    diagram_marks: dict = {}
 
     @model_validator(mode="after")
     def check_t_range(self) -> "SystemDefinition":
@@ -174,9 +200,41 @@ class SystemDefinition(BaseModel):
                 raise ValueError(f"t_range_k must satisfy 0 < T_min < T_max, got {self.t_range_k}")
         return self
 
+    @model_validator(mode="after")
+    def check_x_range(self) -> "SystemDefinition":
+        if self.x_range is not None:
+            x_min, x_max = self.x_range
+            if not 0.0 <= x_min < x_max <= 1.0:
+                raise ValueError(f"x_range must satisfy 0 <= x_min < x_max <= 1, got {self.x_range}")
+        return self
+
     @property
     def is_provisional(self) -> bool:
         return self.status == PROVISIONAL
+
+    @property
+    def mode_keys(self) -> list[str]:
+        return [mode.key for mode in self.modes]
+
+    def mode(self, key: str | None = None) -> DiagramMode | None:
+        """The mode with this key (default: the first), or None for a system without modes."""
+        if not self.modes:
+            return None
+        if key is None:
+            return self.modes[0]
+        for mode in self.modes:
+            if mode.key == key:
+                return mode
+        raise ValueError(f"{self.name} has no mode {key!r}; modes: {', '.join(self.mode_keys)}")
+
+    def in_mode(self, key: str | None = None) -> "SystemDefinition":
+        """This system with the phases suspended in mode `key` (default: the
+        first mode) left out. A system without modes is returned unchanged."""
+        mode = self.mode(key)
+        if mode is None or not mode.suspended_phases:
+            return self
+        suspended = set(mode.suspended_phases)
+        return self.model_copy(update={"phases": [phase for phase in self.phases if phase.name not in suspended]})
 
     def _binary_elements(self) -> tuple[Element, Element]:
         if len(self.elements) != 2:
@@ -230,6 +288,7 @@ def load_system(
     dependent_element: str | None = None,
     gas_constant: float | None = None,
     download: bool = True,
+    include_suspended: bool = False,
 ) -> SystemDefinition:
     """Load a binary system from JSON, YAML, a TDB database, or a
     <name>.meta.json that names a registered data source.
@@ -245,7 +304,8 @@ def load_system(
 
     A sourced .meta.json ({"source": "nist_solder", ...}) loads the
     registered database from data/tdb/, downloading and verifying it first
-    if it is missing (unless download=False); see sources.py.
+    if it is missing (unless download=False); see sources.py. Phases listed
+    in its "suspended_phases" are left out unless include_suspended=True.
     """
     path = Path(path)
     if path.name.endswith(METADATA_SUFFIX):
@@ -257,7 +317,8 @@ def load_system(
             raise ValueError(f"{path} names no data source; load the .tdb file it describes instead")
         tdb_path = ensure(metadata["source"], download=download)
         definition = load_tdb_system(
-            tdb_path, elements=elements, dependent_element=dependent_element, metadata=metadata
+            tdb_path, elements=elements, dependent_element=dependent_element, metadata=metadata,
+            include_suspended=include_suspended,
         )
     elif path.suffix.lower() == TDB_SUFFIX:
         from phase_diagram_explorer.tdb.convert import load_tdb_system

@@ -8,20 +8,25 @@ miscibility gap whose two sides are different terminal solutions gets one
 name per side: {"FCC_A1": {"base_side": "(Ag)", "dependent_side": "(Cu)"}}.
 A composition set is named by the side of the gap it lies on (its
 composition against the gap's midpoint at that temperature, or 0.5 if there
-is no gap there), not by its #1/#2 number. Phases without a display name keep
-their CALPHAD label.
+is no gap there), not by its #1/#2 number. A phase that forms separate
+fields at low and high temperature gets one name per temperature region:
+{"BCC_A2": {"below_k": 1400, "below": "alpha (ferrite)", "above": "delta
+(ferrite)"}}. Phases without a display name keep their CALPHAD label.
 
 Label placement
 ---------------
 Labels are laid out in a nominal pixel model of the plot area (PlotBox):
 text boxes are CHAR_WIDTH_PX per character by LINE_HEIGHT_PX. A field
-label sits at the field's centroid if its box fits inside the field, else at
+label sits at the centroid of the field (clipped to the displayed
+composition range) if its box fits inside the field, else at
 the nearest position inside the field where it fits; otherwise it is placed
 outside with a leader line to the field, avoiding boundary lines where
 possible. An invariant
 temperature label sits just above its line, moved along it or further up
 (with a leader) until its box crosses no boundary line. No box leaves the
-plot area.
+plot area. Labels of marked lines (A1, A3, Acm) are placed like field
+labels that do not fit, with a leader to the line; labels beside a vertical
+composition line ("Steels", "Cast irons") sit at the bottom of the plot.
 """
 from dataclasses import dataclass, field
 
@@ -32,6 +37,7 @@ from phase_diagram_explorer.equilibrium.equilibrium import base_phase_name
 from phase_diagram_explorer.tracing import TracedDiagram, TracedField
 
 BASE_SIDE = "base_side"
+BELOW_K = "below_k"
 DEPENDENT_SIDE = "dependent_side"
 CHAR_WIDTH_PX = 7.0
 LINE_HEIGHT_PX = 16.0
@@ -58,29 +64,33 @@ class PhaseNames:
     def __bool__(self) -> bool:
         return bool(self.display_names)
 
-    def name(self, label: str, x: float | None = None, split: float = 0.5) -> str:
-        """Display name of a phase (or composition-set) label at composition x."""
+    def name(self, label: str, x: float | None = None, split: float = 0.5, T: float | None = None) -> str:
+        """Display name of a phase (or composition-set) label at composition x
+        and temperature T (K)."""
         entry = self.display_names.get(base_phase_name(label))
         if entry is None:
             return label
         if isinstance(entry, str):
             return entry
+        if BELOW_K in entry:
+            return entry["below"] if T is None or T < entry[BELOW_K] else entry["above"]
         side = BASE_SIDE if x is not None and x < split else DEPENDENT_SIDE
         return entry[side]
 
-    def names(self, labels_and_x, split: float = 0.5) -> list[str]:
-        """Display names for the phases of one equilibrium: composition sets of
-        one phase are named by side, the lower-x set on the base side."""
+    def names(self, labels_and_x, split: float = 0.5, T: float | None = None) -> list[str]:
+        """Display names for the phases of one equilibrium at T: composition
+        sets of one phase are named by side, the lower-x set on the base side."""
         items = list(labels_and_x)
         result = []
         for label, x in items:
             base = base_phase_name(label)
+            entry = self.display_names.get(base)
             siblings = [other_x for other, other_x in items if base_phase_name(other) == base]
-            if len(siblings) > 1 and isinstance(self.display_names.get(base), dict):
+            if len(siblings) > 1 and isinstance(entry, dict) and BASE_SIDE in entry:
                 side = BASE_SIDE if x == min(siblings) else DEPENDENT_SIDE
-                result.append(self.display_names[base][side])
+                result.append(entry[side])
             else:
-                result.append(self.name(label, x, split))
+                result.append(self.name(label, x, split, T))
         return result
 
     def legend(self, display: str, calphad: str) -> str:
@@ -122,17 +132,84 @@ def field_names(names: PhaseNames, strip: TracedField, traced: TracedDiagram | N
     if not strip.is_two_phase:
         x = (strip.x_min[k] + strip.x_max[k]) / 2.0
         phase = strip.phases[0]
-        return names.name(phase, x, gap_split(traced, phase, T)), calphad
+        return names.name(phase, x, gap_split(traced, phase, T), T), calphad
     left, right = strip.phases
     if left == right:
-        shown = names.names([(left, strip.x_min[k]), (right, strip.x_max[k])])
+        shown = names.names([(left, strip.x_min[k]), (right, strip.x_max[k])], T=T)
     else:
         shown = [
-            names.name(left, strip.x_min[k], gap_split(traced, left, T)),
-            names.name(right, strip.x_max[k], gap_split(traced, right, T)),
+            names.name(left, strip.x_min[k], gap_split(traced, left, T), T),
+            names.name(right, strip.x_max[k], gap_split(traced, right, T), T),
         ]
     ordered = sorted(zip(strip.phases, shown), key=lambda item: "liquid" not in item[0].lower())
     return " + ".join(name for _, name in ordered), calphad
+
+
+# --- composition range ----------------------------------------------------------
+
+
+def _clip_half(points, x_limit: float, keep_below: bool):
+    """Sutherland-Hodgman: the part of a closed polygon on one side of x = x_limit."""
+    def inside(p):
+        return p[0] <= x_limit if keep_below else p[0] >= x_limit
+
+    result = []
+    for k, current in enumerate(points):
+        previous = points[k - 1]
+        if inside(current):
+            if not inside(previous):
+                result.append(_crossing(previous, current, x_limit))
+            result.append(current)
+        elif inside(previous):
+            result.append(_crossing(previous, current, x_limit))
+    return result
+
+
+def _crossing(p, q, x_limit):
+    t = (x_limit - p[0]) / (q[0] - p[0])
+    return (x_limit, p[1] + t * (q[1] - p[1]))
+
+
+def clip_polygon(x, y, x_range):
+    """A polygon (x, y) clipped to x_range[0] <= x <= x_range[1]; empty arrays
+    if nothing is left."""
+    points = list(zip(np.asarray(x, dtype=float), np.asarray(y, dtype=float)))
+    points = _clip_half(points, x_range[1], keep_below=True)
+    if points:
+        points = _clip_half(points, x_range[0], keep_below=False)
+    if len(points) < 3:
+        return np.array([]), np.array([])
+    xs, ys = zip(*points)
+    return np.array(xs), np.array(ys)
+
+
+def polygon_area(x, y) -> float:
+    x, y = np.asarray(x), np.asarray(y)
+    return float(0.5 * abs(np.dot(x, np.roll(y, 1)) - np.dot(y, np.roll(x, 1))))
+
+
+def polygon_anchor(x, y, grid: int = 41) -> tuple[float, float]:
+    """Area centroid of a polygon or, if it falls outside a non-convex
+    outline, the grid point inside the polygon nearest to it."""
+    x, y = np.asarray(x, dtype=float), np.asarray(y, dtype=float)
+    cross = x * np.roll(y, -1) - np.roll(x, -1) * y
+    area = cross.sum() / 2.0
+    path = PolygonPath(np.column_stack([x, y]))
+    if abs(area) < 1e-15:
+        return float(x.mean()), float(y.mean())
+    cx = ((x + np.roll(x, -1)) * cross).sum() / (6.0 * area)
+    cy = ((y + np.roll(y, -1)) * cross).sum() / (6.0 * area)
+    if path.contains_point((cx, cy)):
+        return float(cx), float(cy)
+    gx, gy = np.meshgrid(np.linspace(x.min(), x.max(), grid), np.linspace(y.min(), y.max(), grid))
+    points = np.column_stack([gx.ravel(), gy.ravel()])
+    inside = points[path.contains_points(points)]
+    if not len(inside):
+        return float(x.mean()), float(y.mean())
+    # nearest in units of the polygon's extent
+    sx, sy = max(np.ptp(x), 1e-12), max(np.ptp(y), 1e-12)
+    k = int(np.argmin(((inside[:, 0] - cx) / sx) ** 2 + ((inside[:, 1] - cy) / sy) ** 2))
+    return float(inside[k, 0]), float(inside[k, 1])
 
 
 # --- placement --------------------------------------------------------------------
@@ -256,6 +333,7 @@ def place_field_label(text: str, polygon_px: PolygonPath, anchor_px, plot: PlotB
             _inside_plot(box, plot)
             and all(polygon_px.contains_point(p) for p in _box_points(box))
             and not any(_overlaps(box, other) for other in placed)
+            and not _hits_lines(box, lines_px)
         ):
             return centre, False, box
     ax, ay = anchor_px
@@ -298,16 +376,42 @@ def place_invariant_label(text: str, x_range_px, y_px, plot: PlotBox, lines_px, 
     return ((box[0] + box[2]) / 2, (box[1] + box[3]) / 2), True, box
 
 
-def layout_labels(field_items, invariant_items, boundary_lines, plot: PlotBox) -> list[Label]:
-    """Place field and invariant labels (see module docstring).
+COMPOSITION_LABEL_GAP_PX = 6.0
+COMPOSITION_LABEL_BOTTOM_PX = 14.0
+
+
+def place_composition_labels(text_left: str, text_right: str, x_line: float, plot: PlotBox):
+    """Centres (data units) of the labels either side of a vertical line, at
+    the bottom of the plot, kept inside it."""
+    x_px = float(plot.to_px(x_line, plot.y_range[0])[0])
+    result = []
+    for text, sign in ((text_left, -1.0), (text_right, 1.0)):
+        box = text_box_px(text, (0.0, 0.0))
+        half_width, half_height = (box[2] - box[0]) / 2.0, (box[3] - box[1]) / 2.0
+        centre = (x_px + sign * (COMPOSITION_LABEL_GAP_PX + half_width), COMPOSITION_LABEL_BOTTOM_PX + half_height)
+        box = _clamped(text_box_px(text, centre), plot)
+        result.append((text, plot.to_data((box[0] + box[2]) / 2.0, (box[1] + box[3]) / 2.0), box))
+    return result
+
+
+def layout_labels(
+    field_items, invariant_items, boundary_lines, plot: PlotBox, line_items=(), composition_items=()
+) -> list[Label]:
+    """Place field, invariant and marked-line labels (see module docstring).
 
     field_items: (text, hover, polygon (x, T) arrays, anchor (x, T)) in data units;
     invariant_items: (text, hover, x_min, x_max, T, marker x) in data units;
-    boundary_lines: (x, T) arrays in data units (boundaries and invariant lines).
+    boundary_lines: (x, T) arrays in data units (boundaries and invariant lines);
+    line_items: (text, hover, anchor (x, T)) for labels of marked lines;
+    composition_items: (left text, right text, x) for vertical composition lines.
     """
     lines_px = [plot.to_px(x, y) for x, y in boundary_lines]
     placed_boxes: list = []
     labels: list[Label] = []
+    for left, right, x_line in composition_items:
+        for text, position, box in place_composition_labels(left, right, x_line, plot):
+            placed_boxes.append(box)
+            labels.append(Label(text, position, position, False, "composition", text))
     for text, hover, x_min, x_max, T, marker_x in invariant_items:
         (x_lo, x_hi), (y_px, _) = plot.to_px([x_min, x_max], [T, T])
         centre, leader, box = place_invariant_label(text, (float(x_lo), float(x_hi)), float(y_px), plot, lines_px, placed_boxes)
@@ -322,4 +426,10 @@ def layout_labels(field_items, invariant_items, boundary_lines, plot: PlotBox) -
         centre, leader, box = place_field_label(text, polygon_px, anchor_px, plot, placed_boxes, lines_px)
         placed_boxes.append(box)
         labels.append(Label(text, anchor, plot.to_data(*centre), leader, "field", hover))
+    for text, hover, anchor in line_items:
+        anchor_px = tuple(float(v) for v in plot.to_px(*anchor))
+        point = PolygonPath(np.array([anchor_px, anchor_px, anchor_px]))
+        centre, _, box = place_field_label(text, point, anchor_px, plot, placed_boxes, lines_px)
+        placed_boxes.append(box)
+        labels.append(Label(text, anchor, plot.to_data(*centre), True, "line", hover))
     return labels

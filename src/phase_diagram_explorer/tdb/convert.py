@@ -190,6 +190,7 @@ def definition_from_database(
     dependent_element: str | None = None,
     metadata: dict | None = None,
     source: str = "TDB database",
+    include_suspended: bool = False,
 ) -> SystemDefinition:
     """A SystemDefinition from a parsed database. Arguments take precedence
     over the corresponding `metadata` fields.
@@ -197,7 +198,10 @@ def definition_from_database(
     For a database with more than two elements, `elements` (or the
     metadata's "elements") selects the binary subsystem, extracted with
     extract_subsystem; what was dropped is reported in
-    system.metadata["subsystem"]."""
+    system.metadata["subsystem"].
+
+    Phases named in the metadata's "suspended_phases" ({name: reason}) are
+    left out unless include_suspended=True."""
     metadata = dict(metadata or {})
     if elements is None and dependent_element is None:
         elements = metadata.get("elements")
@@ -231,13 +235,21 @@ def definition_from_database(
             )
         )
 
+    suspended = metadata.get("suspended_phases", {})
+    unknown = sorted(set(suspended) - set(database.phases))
+    if unknown:
+        raise ValueError(f"{source}: suspended phases {unknown} are not in the database")
     return SystemDefinition(
         name=metadata.get("name", f"{symbols[base]}-{symbols[dependent]}"),
         source=metadata.get("_source"),
         status=metadata.get("_status"),
         status_reason=metadata.get("_status_reason"),
         elements=element_models,
-        phases=[_phase(database, phase, base, dependent) for phase in database.phases.values()],
+        phases=[
+            _phase(database, phase, base, dependent)
+            for name, phase in database.phases.items()
+            if include_suspended or name not in suspended
+        ],
         t_range_k=metadata.get("t_range_k"),
         functions=database.functions,
         gas_constant=metadata.get("gas_constant", DATABASE_GAS_CONSTANT),
@@ -248,6 +260,11 @@ def definition_from_database(
         display=metadata.get("display", {}),
         industry_note=metadata.get("industry_note"),
         display_names=metadata.get("display_names", {}),
+        suspended_phases=suspended,
+        modes=metadata.get("modes", []),
+        x_range=metadata.get("x_range"),
+        diagram_note=metadata.get("diagram_note"),
+        diagram_marks=metadata.get("diagram_marks", {}),
     )
 
 
@@ -257,6 +274,7 @@ def load_tdb_system(
     elements: Sequence[str] | None = None,
     dependent_element: str | None = None,
     metadata: dict | None = None,
+    include_suspended: bool = False,
 ) -> SystemDefinition:
     """Load a binary system from a TDB file and its metadata: `metadata` if
     given, else the optional <name>.meta.json next to it (see
@@ -266,5 +284,6 @@ def load_tdb_system(
         meta = metadata_path(path)
         metadata = json.loads(meta.read_text()) if meta.exists() else {}
     return definition_from_database(
-        read_tdb(path), elements=elements, dependent_element=dependent_element, metadata=metadata, source=str(path)
+        read_tdb(path), elements=elements, dependent_element=dependent_element, metadata=metadata, source=str(path),
+        include_suspended=include_suspended,
     )

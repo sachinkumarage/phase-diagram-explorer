@@ -1,4 +1,5 @@
-"""Precompute the app's phase diagrams (see phase_diagram_explorer.precomputed).
+"""Precompute the app's phase diagrams (see phase_diagram_explorer.precomputed),
+one file per diagram mode for systems with modes (Fe-C: metastable and stable).
 
     python scripts/precompute.py            # regenerate every app system
     python scripts/precompute.py --check    # exit 1 if any file is missing or stale
@@ -17,6 +18,7 @@ from phase_diagram_explorer.precomputed import (
     precomputed_path,
     save,
     status,
+    system_modes,
 )
 
 
@@ -29,17 +31,19 @@ def main(argv=None) -> int:
 
     problems = 0
     for system_path in app_systems(arguments.systems_dir):
-        if arguments.check:
-            _, reason = status(system_path, arguments.output_dir)
-            print(f"{system_path.name}: {reason or 'up to date'}")
-            problems += reason is not None
-            continue
-        precomputed = compute(system_path)
-        path = save(precomputed, precomputed_path(system_path, arguments.output_dir))
-        print(
-            f"{system_path.name}: {path} ({path.stat().st_size / 1024:.1f} KiB, "
-            f"computed in {precomputed.metadata['computation_time_s']:.2f} s)"
-        )
+        for mode in system_modes(system_path):
+            label = system_path.name + (f" [{mode}]" if mode else "")
+            if arguments.check:
+                _, reason = status(system_path, arguments.output_dir, mode)
+                print(f"{label}: {reason or 'up to date'}")
+                problems += reason is not None
+                continue
+            precomputed = compute(system_path, mode)
+            path = save(precomputed, precomputed_path(system_path, arguments.output_dir, mode))
+            print(
+                f"{label}: {path} ({path.stat().st_size / 1024:.1f} KiB, "
+                f"computed in {precomputed.metadata['computation_time_s']:.2f} s)"
+            )
     return 1 if problems else 0
 
 

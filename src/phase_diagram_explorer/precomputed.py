@@ -16,7 +16,8 @@ machine. scripts/precompute.py stores, for each app system,
   phase names, citations, display settings; no thermodynamic parameters),
   so that the app can show a system whose database cannot be downloaded,
 
-in data/precomputed/<system>.npz, with metadata: the SHA256 of the source
+in data/precomputed/<system>.npz (one file per diagram mode for systems
+with modes: <system>.<mode>.npz), with metadata: the SHA256 of the source
 data file (and of its .meta.json for TDB systems), the package version, the
 gas constant, the temperature range, the settings and the computation time.
 
@@ -68,7 +69,7 @@ TABLE_STEP_K = 0.25
 # two-phase field (see equilibrium_table).
 TABLE_END_OFFSETS_K = (0.001, 0.003, 0.01, 0.03, 0.1, 0.2, 0.3)
 # Metadata that must match for a file to be used.
-CHECKED_FIELDS = ("source_sha256", "package_version", "gas_constant", "t_range_k", "n_levels", "n_points")
+CHECKED_FIELDS = ("source_sha256", "package_version", "gas_constant", "t_range_k", "n_levels", "n_points", "mode")
 
 
 def default_precomputed_dir() -> Path:
@@ -80,6 +81,16 @@ def default_precomputed_dir() -> Path:
 
 def analysis_range(definition: SystemDefinition) -> tuple[float, float]:
     return tuple(float(T) for T in definition.t_range_k) if definition.t_range_k else FALLBACK_T_RANGE_K
+
+
+def default_composition(definition: SystemDefinition) -> float:
+    """The app's default composition (mole fraction): the system's
+    display["default_x"], else DEFAULT_X, or the middle of its x_range if
+    DEFAULT_X lies outside it."""
+    if "default_x" in definition.display:
+        return float(definition.display["default_x"])
+    x_min, x_max = definition.x_range or (0.0, 1.0)
+    return DEFAULT_X if x_min <= DEFAULT_X <= x_max else (x_min + x_max) / 2.0
 
 
 def default_temperature(definition: SystemDefinition) -> float:
@@ -112,8 +123,21 @@ def source_hash(system_path: str | Path) -> str:
     return digest.hexdigest()
 
 
-def precomputed_path(system_path: str | Path, directory: str | Path | None = None) -> Path:
-    return Path(directory or default_precomputed_dir()) / f"{system_name(system_path)}{SUFFIX}"
+def precomputed_path(
+    system_path: str | Path, directory: str | Path | None = None, mode: str | None = None
+) -> Path:
+    """<system>.npz, or <system>.<mode>.npz for one mode of a system with modes."""
+    name = system_name(system_path) + (f".{mode}" if mode else "")
+    return Path(directory or default_precomputed_dir()) / f"{name}{SUFFIX}"
+
+
+def system_modes(system_path: str | Path) -> list[str | None]:
+    """The mode keys of a system ([None] for a system without modes), read
+    without loading a sourced system's database."""
+    if is_sourced_system(system_path):
+        modes = json.loads(Path(system_path).read_text()).get("modes", [])
+        return [mode["key"] for mode in modes] or [None]
+    return load_system(system_path).mode_keys or [None]
 
 
 def app_systems(systems_dir: str | Path) -> list[Path]:
@@ -130,7 +154,9 @@ def _definition_without_database(system_path: str | Path) -> SystemDefinition | 
     return load_system(system_path)
 
 
-def expected_metadata(system_path: str | Path, definition: SystemDefinition | None = None) -> dict:
+def expected_metadata(
+    system_path: str | Path, definition: SystemDefinition | None = None, mode: str | None = None
+) -> dict:
     """The metadata a precomputed file must have to be used. Never needs a
     sourced system's database."""
     definition = definition or _definition_without_database(system_path)
@@ -147,6 +173,7 @@ def expected_metadata(system_path: str | Path, definition: SystemDefinition | No
         "t_range_k": [float(T) for T in T_range],
         "n_levels": DEFAULT_LEVELS,
         "n_points": DEFAULT_POINTS,
+        "mode": mode,
     }
 
 
@@ -167,6 +194,11 @@ def definition_summary(definition: SystemDefinition) -> dict:
         "display": definition.display,
         "industry_note": definition.industry_note,
         "display_names": definition.display_names,
+        "suspended_phases": definition.suspended_phases,
+        "modes": [mode.model_dump() for mode in definition.modes],
+        "x_range": list(definition.x_range) if definition.x_range else None,
+        "diagram_note": definition.diagram_note,
+        "diagram_marks": definition.diagram_marks,
     }
 
 
@@ -195,16 +227,21 @@ class Precomputed:
         return [key for key in CHECKED_FIELDS if self.metadata.get(key) != expected.get(key)]
 
 
-def compute(system_path: str | Path) -> Precomputed:
-    """Everything the app shows at its default settings, timed."""
+def compute(system_path: str | Path, mode: str | None = None) -> Precomputed:
+    """Everything the app shows at its default settings (in diagram mode
+    `mode`, for a system with modes), timed."""
     definition = load_system(system_path)
+    if mode is not None:
+        definition.mode(mode)  # unknown modes raise
     start = time.perf_counter()
-    system = build_system(definition)
+    system = build_system(definition.in_mode(mode))
     T_range = analysis_range(definition)
     invariants = detect_invariants_over_range(system, T_range, n_points=DEFAULT_POINTS)
     traced = trace_diagram(system, T_range, invariants=invariants, n_levels=DEFAULT_LEVELS, n_points=DEFAULT_POINTS)
-    equilibrium = compute_equilibrium(system, default_temperature(definition), DEFAULT_X, n_points=DEFAULT_POINTS)
-    metadata = expected_metadata(system_path, definition)
+    equilibrium = compute_equilibrium(
+        system, default_temperature(definition), default_composition(definition), n_points=DEFAULT_POINTS
+    )
+    metadata = expected_metadata(system_path, definition, mode)
     metadata["computation_time_s"] = round(time.perf_counter() - start, 3)
     table = equilibrium_table(system, T_range, invariants)
     metadata["table_step_k"] = TABLE_STEP_K
@@ -321,17 +358,19 @@ def load(path: str | Path) -> Precomputed:
         )
 
 
-def status(system_path: str | Path, directory: str | Path | None = None) -> tuple[Precomputed | None, str | None]:
-    """(precomputed result, None) if an up-to-date file exists, else
-    (None, reason)."""
-    path = precomputed_path(system_path, directory)
+def status(
+    system_path: str | Path, directory: str | Path | None = None, mode: str | None = None
+) -> tuple[Precomputed | None, str | None]:
+    """(precomputed result, None) if an up-to-date file exists (for diagram
+    mode `mode`), else (None, reason)."""
+    path = precomputed_path(system_path, directory, mode)
     if not path.exists():
         return None, f"no precomputed file {path.name}"
     try:
         precomputed = load(path)
     except Exception as error:  # a damaged or foreign file is treated as missing
         return None, f"{path.name} could not be read ({type(error).__name__})"
-    stale = precomputed.stale_fields(expected_metadata(system_path))
+    stale = precomputed.stale_fields(expected_metadata(system_path, mode=mode))
     if stale:
         return None, f"{path.name} is out of date ({', '.join(stale)} changed)"
     return precomputed, None

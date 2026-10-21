@@ -311,7 +311,12 @@ are read from a metadata file next to the TDB file: `ag_cu.meta.json` for
 | `gas_constant` | R for this system. Optional; the TDB default is 8.31451. |
 | `pressure_pa` | Pressure for `P` in expressions. Optional; the default is 101325. |
 | `display` | Optional default units in the app, e.g. `{"temperature_unit": "C", "composition_unit": "wt%"}`. Without it the app opens in °C and at%. |
-| `display_names` | Optional textbook names for phases, used in field labels, tables and the invariant table, e.g. `{"LIQUID": "L", "FCC_A1": "(Pb)"}`. A phase with a miscibility gap between two terminal solutions gets one name per side, `{"FCC_A1": {"base_side": "(Ag)", "dependent_side": "(Cu)"}}`; a composition set is named by its side of the gap, not by #1/#2. The CALPHAD name is still shown in the legend, tables and hover text. |
+| `suspended_phases` | Optional phases of the database to leave out, with the reason, e.g. `{"M7C3_D101": "..."}`. They are removed when the system is loaded (`load_system(..., include_suspended=True)` keeps them). |
+| `modes` | Optional diagram modes, e.g. `[{"key": "metastable", "label": "Metastable Fe-Fe3C (steel practice)", "suspended_phases": ["GRAPHITE"]}, {"key": "stable", "label": "Stable Fe-graphite"}]`. The first is the default; the app shows a "Diagram" choice and precomputes each mode. |
+| `x_range` | Optional composition range (mole fraction) of the diagram's x axis and the composition slider, e.g. `[0.0, 0.25]` for Fe-Fe3C. |
+| `diagram_note` | Optional short note shown under the diagram. |
+| `diagram_marks` | Optional extra marks: `"composition_lines"` (`[{"wt_percent": 2.14, "left_label": "Steels", "right_label": "Cast irons"}]`, dashed) and `"critical_lines"` (named lines: `{"A1": {"invariant": "eutectoid"}, "A3": {"fields": [["BCC_A2", "FCC_A1"]], "edge": "x_max", "below_k": 1400}}`). |
+| `display_names` | Optional textbook names for phases, used in field labels, tables and the invariant table, e.g. `{"LIQUID": "L", "FCC_A1": "(Pb)"}`. A phase with a miscibility gap between two terminal solutions gets one name per side, `{"FCC_A1": {"base_side": "(Ag)", "dependent_side": "(Cu)"}}`; a composition set is named by its side of the gap, not by #1/#2. A phase with a low- and a high-temperature field gets `{"below_k": 1400, "below": "alpha (ferrite)", "above": "delta (ferrite)"}`. The CALPHAD name is still shown in the legend, tables and hover text. |
 | `name`, `element_names`, `t_range_k`, `_source`, `_status`, `_status_reason` | As in JSON. Optional. `name` defaults to "Base-Dependent". |
 
 Arguments to `load_system(path, elements=[...])` or

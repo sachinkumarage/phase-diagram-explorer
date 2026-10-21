@@ -3,7 +3,8 @@
 defaults (validated systems only, Ag-Cu selected, °C and at%) and both states of the
 preview checkbox, that every system loads from precomputed data, that
 assessed systems show their citations and no preview banner while
-provisional ones show the banner, switch systems and unit toggles, and
+provisional ones show the banner, switch systems, diagram modes (Fe-C
+metastable and stable) and unit toggles, and
 report the cold-start and per-system load times.
 
     python scripts/smoke_test.py             # database available (or downloadable)
@@ -29,19 +30,28 @@ ENTRY_POINT = ROOT / "streamlit_app.py"
 PRECOMPUTED_NOTE = "Diagram and invariant reactions from precomputed data"
 PROVISIONAL_BANNER = "Preview: provisional thermodynamic data, not yet validated."
 PREVIEW_LABEL = "Show preview systems (provisional data)"
-VALIDATED = ["ag_cu", "pb_sn"]
+VALIDATED = ["ag_cu", "fe_c", "pb_sn"]
 DEFAULT_UNITS = ["°C", "at%"]
-ALL_SYSTEMS = ["ag_cu", "al_cu", "pb_sn"]
-GIBBS_NOTICE = "Gibbs energy curves need the NIST database, which could not be downloaded right now."
-SOURCED = {"ag_cu", "pb_sn"}
+ALL_SYSTEMS = ["ag_cu", "al_cu", "fe_c", "pb_sn"]
+# "Gibbs energy curves need the <database> database, which could not be downloaded right now."
+GIBBS_NOTICE = ("Gibbs energy curves need the ", " database, which could not be downloaded right now.")
+SOURCED = {"ag_cu", "fe_c", "pb_sn"}
 # Expected per system: (preview banner shown, citation that must be shown)
 EXPECTED = {
     "ag_cu": (False, "https://doi.org/10.18434/T4759N"),
     "al_cu": (True, None),
     "pb_sn": (False, "https://www.metallurgy.nist.gov/phase/solder/pbsn.html"),
+    "fe_c": (False, "https://doi.org/10.1016/j.calphad.2010.01.004"),
 }
+# Systems with diagram modes: every mode must load from precomputed data.
+MODES = {"fe_c": ["metastable", "stable"]}
 # Systems with an industrial-context info box, and how it starts.
 INFO_BOXES = {"pb_sn": "63Sn-37Pb solder (63 wt% Sn) is near-eutectic"}
+
+
+def radio(at: AppTest, label: str):
+    (match,) = [element for element in at.radio if element.label == label]
+    return match
 
 
 def check(at: AppTest, context: str, offline: bool = False, system: str | None = None) -> None:
@@ -54,7 +64,7 @@ def check(at: AppTest, context: str, offline: bool = False, system: str | None =
     markdown = [m.value for m in at.markdown]
     if "**Stable phases**" not in markdown or not at.table:
         raise AssertionError(f"{context}: point equilibrium or invariant table missing")
-    gibbs_notice = GIBBS_NOTICE in [i.value for i in at.info]
+    gibbs_notice = any(i.value.startswith(GIBBS_NOTICE[0]) and i.value.endswith(GIBBS_NOTICE[1]) for i in at.info)
     if offline and system in SOURCED and not gibbs_notice:
         raise AssertionError(f"{context}: Gibbs energy notice missing without the database")
     if not offline and gibbs_notice:
@@ -80,8 +90,9 @@ def main(argv=None) -> int:
     (preview,) = [box for box in at.checkbox if box.label == PREVIEW_LABEL]
     if preview.value or list(at.selectbox[0].options) != VALIDATED or at.selectbox[0].value != "ag_cu":
         raise AssertionError(f"public defaults: {list(at.selectbox[0].options)}, selected {at.selectbox[0].value}")
-    if [radio.value for radio in at.radio] != DEFAULT_UNITS:
-        raise AssertionError(f"public default units: {[radio.value for radio in at.radio]}")
+    units = [radio(at, "Temperature unit").value, radio(at, "Composition unit").value]
+    if units != DEFAULT_UNITS:
+        raise AssertionError(f"public default units: {units}")
     print(f"preview off: {list(at.selectbox[0].options)}")
     run_systems(at, VALIDATED, offline)
 
@@ -118,11 +129,21 @@ def run_systems(at: AppTest, systems: list[str], offline: bool) -> None:
         if info:
             notes.append("info box")
         print(f"load {system}: {elapsed:.2f} s ({', '.join(notes)})")
-        for temperature_unit, composition_unit in [("°C", "wt%"), ("K", "at%")]:
-            at.radio[0].set_value(temperature_unit)
-            at.radio[1].set_value(composition_unit)
+        for mode in MODES.get(system, [None]):
+            if mode is not None:
+                start = time.perf_counter()
+                radio(at, "Diagram").set_value(mode)
+                at.run()
+                check(at, f"{system} ({mode})", offline, system)
+                print(f"  mode {mode}: {time.perf_counter() - start:.2f} s")
+            for temperature_unit, composition_unit in [("°C", "wt%"), ("K", "at%")]:
+                radio(at, "Temperature unit").set_value(temperature_unit)
+                radio(at, "Composition unit").set_value(composition_unit)
+                at.run()
+                check(at, f"{system} {mode or ''} in {temperature_unit}, {composition_unit}", offline, system)
+        if system in MODES:
+            radio(at, "Diagram").set_value(MODES[system][0])
             at.run()
-            check(at, f"{system} in {temperature_unit}, {composition_unit}", offline, system)
 
 
 if __name__ == "__main__":

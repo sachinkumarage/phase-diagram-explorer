@@ -20,7 +20,7 @@ from phase_diagram_explorer.units import (
     temperature_to_display,
 )
 from phase_diagram_explorer.labels import PhaseNames, PlotBox
-from phase_diagram_explorer.visualization import MIN_LABELLED_AREA_FRACTION, diagram_labels
+from phase_diagram_explorer.visualization import MIN_LABELLED_AREA_FRACTION, composition_lines, diagram_labels
 
 EXPORT_FORMATS = ("svg", "pdf")
 
@@ -66,8 +66,11 @@ def publication_figure(
     atomic_masses: tuple[float | None, float | None] = (None, None),
     footnote: str = "",
     display_names: dict | None = None,
+    x_range: tuple[float, float] | None = None,
+    diagram_marks: dict | None = None,
 ):
     plt = _pyplot()
+    x_range = tuple(x_range or (0.0, 1.0))
     mass_a, mass_b = atomic_masses
 
     def to_x(x):
@@ -81,23 +84,26 @@ def publication_figure(
         for boundary in traced.boundaries:
             ax.plot(to_x(boundary.x), to_T(boundary.T), color="black", linewidth=1.0)
 
-        x_right = to_x(1.0)
+        x_left, x_right = to_x(x_range[0]), to_x(x_range[1])
         for reaction in traced.invariants:
             compositions = list(reaction.composition.values())
             T = to_T(reaction.temperature)
             ax.plot([to_x(min(compositions)), to_x(max(compositions))], [T, T], color="black", linewidth=1.0)
 
-        ax.set_xlim(to_x(0.0), x_right)
+        for x_line, _, _ in composition_lines(diagram_marks, atomic_masses):
+            ax.axvline(to_x(x_line), color="black", linewidth=0.8, linestyle="--")
+        ax.set_xlim(x_left, x_right)
         ax.set_ylim(to_T(traced.T_range[0]), to_T(traced.T_range[1]))
         fig.canvas.draw()
         size = ax.get_window_extent().transformed(fig.dpi_scale_trans.inverted())
         plot = PlotBox(
-            (float(to_x(0.0)), float(x_right)), (float(to_T(traced.T_range[0])), float(to_T(traced.T_range[1]))),
+            (float(x_left), float(x_right)), (float(to_T(traced.T_range[0])), float(to_T(traced.T_range[1]))),
             width_px=size.width * 72 * LAYOUT_SCALE, height_px=size.height * 72 * LAYOUT_SCALE,
         )
         labels = diagram_labels(
             traced, PhaseNames(display_names), to_x, to_T, traced.T_range, temperature_unit, plot,
-            min_area_fraction=MIN_LABELLED_AREA_FRACTION,
+            min_area_fraction=MIN_LABELLED_AREA_FRACTION, x_range=x_range, marks=diagram_marks,
+            atomic_masses=atomic_masses,
         )
         for label in labels:
             text = f"{label.anchor[1]:.1f} {temperature_unit}" if label.kind == "invariant" else label.text

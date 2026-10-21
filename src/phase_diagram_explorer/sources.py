@@ -56,6 +56,7 @@ class Source:
     doi: str = ""
     page: str = ""
     note: str = ""
+    license_note: str = ""
 
 
 def registry_path() -> Path:

@@ -16,6 +16,10 @@ Public defaults: only validated systems are listed until "Show preview
 systems (provisional data)" is ticked; Ag-Cu is selected first, in °C and
 at% unless a system sets its own display units.
 
+A system may have several diagram modes (Fe-C: the metastable Fe-Fe3C
+diagram, with graphite suspended, and the stable Fe-graphite diagram),
+chosen with a radio button; each mode has its own precomputed data.
+
 Phase fractions are mole fractions in at% and mass fractions in wt%
 (presentation.py). The Gibbs energy curves are always plotted against mole
 fraction, where the common tangent construction is valid.
@@ -51,7 +55,7 @@ from phase_diagram_explorer.models import (
 )
 from phase_diagram_explorer.precomputed import (
     DEFAULT_POINTS,
-    DEFAULT_X,
+    default_composition,
     FALLBACK_T_RANGE_K,
     analysis_range,
     default_precomputed_dir,
@@ -78,7 +82,6 @@ from phase_diagram_explorer.units import (
     temperature_to_display,
 )
 from phase_diagram_explorer.visualization import (
-    COMPOSITION_FORMAT,
     TEMPERATURE_FORMAT,
     plot_diagram,
     reaction_names,
@@ -129,10 +132,22 @@ def _data_hash(system_path: str) -> str:
 
 
 @st.cache_resource(show_spinner="Loading system...")
-def _load(system_path: str, data_hash: str):
-    """(definition, evaluable system) for a system file, built once per data version."""
+def _load(system_path: str, data_hash: str, mode: str | None = None):
+    """(definition, evaluable system in diagram mode `mode`) for a system
+    file, built once per data version and mode. The definition lists every
+    phase of the system; the system leaves out the mode's suspended phases."""
     definition = load_system(system_path)
-    return definition, build_system(definition)
+    return definition, build_system(definition.in_mode(mode))
+
+
+@st.cache_data(show_spinner=False)
+def _modes(system_path: str, data_hash: str) -> dict[str, str]:
+    """{mode key: label} of a system's diagram modes (empty without modes),
+    read without loading a sourced system's database."""
+    if is_sourced_system(system_path):
+        modes = json.loads(Path(system_path).read_text()).get("modes", [])
+        return {mode["key"]: mode["label"] for mode in modes}
+    return {mode.key: mode.label for mode in load_system(system_path).modes}
 
 
 @st.cache_data(show_spinner=False)
@@ -203,13 +218,13 @@ def _show_citations(definition: SystemDefinition) -> None:
 
 
 @st.cache_data(show_spinner=False)
-def _precomputed(system_path: str, data_hash: str, version: str, directory: str):
-    return status(system_path, directory)
+def _precomputed(system_path: str, data_hash: str, version: str, directory: str, mode: str | None = None):
+    return status(system_path, directory, mode)
 
 
 @st.cache_data(show_spinner="Computing the melting range...")
-def _cached_melting_range(system_path: str, data_hash: str, version: str, x: float):
-    definition, system = _load(system_path, data_hash)
+def _cached_melting_range(system_path: str, data_hash: str, version: str, x: float, mode: str | None = None):
+    definition, system = _load(system_path, data_hash, mode)
     return melting_range(system, x, analysis_range(definition))
 
 
@@ -243,16 +258,17 @@ def _show_industry_note(definition, reactions, melting, to_T, T_unit: str, compo
 
 
 @st.cache_data(show_spinner="Detecting invariant reactions...")
-def _cached_invariants(system_path: str, data_hash: str, version: str, n_points: int):
-    definition, system = _load(system_path, data_hash)
+def _cached_invariants(system_path: str, data_hash: str, version: str, n_points: int, mode: str | None = None):
+    definition, system = _load(system_path, data_hash, mode)
     return detect_invariants_over_range(system, analysis_range(definition), n_points=n_points)
 
 
 @st.cache_data(show_spinner="Tracing phase boundaries...")
 def _cached_trace(
-    system_path: str, data_hash: str, version: str, T_min: float, T_max: float, n_T: int, n_points: int, invariants
+    system_path: str, data_hash: str, version: str, T_min: float, T_max: float, n_T: int, n_points: int, invariants,
+    mode: str | None = None,
 ):
-    _, system = _load(system_path, data_hash)
+    _, system = _load(system_path, data_hash, mode)
     return trace_diagram(system, (T_min, T_max), invariants=invariants, n_levels=n_T, n_points=n_points)
 
 
@@ -268,14 +284,17 @@ def _footnote(definition: SystemDefinition, system_path: str) -> str:
 
 @st.cache_data(show_spinner="Rendering figure...")
 def _cached_export(
-    system_path: str, data_hash: str, version: str, settings: tuple, T_unit: str, x_unit: str, fmt: str, _traced
+    system_path: str, data_hash: str, version: str, settings: tuple, T_unit: str, x_unit: str, fmt: str, _traced,
+    mode: str | None = None, _definition: SystemDefinition | None = None,
 ) -> bytes:
-    definition, _ = _load(system_path, data_hash)
+    # The definition is passed in, so that exporting works without the database.
+    definition = _definition
     return export_figure(
         _traced, definition.name, fmt,
         dependent_symbol=definition.dependent_element.symbol, temperature_unit=T_unit, composition_unit=x_unit,
         atomic_masses=(definition.base_element.atomic_mass, definition.dependent_element.atomic_mass),
         footnote=_footnote(definition, system_path), display_names=definition.display_names,
+        x_range=definition.x_range, diagram_marks=definition.diagram_marks,
     )
 
 
@@ -295,12 +314,24 @@ def stable_phase_names(definition: SystemDefinition, traced) -> tuple[list[str],
     return [name for name in names if name in stable], [name for name in names if name not in stable]
 
 
-def _system_info(definition: SystemDefinition, stable: list[str], metastable: list[str]) -> str:
+def _system_info(definition: SystemDefinition, stable: list[str], metastable: list[str], mode: str | None) -> str:
     base, dependent = definition.base_element, definition.dependent_element
     info = f"Elements: {base.symbol} (x = 0), {dependent.symbol} (x = 1) · Stable phases: {', '.join(stable)}"
     if metastable:
         info += f" · Metastable in this database: {', '.join(metastable)}"
+    left_out = list(definition.suspended_phases) + [
+        phase for phase in (definition.mode(mode).suspended_phases if definition.modes else []) if phase not in stable
+    ]
+    if left_out:
+        info += f" · Left out: {', '.join(left_out)}"
     return info
+
+
+def _show_suspended_phases(definition: SystemDefinition) -> None:
+    """Why phases of the database are left out (e.g. M7C3_D101 in Fe-C)."""
+    if definition.suspended_phases:
+        st.markdown("**Phases left out**")
+        st.markdown("\n".join(f"- {name}: {reason}" for name, reason in definition.suspended_phases.items()))
 
 
 def _tangent_line_figure(
@@ -418,10 +449,16 @@ def main() -> None:
     )
     selected_path = str(system_paths[system_names.index(selected_name)])
     data_hash = _data_hash(selected_path)
-    precomputed, stale_reason = _precomputed(selected_path, data_hash, __version__, precomputed_dir)
+    modes = _modes(selected_path, data_hash)
+    mode = None
+    if modes:
+        mode = st.radio(
+            "Diagram", list(modes), format_func=modes.get, horizontal=True, key=f"mode_{selected_name}"
+        )
+    precomputed, stale_reason = _precomputed(selected_path, data_hash, __version__, precomputed_dir, mode)
     database_error = _database_error(selected_path)
     if database_error is None:
-        definition, system = _load(selected_path, data_hash)
+        definition, system = _load(selected_path, data_hash, mode)
     elif precomputed is not None:
         # The database is unavailable: everything below except the Gibbs
         # energy curves works from the precomputed data.
@@ -432,6 +469,7 @@ def main() -> None:
         )
         st.stop()
     database_name = _database_name(selected_path)
+    file_stem = f"{selected_name}_{mode}" if mode else selected_name
 
     if definition.is_provisional:
         st.warning(PROVISIONAL_BANNER)
@@ -470,7 +508,11 @@ def main() -> None:
 
     x_title = composition_label(dependent.symbol, x_unit)
     T_title = temperature_label(T_unit)
-    default_x_display = round(float(to_x(DEFAULT_X)), 1)
+    # table precision: 0.1 at% or wt% unless the system asks for more (Fe-C: 0.001 wt%)
+    x_format = f".{int(definition.display.get('composition_decimals', 1))}f"
+    default_x_display = round(float(to_x(default_composition(definition))), 1)
+    x_limits = definition.x_range or (0.0, 1.0)
+    x_slider_range = (round(float(to_x(x_limits[0])), 2), round(float(to_x(x_limits[1])), 2))
 
     with st.sidebar:
         st.header("Diagram settings")
@@ -483,7 +525,10 @@ def main() -> None:
         T_range = (
             temperature_from_display(T_range_display[0], T_unit), temperature_from_display(T_range_display[1], T_unit)
         )
-        x_display = st.slider(f"Composition {x_title}", 0.0, 100.0, default_x_display, step=0.1)
+        x_display = st.slider(
+            f"Composition {x_title}", x_slider_range[0], x_slider_range[1],
+            min(max(default_x_display, x_slider_range[0]), x_slider_range[1]), step=0.1 if x_limits[1] > 0.1 else 0.01,
+        )
         x_overall = min(max(composition_from_display(x_display, x_unit, *atomic_masses), 0.0), 1.0)
         with st.expander("Grid resolution"):
             high_resolution = st.checkbox(
@@ -511,7 +556,7 @@ def main() -> None:
     if precomputed is not None and (default_settings or system is None):
         reactions = precomputed.invariants
     else:
-        reactions = _cached_invariants(selected_path, data_hash, __version__, n_points)
+        reactions = _cached_invariants(selected_path, data_hash, __version__, n_points, mode)
 
     if precomputed is not None and ((default_settings and full_range) or system is None):
         traced = precomputed.traced
@@ -535,27 +580,33 @@ def main() -> None:
                 "slower machines take longer, rough estimate)."
             )
         traced = _cached_trace(
-            selected_path, data_hash, __version__, T_range[0], T_range[1], n_T, n_points, reactions
+            selected_path, data_hash, __version__, T_range[0], T_range[1], n_T, n_points, reactions, mode
         )
         source_note = "Diagram computed live for these settings."
 
     # Stable phases of the system's default diagram (Gibbs chart filter, info line).
-    stable, metastable = stable_phase_names(definition, precomputed.traced if precomputed is not None else traced)
-    system_info.caption(_system_info(definition, stable, metastable))
+    stable, metastable = stable_phase_names(
+        definition.in_mode(mode), precomputed.traced if precomputed is not None else traced
+    )
+    system_info.caption(_system_info(definition, stable, metastable, mode))
 
-    st.subheader("Phase diagram")
+    st.subheader(f"Phase diagram ({modes[mode]})" if mode else "Phase diagram")
     figure = plot_diagram(
         traced, definition.name,
         dependent_symbol=dependent.symbol, temperature_unit=T_unit,
         composition_unit=x_unit, atomic_masses=atomic_masses,
         display_names=definition.display_names, T_range_k=T_range,
+        x_range=definition.x_range, diagram_marks=definition.diagram_marks,
     )
     st.plotly_chart(figure, width="stretch")
+    if definition.diagram_note:
+        st.caption(definition.diagram_note)
     st.caption(source_note)
     _show_citations(definition)
+    _show_suspended_phases(definition)
     if definition.industry_note:
         if system is not None:
-            melting = _cached_melting_range(selected_path, data_hash, __version__, x_overall)
+            melting = _cached_melting_range(selected_path, data_hash, __version__, x_overall, mode)
         else:
             melting = _table_melting_range(selected_path, data_hash, __version__, x_overall, precomputed.table)
         _show_industry_note(
@@ -569,9 +620,9 @@ def main() -> None:
                 f"Export figure ({fmt.upper()})",
                 # rendered only when clicked
                 data=lambda fmt=fmt: _cached_export(
-                    selected_path, data_hash, __version__, settings, T_unit, x_unit, fmt, traced
+                    selected_path, data_hash, __version__, settings, T_unit, x_unit, fmt, traced, mode, definition
                 ),
-                file_name=f"{selected_name}_phase_diagram.{fmt}",
+                file_name=f"{file_stem}_phase_diagram.{fmt}",
                 mime="image/svg+xml" if fmt == "svg" else "application/pdf",
             )
 
@@ -594,7 +645,9 @@ def main() -> None:
         labels = list(result.phase_fractions)
         # A lone composition set is named by its side of the gap at this T.
         split = gap_split(traced, base_phase_name(labels[0]), T_selected) if len(labels) == 1 else 0.5
-        shown = dict(zip(labels, names.names([(label, result.phase_compositions[label]) for label in labels], split)))
+        shown = dict(zip(labels, names.names(
+            [(label, result.phase_compositions[label]) for label in labels], split, T=T_selected
+        )))
 
         def phase_columns(phases) -> dict:
             columns = {"phase": [shown[p] for p in phases]}
@@ -622,7 +675,7 @@ def main() -> None:
             st.table(
                 {
                     **phase_columns(result.phase_compositions),
-                    x_title: [f"{to_x(x):{COMPOSITION_FORMAT}}" for x in result.phase_compositions.values()],
+                    x_title: [f"{to_x(x):{x_format}}" for x in result.phase_compositions.values()],
                 }
             )
             st.markdown(f"**Molar Gibbs energy ({GIBBS_UNIT})**")
@@ -633,7 +686,7 @@ def main() -> None:
         st.download_button(
             "Download equilibrium (CSV, full precision)",
             data=_equilibrium_csv(result, shown, atomic_masses, dependent.symbol),
-            file_name=f"{selected_name}_equilibrium.csv",
+            file_name=f"{file_stem}_equilibrium.csv",
             mime="text/csv",
         )
 
@@ -668,7 +721,7 @@ def main() -> None:
                 **({"CALPHAD phases": ["+".join(r.phases) for r in reactions]} if names else {}),
                 x_title: [
                     ", ".join(
-                        f"{name} {to_x(r.composition[phase]):{COMPOSITION_FORMAT}}"
+                        f"{name} {to_x(r.composition[phase]):{x_format}}"
                         for phase, name in zip(r.phases, reaction_names(r, names))
                     )
                     for r in reactions
@@ -679,7 +732,7 @@ def main() -> None:
         st.download_button(
             "Download invariant reactions (CSV, full precision)",
             data=invariants_csv(reactions, dependent.symbol),
-            file_name=f"{selected_name}_invariants.csv",
+            file_name=f"{file_stem}_invariants.csv",
             mime="text/csv",
         )
     else:

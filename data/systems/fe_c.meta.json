@@ -1,0 +1,113 @@
+{
+  "name": "Fe-C",
+  "source": "pycalphad_cfe_broshe",
+  "elements": [
+    "FE",
+    "C"
+  ],
+  "dependent_element": "C",
+  "element_names": {
+    "Fe": "Iron",
+    "C": "Carbon"
+  },
+  "t_range_k": [
+    673.15,
+    1873.15
+  ],
+  "x_range": [
+    0.0,
+    0.25
+  ],
+  "display": {
+    "temperature_unit": "°C",
+    "composition_unit": "wt%",
+    "default_x": 0.0361,
+    "composition_decimals": 3
+  },
+  "suspended_phases": {
+    "M7C3_D101": "Left out: its parameters are attributed only to an unidentified \"This work\" (REF1) in the database file. It is never stable below x(C) = 0.25, so leaving it out does not change the displayed diagram.",
+    "DIAMOND_A4": "Left out: diamond is stable only at high pressure. At 1 atm it is always less stable than graphite, so it never appears in the stable diagram; with graphite suspended (the metastable Fe-Fe3C diagram) ferrite + diamond would replace ferrite + Fe3C below 589 °C, which is not the Fe-Fe3C diagram of steel practice."
+  },
+  "modes": [
+    {
+      "key": "metastable",
+      "label": "Metastable Fe-Fe3C (steel practice)",
+      "suspended_phases": [
+        "GRAPHITE"
+      ]
+    },
+    {
+      "key": "stable",
+      "label": "Stable Fe-graphite",
+      "suspended_phases": []
+    }
+  ],
+  "display_names": {
+    "LIQUID": "L",
+    "BCC_A2": {
+      "below_k": 1400.0,
+      "below": "alpha (ferrite)",
+      "above": "delta (ferrite)"
+    },
+    "FCC_A1": "gamma (austenite)",
+    "CEMENTITE_D011": "Fe3C (cementite)",
+    "GRAPHITE": "graphite"
+  },
+  "diagram_note": "Temperatures and compositions are this assessed database's values (e.g. eutectoid 726.5 °C, 0.76 wt% C); they may differ slightly from older textbook figures.",
+  "diagram_marks": {
+    "composition_lines": [
+      {
+        "wt_percent": 2.14,
+        "left_label": "Steels",
+        "right_label": "Cast irons"
+      }
+    ],
+    "critical_lines": {
+      "A1": {
+        "invariant": "eutectoid"
+      },
+      "A3": {
+        "fields": [
+          [
+            "BCC_A2",
+            "FCC_A1"
+          ]
+        ],
+        "edge": "x_max",
+        "below_k": 1400.0
+      },
+      "Acm": {
+        "fields": [
+          [
+            "FCC_A1",
+            "CEMENTITE_D011"
+          ],
+          [
+            "FCC_A1",
+            "GRAPHITE"
+          ]
+        ],
+        "edge": "x_min"
+      }
+    }
+  },
+  "_source": "Assessed Fe-C description of Hallstedt et al. (2010), with the equation of state of Brosh et al. (2007), from pycalphad's test database cfe_broshe.tdb.",
+  "citations": [
+    {
+      "text": "B. Hallstedt, D. Djurovic, J. von Appen, R. Dronskowski, A. Dick, F. Koermann, T. Hickel, J. Neugebauer, Calphad 34 (2010) 129-133.",
+      "url": "https://doi.org/10.1016/j.calphad.2010.01.004"
+    },
+    {
+      "text": "A.T. Dinsdale, CALPHAD 15 (1991) 317-425.",
+      "url": "https://doi.org/10.1016/0364-5916(91)90030-N"
+    },
+    {
+      "text": "Brosh et al., CALPHAD 31 (2007) 173-185 (equation of state; not used at 1 atm beyond its contribution at that pressure).",
+      "url": null
+    },
+    {
+      "text": "Database file: pycalphad 0.11.2 test database cfe_broshe.tdb.",
+      "url": "https://github.com/pycalphad/pycalphad/blob/0.11.2/pycalphad/tests/databases/cfe_broshe.tdb"
+    }
+  ]
+}
