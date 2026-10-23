@@ -16,6 +16,8 @@ jobs:
   test:
     runs-on: ubuntu-latest
     strategy:
+      # every Python version reports its own result; one failing does not cancel the other
+      fail-fast: false
       matrix:
         python-version: ["3.11", "3.12"]
     steps:

@@ -42,6 +42,8 @@
 - Field labels are placed in the part of each field inside the displayed composition range, and a field
   traced as several strips is labelled once.
 - The smoke test loads Fe-C in both modes, offline and online, and selects unit radios by label.
+- CI: compare precomputed data with live results within numerical tolerance (cross-platform
+  floating-point differences); CI matrix no longer fails fast.
 
 ## 0.3.3 - 2026-10-13
 

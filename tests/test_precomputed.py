@@ -128,16 +128,48 @@ def test_missing_or_unreadable_files(tmp_path):
     assert "could not be read" in status(system, tmp_path)[1]
 
 
+# A live computation on another platform (e.g. Linux in CI vs the macOS
+# machine that wrote the files) can differ in the last digits: Fe-C's
+# equation-of-state functions take many log/exp evaluations, and a one-ulp
+# difference moves where a root-finder stops within its own tolerance
+# (measured: 4.5e-9 in an invariant composition, 1e-12 K). Stale data
+# differ by far more than these tolerances; the stale-data check above
+# compares hashes and versions exactly.
+LIVE_T_TOLERANCE_K = 1e-6
+LIVE_X_TOLERANCE = 1e-7
+
+
+def _close(a: float, b: float, tolerance: float) -> bool:
+    return abs(a - b) <= tolerance
+
+
 @pytest.mark.slow
 @pytest.mark.parametrize("system_path, mode", APP_ENTRIES, ids=[_entry_id(e) for e in APP_ENTRIES])
 def test_precomputed_data_equals_a_live_computation(system_path, mode):
     stored = load(precomputed_path(system_path, PRECOMPUTED_DIR, mode))
-    live = compute(system_path, mode)
-    assert stored.invariants == live.invariants
-    assert stored.default_equilibrium == live.default_equilibrium
+    assert_matches_live(stored, compute(system_path, mode))
+
+
+def assert_matches_live(stored, live) -> None:
+    """Stored precomputed data agree with a live computation: the same
+    structure (reaction types and phases, field phases, in order) exactly,
+    numbers within LIVE_T_TOLERANCE_K and LIVE_X_TOLERANCE."""
+    assert [(r.type, r.phases) for r in stored.invariants] == [(r.type, r.phases) for r in live.invariants]
+    for a, b in zip(stored.invariants, live.invariants):
+        assert _close(a.temperature, b.temperature, LIVE_T_TOLERANCE_K), (a, b)
+        assert a.composition.keys() == b.composition.keys()
+        assert all(_close(a.composition[p], b.composition[p], LIVE_X_TOLERANCE) for p in a.composition), (a, b)
+    stored_eq, live_eq = stored.default_equilibrium, live.default_equilibrium
+    assert (stored_eq.T, stored_eq.x_overall, stored_eq.stable_phases) == (live_eq.T, live_eq.x_overall, live_eq.stable_phases)
+    for phase in stored_eq.stable_phases:
+        assert _close(stored_eq.phase_compositions[phase], live_eq.phase_compositions[phase], LIVE_X_TOLERANCE)
+        assert _close(stored_eq.phase_fractions[phase], live_eq.phase_fractions[phase], LIVE_X_TOLERANCE)
+    assert stored_eq.total_gibbs == pytest.approx(live_eq.total_gibbs, rel=1e-9)
     assert [f.phases for f in stored.traced.fields] == [f.phases for f in live.traced.fields]
     for a, b in zip(stored.traced.fields, live.traced.fields):
-        assert np.allclose([a.T, a.x_min, a.x_max], [b.T, b.x_min, b.x_max], rtol=0, atol=1e-12)
+        assert len(a.T) == len(b.T), (a.phases, len(a.T), len(b.T))
+        assert np.allclose(a.T, b.T, rtol=0, atol=LIVE_T_TOLERANCE_K)
+        assert np.allclose([a.x_min, a.x_max], [b.x_min, b.x_max], rtol=0, atol=LIVE_X_TOLERANCE)
 
 
 @pytest.mark.parametrize("system_path, mode", APP_ENTRIES, ids=[_entry_id(e) for e in APP_ENTRIES])
