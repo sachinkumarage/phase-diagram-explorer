@@ -28,10 +28,10 @@ ROOT = Path(__file__).resolve().parents[1]
 SYSTEMS_DIR = ROOT / "data" / "systems"
 FIXTURES_DIR = ROOT / "tests" / "fixtures"
 AG_CU = FIXTURES_DIR / "ag_cu_provisional.json"
-AL_CU = SYSTEMS_DIR / "al_cu.json"
+AL_CU = FIXTURES_DIR / "al_cu_provisional.json"
 SYSTEMS = [
     AG_CU,
-    SYSTEMS_DIR / "al_cu.json",
+    FIXTURES_DIR / "al_cu_provisional.json",
     FIXTURES_DIR / "regular_solution.json",
     FIXTURES_DIR / "gap_eutectic.json",
 ]
@@ -165,7 +165,7 @@ def test_phase_regions_tile_the_diagram(traced_system):
 def test_narrow_al_cu_liquid_field_is_traced(traced_diagram):
     """The Al-rich LIQUID + FCC_AL field is narrower than any display grid
     step and must still be traced."""
-    traced = traced_diagram(SYSTEMS_DIR / "al_cu.json")
+    traced = traced_diagram(FIXTURES_DIR / "al_cu_provisional.json")
     narrow = [field for field in traced.regions if set(field.phases) == {"LIQUID", "FCC_AL"}]
 
     assert len(narrow) == 1

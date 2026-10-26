@@ -8,6 +8,7 @@ from phase_diagram_explorer.models import load_system
 from phase_diagram_explorer.thermo.stoichiometric import StoichiometricPhase
 
 SYSTEMS_DIR = Path(__file__).resolve().parents[1] / "data" / "systems"
+FIXTURES_DIR = Path(__file__).resolve().parent / "fixtures"
 # The provisional two-FCC Ag-Cu model (data/systems/ag_cu.json until 0.3.0).
 AG_CU_PROVISIONAL = Path(__file__).resolve().parent / "fixtures" / "ag_cu_provisional.json"
 
@@ -25,7 +26,7 @@ def test_ag_cu_loads_without_error():
 
 
 def test_al_cu_loads_without_error():
-    definition = load_system(SYSTEMS_DIR / "al_cu.json")
+    definition = load_system(FIXTURES_DIR / "al_cu_provisional.json")
     assert definition.name == "Al-Cu"
     assert {element.symbol for element in definition.elements} == {"Al", "Cu"}
     assert {phase.name for phase in definition.phases} == {"LIQUID", "FCC_AL", "AL2CU"}
@@ -67,8 +68,8 @@ def test_engine_finds_single_al_cu_reaction():
     data, invariant detection over the system's range on the default grid
     finds exactly one LIQUID + FCC_AL + AL2CU reaction, even though its
     Al-rich liquid field is far narrower than any composition grid step.
-    Physical expectations for Al-Cu are in tests/test_physics_regression.py."""
-    definition = load_system(SYSTEMS_DIR / "al_cu.json")
+    (Al-Cu is a test fixture since 1.0.0; it has no physical expectations.)"""
+    definition = load_system(FIXTURES_DIR / "al_cu_provisional.json")
     system = build_system(definition)
 
     reactions = detect_invariants_over_range(system, definition.t_range_k)
@@ -78,7 +79,7 @@ def test_engine_finds_single_al_cu_reaction():
 
 
 def test_al_cu_compound_composition_matches_stoichiometry():
-    definition = load_system(SYSTEMS_DIR / "al_cu.json")
+    definition = load_system(FIXTURES_DIR / "al_cu_provisional.json")
     system = build_system(definition)
 
     al2cu = system["AL2CU"]

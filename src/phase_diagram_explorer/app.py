@@ -12,9 +12,9 @@ toggles, and the equilibrium at the selected (T, x) read from the
 precomputed equilibrium table (lookup.py). Only the Gibbs energy curves and
 the total Gibbs energy need the database; that section then shows a notice.
 
-Public defaults: only validated systems are listed until "Show preview
-systems (provisional data)" is ticked; Ag-Cu is selected first, in °C and
-at% unless a system sets its own display units.
+Public defaults: only validated systems are listed (system files marked
+"_status": "provisional" are never offered); Ag-Cu is selected first, in °C
+and at% unless a system sets its own display units.
 
 A system may have several diagram modes (Fe-C: the metastable Fe-Fe3C
 diagram, with graphite suspended, and the stable Fe-graphite diagram),
@@ -90,8 +90,6 @@ from phase_diagram_explorer.visualization import (
 
 LOGGER = logging.getLogger(__name__)
 
-PROVISIONAL_BANNER = "Preview: provisional thermodynamic data, not yet validated."
-PREVIEW_LABEL = "Show preview systems (provisional data)"
 DEFAULT_SYSTEM = "ag_cu"
 GIBBS_NOTICE = "Gibbs energy curves need the {name} database, which could not be downloaded right now."
 TOTAL_GIBBS_NOTICE = "Needs the {name} database."
@@ -158,7 +156,7 @@ def _is_computable(system_path: str, data_hash: str) -> bool:
 
 
 @st.cache_data(show_spinner=False)
-def _is_preview(system_path: str, data_hash: str) -> bool:
+def _is_provisional(system_path: str, data_hash: str) -> bool:
     """Provisional data, read without loading a sourced system's database."""
     if is_sourced_system(system_path):
         return json.loads(Path(system_path).read_text()).get("_status") == "provisional"
@@ -277,8 +275,6 @@ def _footnote(definition: SystemDefinition, system_path: str) -> str:
     note = f"Data source: {Path(system_path).name} ({definition.name})."
     if definition.source:
         note += " " + definition.source.split(". ")[0].rstrip(".") + "."
-    if definition.is_provisional:
-        note += " Provisional thermodynamic data, not yet validated."
     return note
 
 
@@ -435,12 +431,9 @@ def main() -> None:
         st.error(f"No system definitions with complete Gibbs energy data found in {systems_dir}")
         st.stop()
 
-    with st.sidebar:
-        show_preview = st.checkbox(PREVIEW_LABEL, value=False)
-    if not show_preview:
-        system_paths = [path for path in system_paths if not _is_preview(str(path), _data_hash(str(path)))]
+    system_paths = [path for path in system_paths if not _is_provisional(str(path), _data_hash(str(path)))]
     if not system_paths:
-        st.info(f"No validated systems are available; tick \"{PREVIEW_LABEL}\" in the sidebar.")
+        st.info("No validated systems are available.")
         st.stop()
 
     system_names = _system_names(system_paths)
@@ -471,10 +464,6 @@ def main() -> None:
     database_name = _database_name(selected_path)
     file_stem = f"{selected_name}_{mode}" if mode else selected_name
 
-    if definition.is_provisional:
-        st.warning(PROVISIONAL_BANNER)
-        if definition.status_reason:
-            st.caption(definition.status_reason)
 
     base = definition.base_element
     dependent = definition.dependent_element

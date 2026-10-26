@@ -663,13 +663,41 @@ Against `compute_equilibrium`, with the same phases at every point:
 The tests use 20 points per system, including the gap, the eutectic and
 the pure ends.
 
-## Still open
+## Resolved in 0.3.3 to 1.0.0
 
-- **Al-Cu data (provisional).** The model has no Cu-rich solid phases, so
-  LIQUID is stable at the Cu-rich end at every temperature. The eutectic is
-  at 930.3 K with liquid x(Cu) = 0.0056 and FCC_AL x(Cu) = 0.0009. The
-  assessed values are 821 K, 0.173 and 0.0248. Three strict-xfail tests
-  record this.
+### Phase fractions and the Gibbs energy chart (0.3.3)
+In wt% mode the app showed mole fractions of the phases, which do not obey
+the lever rule in wt%, and drew the Gibbs energy curves against wt%, where
+the common tangent is not a straight line. Phase fractions are now mass
+fractions in wt% and mole fractions in at%, and the Gibbs energy chart is
+always plotted against mole fraction.
+
+### Cross-platform precomputed comparison (0.4.0)
+A test required precomputed Fe-C data to equal a live computation bit for
+bit. On Linux, Fe-C invariant compositions differed from the files written
+on macOS by 4.5e-9 (library rounding in the equation-of-state functions), so
+CI failed. The comparison now uses 1e-6 K and 1e-7 in mole fraction.
+
+### Al-Cu removed (1.0.0)
+The provisional Al-Cu model had no Cu-rich solid phases, so LIQUID was
+stable at the Cu-rich end at every temperature. Its eutectic was at 930.3 K
+with liquid x(Cu) = 0.0056 and FCC_AL x(Cu) = 0.0009, against the assessed
+821 K, 0.173 and 0.0248; three strict-xfail tests recorded this. No openly
+redistributable assessed Al-Cu database was available to replace it, so
+Al-Cu was removed from the app, its precomputed data and the physics tests
+(with the three xfails). The model is kept as a test fixture,
+`tests/fixtures/al_cu_provisional.json`, for engine tests of a stoichiometric
+compound; it is not literature data. With no provisional system left, the
+app's "Show preview systems" option was removed.
+
+### Divide-by-zero warning for interstitial phases (1.0.0)
+Evaluating an interstitial phase such as (FE)1(C,VA)3 at x = 1, which it
+cannot reach, divided by zero. The value was already discarded as out of
+range, so results were correct; the warning is now silenced with a targeted
+`np.errstate` around that division only, and any warning from the
+package's own code fails the test suite.
+
+## Still open
 - **Detection limits.** A field that appears and disappears again between
   two scan levels (5 K apart for invariants; the tracer's starting levels
   for drawing) is not found. A miscibility gap is detected from the sampled
@@ -688,3 +716,25 @@ the pure ends.
   straight segments. Points on the lines are exact equilibrium compositions,
   but between levels a line can deviate from the true curve by up to the
   0.001 bend tolerance.
+
+## Summary of corrections
+
+| Issue | Root cause | Fixed in |
+|---|---|---|
+| App showed a placeholder Ag-Cu diagram (eutectic 650 K instead of 1052 K) | The app never read the system's Gibbs energy coefficients; it built its own placeholder model | 0.1.2 |
+| Ag and Cu ends swapped in the app | Element-to-axis mapping not taken from the system definition | 0.1.2 |
+| Invariant reactions depended on the displayed temperature range | Detection ran on the display grid | 0.1.2 |
+| Compounds placed at the nearest grid point | Compounds sampled on the Gibbs-curve grid instead of their exact composition | 0.1.3 |
+| Spurious Al-Cu invariant reactions | Two-phase fields on both sides of a compound merged by phase set | 0.1.3 |
+| Boundaries and invariant temperatures limited by grid resolution | Boundaries from grid cell labels; invariants on a 2 K grid | 0.1.4 |
+| Tests asserted non-physical Al-Cu results | Tests encoded the provisional model's output as physics | 0.1.4 |
+| False LIQUID#1 + CUMG2 + LIQUID#2 reaction in Cu-Mg | A compound above a solution phase counted as evidence of a miscibility gap | 0.2.1 |
+| Wrong Ag-Cu solvus (x(Cu) 0.26 and 0.54 instead of 0.141 and 0.950) | Provisional two-FCC model parameters | 0.3.0 (assessed NIST data) |
+| Liquid up to 1.7 K early next to a pure element | Tie-line refinement failed in L + FCC fields narrower than one grid cell | 0.3.0 |
+| Ag-Cu differed from pycalphad by up to 4.8e-4 at 525 K | Common-tangent refinement fell back to grid points at the ends of the gap | 0.3.1 |
+| NIST database download refused with HTTP 403 | Python's default User-Agent rejected by the server | 0.3.2 |
+| 2e-6-wide miscibility-gap tie line in Ag-Cu at 504.25 K | Fallback start converged to the trivial solution of the tangent equations | 0.3.2 |
+| Mole fractions shown in wt% mode; Gibbs chart against wt% | Fraction basis and chart axis did not follow the composition unit's physics | 0.3.3 |
+| Precomputed-data test failed on Linux (4.5e-9) | Exact comparison across platforms with different floating-point rounding | 0.4.0 |
+| Provisional Al-Cu eutectic wrong (930 K instead of 821 K) | No openly redistributable assessed Al-Cu database | 1.0.0 (removed) |
+| Divide-by-zero warning for interstitial phases at x = 1 | Division evaluated at an unreachable composition | 1.0.0 |

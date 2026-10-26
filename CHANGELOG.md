@@ -1,5 +1,37 @@
 # Changelog
 
+## 1.0.0 - 2026-10-26
+
+First stable release, as citable research software. No thermodynamic parameters changed and no systems
+were added. The validated systems are Ag-Cu, Pb-Sn and Fe-C.
+
+### Removed
+- **The provisional Al-Cu system**, from the app, the precomputed data and the physics tests, including
+  its three strict-xfail tests. No openly redistributable assessed Al-Cu database was available to replace
+  the provisional model (eutectic at 930 K instead of the assessed 821 K). The model is kept as a test
+  fixture, `tests/fixtures/al_cu_provisional.json`, for engine tests of a stoichiometric compound; its
+  history is in this changelog and `docs/audit_v0.1.md`.
+- **The "Show preview systems (provisional data)" option** and the preview banner: no provisional system
+  remains. System files marked `"_status": "provisional"` are never listed by the app.
+
+### Fixed
+- The numpy divide-by-zero warning when an interstitial phase is evaluated at x = 1, a composition it
+  cannot reach, is silenced with a targeted `np.errstate` around that division only. Results are unchanged.
+- Phase fields lying wholly beyond a cut composition range (the Fe-C liquid miscibility gap past Fe3C) are
+  no longer drawn or listed in the legend.
+
+### Added
+- `CITATION.cff` (CFF 1.2.0) and `.zenodo.json`, so a GitHub release can be archived on Zenodo with a DOI.
+- README for an academic reader: summary, a validation table for Ag-Cu, Pb-Sn and Fe-C (this engine,
+  pycalphad, database reference, experiment), method, data sources and licensing, limitations, how to
+  cite, and an image of the Fe-C metastable diagram (`docs/img/fe_c_metastable.png`).
+- `docs/audit_v0.1.md` ends with a summary of all corrections (issue, root cause, fixed in).
+- Any warning raised from the package's own code fails the test suite (pytest `filterwarnings`).
+
+### Changed
+- The validation reports in `docs/validation/` are regenerated with 1.0.0; the precomputed data are
+  regenerated for the new version. The full test suite has no xfails.
+
 ## 0.4.0 - 2026-10-22
 
 ### Added

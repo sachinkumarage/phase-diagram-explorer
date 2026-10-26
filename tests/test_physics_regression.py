@@ -6,7 +6,8 @@ xfails in 0.1.1, when the app used placeholder Gibbs curves instead of the
 system JSON (see docs/audit_v0.1.md), and pass since 0.1.2. The solvus tests
 were strict xfails with the provisional two-FCC model and pass since 0.3.0,
 when Ag-Cu became the assessed description from the NIST solder database
-(data/systems/ag_cu.meta.json).
+(data/systems/ag_cu.meta.json). The strict xfails for the provisional Al-Cu
+system were removed with that system in 1.0.0 (see docs/audit_v0.1.md).
 
 Composition is the mole fraction of the dependent element
 (SystemDefinition.dependent_element). For Ag-Cu that is Cu, so x = x(Cu); the
@@ -40,19 +41,6 @@ AG_RICH_FCC_X_TOLERANCE = 0.015
 CU_RICH_FCC_X_CU = 0.950
 CU_RICH_FCC_X_TOLERANCE = 0.010
 
-AL_CU_EUTECTIC_K = 821.0
-AL_CU_EUTECTIC_TOLERANCE_K = 3.0
-AL_CU_EUTECTIC_LIQUID_X_CU = 0.173
-AL_CU_EUTECTIC_LIQUID_X_TOLERANCE = 0.010
-AL_CU_FCC_AL_MAX_X_CU = 0.0248
-AL_CU_FCC_AL_MAX_X_TOLERANCE = 0.003
-
-AL_CU_DATA_PENDING = pytest.mark.xfail(
-    strict=True,
-    raises=AssertionError,
-    reason="provisional Al-Cu data; fixed by assessed data",
-)
-
 T_RANGE_LABEL = "Temperature range (K)"
 X_LABEL = "Composition x(Cu) (at%)"
 N_T_LABEL = "Temperature points"
@@ -67,10 +55,6 @@ def _slider(at: AppTest, label: str):
 def _run_app(T_range: tuple[float, float], n_T: int | None = None, system: str = "ag_cu") -> AppTest:
     at = AppTest.from_file(str(APP_PATH), default_timeout=120)
     at.run()
-    if system not in at.selectbox[0].options:  # provisional systems are listed on request
-        (preview,) = [box for box in at.checkbox if box.label == "Show preview systems (provisional data)"]
-        preview.check()
-        at.run()
     at.selectbox[0].set_value(system)
     at.run()
     at.radio[0].set_value("K")  # the public default is °C
@@ -185,25 +169,3 @@ def test_cu_rich_fcc_composition_at_eutectic():
     _, cu_rich = _eutectic_solid_compositions()
     assert cu_rich == pytest.approx(CU_RICH_FCC_X_CU, abs=CU_RICH_FCC_X_TOLERANCE)
 
-
-@pytest.mark.slow
-@AL_CU_DATA_PENDING
-def test_al_cu_eutectic_temperature():
-    T, _ = _eutectic_from_table("al_cu")
-    assert T == pytest.approx(AL_CU_EUTECTIC_K, abs=AL_CU_EUTECTIC_TOLERANCE_K)
-
-
-@pytest.mark.slow
-@AL_CU_DATA_PENDING
-def test_al_cu_eutectic_liquid_composition():
-    _, compositions = _eutectic_from_table("al_cu")
-    assert compositions["LIQUID"] == pytest.approx(
-        AL_CU_EUTECTIC_LIQUID_X_CU, abs=AL_CU_EUTECTIC_LIQUID_X_TOLERANCE
-    )
-
-
-@pytest.mark.slow
-@AL_CU_DATA_PENDING
-def test_al_cu_max_cu_solubility_in_fcc_al_at_eutectic():
-    _, compositions = _eutectic_from_table("al_cu")
-    assert compositions["FCC_AL"] == pytest.approx(AL_CU_FCC_AL_MAX_X_CU, abs=AL_CU_FCC_AL_MAX_X_TOLERANCE)

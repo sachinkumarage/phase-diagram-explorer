@@ -20,7 +20,6 @@ ROOT = Path(__file__).resolve().parents[1]
 APP_PATH = ROOT / "src" / "phase_diagram_explorer" / "app.py"
 SYSTEMS_DIR = ROOT / "data" / "systems"
 FIXTURES_DIR = ROOT / "tests" / "fixtures"
-PROVISIONAL_BANNER = "Preview: provisional thermodynamic data, not yet validated."
 
 THERMO_CLASSES = {"PureElementGibbs", "SolutionPhase", "StoichiometricPhase"}
 OUTSIDE_NOTE = "outside displayed temperature range"
@@ -39,18 +38,9 @@ def _systems_dir(monkeypatch, tmp_path: Path, *files: Path) -> None:
     monkeypatch.setenv("PHASE_DIAGRAM_SYSTEMS_DIR", str(tmp_path))
 
 
-PREVIEW_LABEL = "Show preview systems (provisional data)"
-
-
 def _checkbox(at: AppTest, label: str):
     (box,) = [checkbox for checkbox in at.checkbox if checkbox.label == label]
     return box
-
-
-def _show_preview_systems(at: AppTest) -> None:
-    _checkbox(at, PREVIEW_LABEL).check()
-    at.run()
-    assert not at.exception
 
 
 def _run(system: str = "ag_cu", *, default_units: bool = False, **radios) -> AppTest:
@@ -61,8 +51,6 @@ def _run(system: str = "ag_cu", *, default_units: bool = False, **radios) -> App
     at = AppTest.from_file(str(APP_PATH), default_timeout=120)
     at.run()
     assert not at.exception
-    if system not in at.selectbox[0].options:
-        _show_preview_systems(at)
     at.selectbox[0].set_value(system)
     at.run()  # unit radios are per system
     for radio in at.radio:
@@ -245,31 +233,24 @@ def test_selector_lists_only_systems_with_complete_gibbs_data(monkeypatch, tmp_p
     assert at.selectbox[0].options == ["ag_cu"]
 
 
-def test_shipped_selector_has_no_example_system():
-    at = AppTest.from_file(str(APP_PATH), default_timeout=120).run()
-    _show_preview_systems(at)
-    assert at.selectbox[0].options == ["ag_cu", "al_cu", "fe_c", "pb_sn"]
-
-
-def test_public_defaults_list_only_validated_systems_with_ag_cu_selected():
+def test_public_defaults_list_the_validated_systems_with_ag_cu_selected():
     at = AppTest.from_file(str(APP_PATH), default_timeout=120).run()
     assert not at.exception
-    assert _checkbox(at, PREVIEW_LABEL).value is False
     assert at.selectbox[0].options == ["ag_cu", "fe_c", "pb_sn"]
     assert at.selectbox[0].value == "ag_cu"
     assert len(at.warning) == 0
-
-    _show_preview_systems(at)
-    assert at.selectbox[0].options == ["ag_cu", "al_cu", "fe_c", "pb_sn"]
-    assert at.selectbox[0].value == "ag_cu"
-    at.selectbox[0].set_value("al_cu")
-    at.run()
-    assert [warning.value for warning in at.warning] == [PROVISIONAL_BANNER]
+    # no preview systems remain, so there is nothing to show them
+    assert not [box for box in at.checkbox if "preview" in box.label.lower()]
 
 
-def test_provisional_systems_show_banner():
-    at = _run("al_cu")
-    assert [warning.value for warning in at.warning] == [PROVISIONAL_BANNER]
+def test_provisional_systems_are_never_listed(monkeypatch, tmp_path):
+    _systems_dir(
+        monkeypatch, tmp_path, SYSTEMS_DIR / "ag_cu.meta.json", FIXTURES_DIR / "al_cu_provisional.json",
+        FIXTURES_DIR / "ag_cu_provisional.json",
+    )
+    at = AppTest.from_file(str(APP_PATH), default_timeout=120).run()
+    assert not at.exception
+    assert at.selectbox[0].options == ["ag_cu"]
 
 
 def test_assessed_ag_cu_shows_no_banner_and_its_citations():
@@ -281,11 +262,6 @@ def test_assessed_ag_cu_shows_no_banner_and_its_citations():
     assert "](https://doi.org/10.18434/T4759N)" in citations
     assert "[F.H. Hayes, H.L. Lukas, G. Effenberg, G. Petzow, Z. Metallkd. 77 (1986) 749-754.](" in citations
     assert "[A.T. Dinsdale, CALPHAD 15 (1991) 317-425.](https://doi.org/10.1016/0364-5916(91)90030-N)" in citations
-
-
-def test_provisional_al_cu_has_no_citations():
-    at = _run("al_cu")
-    assert "**Data sources**" not in [element.value for element in at.markdown]
 
 
 def test_validated_systems_show_no_banner(monkeypatch, tmp_path):
@@ -329,13 +305,6 @@ def test_diagram_is_drawn_from_traced_polygons_not_a_heatmap():
     assert {trace["name"] for trace in regions} == AG_CU_LEGEND
     labels = _annotations(diagram, "field label")
     assert sorted(label["text"] for label in labels) == sorted(AG_CU_FIELD_LABELS)
-
-
-def test_narrow_al_cu_reaction_is_in_invariant_table_at_default_grid():
-    at = _run("al_cu")
-    table = _invariant_table(at)
-    assert list(table["type"]) == ["eutectic"]
-    assert set(table["phases"][0].split("+")) == {"FCC_AL", "LIQUID", "AL2CU"}
 
 
 @pytest.mark.parametrize("fmt", ["SVG", "PDF"])
@@ -388,30 +357,26 @@ def test_root_entry_point_runs_the_app():
     assert at.selectbox[0].options == ["ag_cu", "fe_c", "pb_sn"]
 
 
-BANNERS = {"ag_cu": [], "al_cu": [PROVISIONAL_BANNER], "fe_c": [], "pb_sn": []}
-
-
-@pytest.mark.parametrize("system", ["ag_cu", "al_cu", "fe_c", "pb_sn"])
+@pytest.mark.parametrize("system", ["ag_cu", "fe_c", "pb_sn"])
 def test_each_system_loads_from_precomputed_data(system):
     at = _run(system)
     assert any(caption.startswith(PRECOMPUTED_NOTE) for caption in _captions(at))
     assert not [info for info in at.info if LIVE_NOTICE in info.value]
-    assert [warning.value for warning in at.warning] == BANNERS[system]
+    assert len(at.warning) == 0
 
 
 def test_switching_systems_and_units_does_not_raise():
     at = AppTest.from_file(str(ENTRY_POINT), default_timeout=120).run()
-    _show_preview_systems(at)
-    for system in ["al_cu", "pb_sn", "ag_cu", "al_cu"]:
+    for system in ["fe_c", "pb_sn", "ag_cu", "fe_c"]:
         at.selectbox[0].set_value(system)
         at.run()
         assert not at.exception
         for temperature_unit, composition_unit in [("°C", "wt%"), ("K", "at%"), ("°C", "at%")]:
-            at.radio[0].set_value(temperature_unit)
-            at.radio[1].set_value(composition_unit)
+            _radio(at, "Temperature unit").set_value(temperature_unit)
+            _radio(at, "Composition unit").set_value(composition_unit)
             at.run()
             assert not at.exception
-            assert [warning.value for warning in at.warning] == BANNERS[system]
+            assert len(at.warning) == 0
             assert any(caption.startswith(PRECOMPUTED_NOTE) for caption in _captions(at))
 
 
@@ -584,7 +549,7 @@ def test_pb_sn_info_box_follows_the_selected_alloy():
 
 
 def test_other_systems_have_no_info_box():
-    for system in ("ag_cu", "al_cu"):
+    for system in ("ag_cu", "fe_c"):
         at = _run(system)
         assert not [i for i in at.info if i.value.startswith(PB_SN_INFO)]
 
@@ -864,6 +829,10 @@ def test_fe_c_metastable_diagram_labels_and_marks():
     assert _values(division["x"]) == pytest.approx([2.14, 2.14])
     assert diagram["layout"]["xaxis"]["range"] == pytest.approx([0.0, 6.69], abs=0.005)
     assert any(caption.startswith(FE_C_NOTE) for caption in _captions(at))
+    # fields wholly beyond Fe3C (x = 0.25), such as the liquid miscibility gap, are not drawn
+    legend = {trace["name"] for trace in diagram["data"] if trace.get("fill") == "toself"}
+    assert not any("LIQUID#1" in name for name in legend)
+    assert "gamma (austenite) + Fe3C (cementite) (FCC_A1 + CEMENTITE_D011)" in legend
 
 
 def test_fe_c_stable_diagram_has_graphite_and_no_cementite():

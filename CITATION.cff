@@ -1,0 +1,39 @@
+cff-version: 1.2.0
+message: "If you use this software, please cite it as below, and cite the thermodynamic assessments and databases of the systems you use (see README.md)."
+title: "Phase Diagram Explorer"
+abstract: >-
+  Phase Diagram Explorer computes binary temperature-composition phase diagrams
+  at 1 atm from assessed CALPHAD thermodynamic databases (Compound Energy
+  Formalism with Redlich-Kister excess terms and the Inden-Hillert-Jarl magnetic
+  model). Equilibria come from the convex hull of the phase Gibbs energies,
+  refined to exact common tangents; phase boundaries are traced adaptively and
+  invariant reactions are located by root-finding. Results for the validated
+  systems Ag-Cu, Pb-Sn (NIST solder database) and Fe-C (metastable Fe-Fe3C and
+  stable Fe-graphite) are checked against pycalphad on the same database files,
+  against the database authors' published calculations, and against
+  experimental values.
+type: software
+authors:
+  - given-names: Sachin
+    family-names: Kumarage
+version: 1.0.0
+date-released: "2026-10-26"
+license: MIT
+repository-code: "https://github.com/sachinkumarage/phase-diagram-explorer"
+url: "https://phase-diagram-explorer.streamlit.app/"
+keywords:
+  - CALPHAD
+  - phase diagrams
+  - computational thermodynamics
+  - materials science
+preferred-citation:
+  type: software
+  title: "Phase Diagram Explorer"
+  authors:
+    - given-names: Sachin
+      family-names: Kumarage
+  version: 1.0.0
+  year: 2026
+  license: MIT
+  repository-code: "https://github.com/sachinkumarage/phase-diagram-explorer"
+  url: "https://github.com/sachinkumarage/phase-diagram-explorer"

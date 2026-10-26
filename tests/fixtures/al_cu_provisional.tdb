@@ -1,7 +1,7 @@
 $ Al-Cu
 $ Written by phase-diagram-explorer 0.2.0.
-$ TEST FIXTURE: the provisional example system data/systems/al_cu.json exported
-$ with write_tdb. NOT LITERATURE DATA.
+$ TEST FIXTURE: the provisional example system
+$ tests/fixtures/al_cu_provisional.json exported with write_tdb. NOT LITERATURE DATA.
 $ Source: Simplified two-term CALPHAD-style model. Pure-element melting points
 $ and enthalpies of fusion from standard reference tables (Al: Tm=933.47 K,
 $ dHfus=10711 J/mol; Cu: Tm=1357.77 K, dHfus=13050 J/mol), consistent with

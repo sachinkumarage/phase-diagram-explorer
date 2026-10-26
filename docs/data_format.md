@@ -57,7 +57,7 @@ phases of its own two elements.)
 | `name` | Display name. |
 | `elements` | Exactly two elements: base first, then dependent. `atomic_mass` (g/mol) is optional and enables wt% display. |
 | `t_range_k` | Optional `[T_min, T_max]`. Invariants are always found over this range, and it is the default display range. |
-| `_source`, `_status`, `_status_reason` | Optional provenance. `"_status": "provisional"` shows a preview banner. |
+| `_source`, `_status`, `_status_reason` | Optional provenance. `"_status": "provisional"` marks data that are not validated; the app never lists such systems. |
 
 ### Gibbs energies
 

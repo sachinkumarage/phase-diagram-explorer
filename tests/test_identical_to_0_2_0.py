@@ -21,7 +21,10 @@ REFERENCE = json.loads((ROOT / "tests" / "fixtures" / "reference_equilibria_0.2.
 SYSTEMS = list(REFERENCE["systems"])
 TOLERANCE = 1e-10
 # Systems moved since the reference was recorded (keys are the 0.2.0 paths).
-MOVED = {"data/systems/ag_cu.json": "tests/fixtures/ag_cu_provisional.json"}
+MOVED = {
+    "data/systems/ag_cu.json": "tests/fixtures/ag_cu_provisional.json",
+    "data/systems/al_cu.json": "tests/fixtures/al_cu_provisional.json",
+}
 
 
 def _path(key: str) -> Path:

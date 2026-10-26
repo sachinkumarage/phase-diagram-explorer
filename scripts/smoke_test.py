@@ -1,11 +1,9 @@
 """App smoke test for the cloud runtime, using only requirements.txt
 (no pytest): start the app with Streamlit's AppTest, check the public
-defaults (validated systems only, Ag-Cu selected, °C and at%) and both states of the
-preview checkbox, that every system loads from precomputed data, that
-assessed systems show their citations and no preview banner while
-provisional ones show the banner, switch systems, diagram modes (Fe-C
-metastable and stable) and unit toggles, and
-report the cold-start and per-system load times.
+defaults (the validated systems Ag-Cu, Fe-C and Pb-Sn, Ag-Cu selected, °C
+and at%), that every system loads from precomputed data with its citations
+and no warning, switch systems, diagram modes (Fe-C metastable and stable)
+and unit toggles, and report the cold-start and per-system load times.
 
     python scripts/smoke_test.py             # database available (or downloadable)
     python scripts/smoke_test.py --offline   # database unavailable: page must still work
@@ -28,20 +26,16 @@ from streamlit.testing.v1 import AppTest
 ROOT = Path(__file__).resolve().parents[1]
 ENTRY_POINT = ROOT / "streamlit_app.py"
 PRECOMPUTED_NOTE = "Diagram and invariant reactions from precomputed data"
-PROVISIONAL_BANNER = "Preview: provisional thermodynamic data, not yet validated."
-PREVIEW_LABEL = "Show preview systems (provisional data)"
 VALIDATED = ["ag_cu", "fe_c", "pb_sn"]
 DEFAULT_UNITS = ["°C", "at%"]
-ALL_SYSTEMS = ["ag_cu", "al_cu", "fe_c", "pb_sn"]
 # "Gibbs energy curves need the <database> database, which could not be downloaded right now."
 GIBBS_NOTICE = ("Gibbs energy curves need the ", " database, which could not be downloaded right now.")
 SOURCED = {"ag_cu", "fe_c", "pb_sn"}
-# Expected per system: (preview banner shown, citation that must be shown)
-EXPECTED = {
-    "ag_cu": (False, "https://doi.org/10.18434/T4759N"),
-    "al_cu": (True, None),
-    "pb_sn": (False, "https://www.metallurgy.nist.gov/phase/solder/pbsn.html"),
-    "fe_c": (False, "https://doi.org/10.1016/j.calphad.2010.01.004"),
+# Citation that each system must show
+CITATIONS = {
+    "ag_cu": "https://doi.org/10.18434/T4759N",
+    "pb_sn": "https://www.metallurgy.nist.gov/phase/solder/pbsn.html",
+    "fe_c": "https://doi.org/10.1016/j.calphad.2010.01.004",
 }
 # Systems with diagram modes: every mode must load from precomputed data.
 MODES = {"fe_c": ["metastable", "stable"]}
@@ -87,22 +81,13 @@ def main(argv=None) -> int:
     print(f"cold start ({at.selectbox[0].value}): {cold_start:.2f} s")
 
     # public defaults: validated systems only, Ag-Cu selected, in °C and at%
-    (preview,) = [box for box in at.checkbox if box.label == PREVIEW_LABEL]
-    if preview.value or list(at.selectbox[0].options) != VALIDATED or at.selectbox[0].value != "ag_cu":
+    if list(at.selectbox[0].options) != VALIDATED or at.selectbox[0].value != "ag_cu":
         raise AssertionError(f"public defaults: {list(at.selectbox[0].options)}, selected {at.selectbox[0].value}")
     units = [radio(at, "Temperature unit").value, radio(at, "Composition unit").value]
     if units != DEFAULT_UNITS:
         raise AssertionError(f"public default units: {units}")
-    print(f"preview off: {list(at.selectbox[0].options)}")
+    print(f"systems: {list(at.selectbox[0].options)}")
     run_systems(at, VALIDATED, offline)
-
-    (preview,) = [box for box in at.checkbox if box.label == PREVIEW_LABEL]  # current element after reruns
-    preview.check()
-    at.run()
-    if list(at.selectbox[0].options) != ALL_SYSTEMS:
-        raise AssertionError(f"preview on: {list(at.selectbox[0].options)}")
-    print(f"preview on: {list(at.selectbox[0].options)}")
-    run_systems(at, ALL_SYSTEMS, offline)
     print(f"smoke test passed ({'offline' if offline else 'online'})")
     return 0
 
@@ -114,18 +99,17 @@ def run_systems(at: AppTest, systems: list[str], offline: bool) -> None:
         at.run()
         elapsed = time.perf_counter() - start
         check(at, system, offline, system)
-        banner = PROVISIONAL_BANNER in [w.value for w in at.warning]
+        if at.warning:
+            raise AssertionError(f"{system}: unexpected warning: {at.warning[0].value}")
         markdown = [m.value for m in at.markdown]
         cited = "**Data sources**" in markdown
-        expected_banner, citation = EXPECTED.get(system, (None, None))
-        if expected_banner is not None and banner != expected_banner:
-            raise AssertionError(f"{system}: preview banner {'shown' if banner else 'missing'}")
+        citation = CITATIONS.get(system)
         if citation and not (cited and citation in markdown[markdown.index("**Data sources**") + 1]):
             raise AssertionError(f"{system}: citation {citation} not shown")
         info = [i.value for i in at.info if system in INFO_BOXES and i.value.startswith(INFO_BOXES[system])]
         if system in INFO_BOXES and len(info) != 1:
             raise AssertionError(f"{system}: info box not shown")
-        notes = ["preview banner" if banner else "no banner", "citations" if cited else "no citations"]
+        notes = ["citations" if cited else "no citations"]
         if info:
             notes.append("info box")
         print(f"load {system}: {elapsed:.2f} s ({', '.join(notes)})")

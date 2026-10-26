@@ -16,7 +16,7 @@ SYSTEMS_DIR = Path(__file__).resolve().parents[1] / "data" / "systems"
 FIXTURES_DIR = Path(__file__).resolve().parent / "fixtures"
 # The provisional two-FCC Ag-Cu model (data/systems/ag_cu.json until 0.3.0).
 AG_CU = FIXTURES_DIR / "ag_cu_provisional.json"
-AL_CU = SYSTEMS_DIR / "al_cu.json"
+AL_CU = FIXTURES_DIR / "al_cu_provisional.json"
 
 
 def _write_reordered(tmp_path: Path, source: Path) -> Path:
@@ -128,5 +128,5 @@ def test_is_computable():
 
 def test_shipped_systems_all_have_complete_gibbs_data():
     paths = system_files(SYSTEMS_DIR)
-    assert [system_name(path) for path in paths] == ["ag_cu", "al_cu", "fe_c", "pb_sn"]
+    assert [system_name(path) for path in paths] == ["ag_cu", "fe_c", "pb_sn"]
     assert all(is_computable(load_system(path)) for path in paths)

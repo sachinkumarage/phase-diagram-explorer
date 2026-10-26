@@ -205,10 +205,17 @@ class SublatticePhase:
         return dG_dt / dx_dt
 
     def _direct_t(self, x: np.ndarray) -> np.ndarray:
-        """Site fraction of the second species of the mixing sublattice at x."""
+        """Site fraction of the second species of the mixing sublattice at x.
+
+        The denominator vanishes at a composition the phase cannot reach: for
+        an interstitial phase (FE)1(C,VA)a it is a(x - 1), zero at x = 1 (pure
+        C). The resulting inf or nan is clipped by the callers and the point
+        is outside _in_range, where G is inf, so the division warning is
+        silenced here only."""
         numerator = self._D0 + self._dp - x * (self._N0 + self._np)
         denominator = x * (self._nq - self._np) - (self._dq - self._dp)
-        return numerator / denominator
+        with np.errstate(divide="ignore", invalid="ignore"):
+            return numerator / denominator
 
     def _direct_Y(self, t: np.ndarray) -> np.ndarray:
         Y = self._template(len(t))

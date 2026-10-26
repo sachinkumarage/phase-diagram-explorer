@@ -21,14 +21,14 @@ SYSTEMS_DIR = ROOT / "data" / "systems"
 FIXTURES_DIR = ROOT / "tests" / "fixtures"
 JSON_SYSTEMS = [
     FIXTURES_DIR / "ag_cu_provisional.json",
-    SYSTEMS_DIR / "al_cu.json",
+    FIXTURES_DIR / "al_cu_provisional.json",
     FIXTURES_DIR / "regular_solution.json",
     FIXTURES_DIR / "gap_eutectic.json",
 ]
 # Committed TDB fixtures and the JSON systems they were exported from.
 TDB_FIXTURES = {
     "ag_cu_provisional.tdb": FIXTURES_DIR / "ag_cu_provisional.json",
-    "al_cu_provisional.tdb": SYSTEMS_DIR / "al_cu.json",
+    "al_cu_provisional.tdb": FIXTURES_DIR / "al_cu_provisional.json",
     "regular_solution.tdb": FIXTURES_DIR / "regular_solution.json",
     "gap_eutectic.tdb": FIXTURES_DIR / "gap_eutectic.json",
 }
@@ -441,7 +441,7 @@ def test_provisional_fixtures_are_labelled(fixture):
 
 
 def test_written_tdb_reads_with_tdb_conventions(tmp_path):
-    text = to_tdb(load_system(SYSTEMS_DIR / "al_cu.json"))
+    text = to_tdb(load_system(FIXTURES_DIR / "al_cu_provisional.json"))
     assert "PHASE AL2CU % 2 2.0 1.0 !" in text
     # the per-atom formation energy (-12000 J/mol) per formula unit of 3 atoms
     assert "PARAMETER G(AL2CU,AL:CU;0) 1.0 -36000.0; 10000.0 N !" in text
@@ -471,8 +471,8 @@ def test_write_tdb_rejects_unsupported_models():
 def test_system_files_lists_tdb_but_not_metadata(tmp_path):
     shutil.copy(FIXTURES_DIR / "ag_cu_provisional.tdb", tmp_path)
     shutil.copy(FIXTURES_DIR / "ag_cu_provisional.meta.json", tmp_path)
-    shutil.copy(SYSTEMS_DIR / "al_cu.json", tmp_path)
-    assert [path.name for path in system_files(tmp_path)] == ["ag_cu_provisional.tdb", "al_cu.json"]
+    shutil.copy(FIXTURES_DIR / "al_cu_provisional.json", tmp_path)
+    assert [path.name for path in system_files(tmp_path)] == ["ag_cu_provisional.tdb", "al_cu_provisional.json"]
     assert all(is_computable(load_system(path)) for path in system_files(tmp_path))
 
 

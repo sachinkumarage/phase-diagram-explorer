@@ -166,6 +166,13 @@ def diagram_labels(traced: TracedDiagram, names: PhaseNames, to_x, to_T, T_range
     return layout_labels(field_items, invariant_items, lines, plot, line_items, composition_items)
 
 
+def _beyond_range(region, x_range) -> bool:
+    x, _ = region.polygon()
+    return bool(
+        (x_range[1] < 1.0 and np.min(x) >= x_range[1] - 1e-12) or (x_range[0] > 0.0 and np.max(x) <= x_range[0] + 1e-12)
+    )
+
+
 def plot_diagram(
     traced: TracedDiagram,
     system_name: str,
@@ -216,7 +223,9 @@ def plot_diagram(
     point_hover = f"{x_title}: %{{x:{COMPOSITION_FORMAT}}}<br>{T_title}: %{{y:{TEMPERATURE_FORMAT}}}"
 
     fig = go.Figure()
-    regions = traced.regions
+    # Fields lying wholly beyond a cut composition range (Fe-C: past Fe3C at
+    # x = 0.25) are not drawn or listed in the legend.
+    regions = [region for region in traced.regions if not _beyond_range(region, x_range)]
     legend_names = [names.legend(*field_names(names, region, traced)) for region in regions]
     colors = field_colors(legend_names)
 
