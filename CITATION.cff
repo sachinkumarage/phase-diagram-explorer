@@ -10,8 +10,8 @@ abstract: >-
   invariant reactions are located by root-finding. Results for the validated
   systems Ag-Cu, Pb-Sn (NIST solder database) and Fe-C (metastable Fe-Fe3C and
   stable Fe-graphite) are checked against pycalphad on the same database files,
-  against the database authors' published calculations, and against
-  experimental values.
+  against the database authors' published calculations, and, for Ag-Cu and
+  Fe-C, against an experimental assessment and commonly quoted textbook values.
 type: software
 authors:
   - given-names: Sachin

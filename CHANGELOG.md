@@ -29,6 +29,12 @@ were added. The validated systems are Ag-Cu, Pb-Sn and Fe-C.
 - Any warning raised from the package's own code fails the test suite (pytest `filterwarnings`).
 
 ### Changed
+- Every reference value in the README and `docs/validation/` now names its source. Ag-Cu experiment:
+  Subramanian and Perepezko (1993), with DOI. Melting points: ITS-90 (Preston-Thomas 1990) and, for Pb,
+  the ITS-90 secondary reference points (Bedford et al. 1996). The Pb-Sn experimental column is removed,
+  because the commonly quoted eutectic values could not be confirmed against a published assessment;
+  Pb-Sn is validated against NIST's calculation and pycalphad. The Fe-C column is labelled "commonly
+  quoted textbook values", with a note that it is not a single assessed source.
 - The validation reports in `docs/validation/` are regenerated with 1.0.0; the precomputed data are
   regenerated for the new version. The full test suite has no xfails.
 

@@ -23,12 +23,16 @@ NIST's calculated values (https://www.metallurgy.nist.gov/phase/solder/agcu.html
 
 Test tolerances: against NIST ±0.2 K and ±0.0005 in mole fraction; against experiment as listed. The pycalphad temperature is where LIQUID appears on heating at x(Cu) = 0.4 (bisected to 0.001 K); its solid compositions are 0.01 K below that.
 
+Experiment: the assessed eutectic of P.R. Subramanian and J.H. Perepezko, The Ag-Cu (silver-copper) system, J. Phase Equilib. 14 (1993) 62-75, https://doi.org/10.1007/BF02652162 (779.1 °C; liquid 39.9 at.% Cu, (Ag) 14.1 at.% Cu, (Cu) 95.1 at.% Cu).
+
 ## Melting points
 
-| Element | This engine (LIQUID = solid) | Experiment | Difference |
+| Element | This engine (LIQUID = solid) | Reference (ITS-90) | Difference |
 |---|---|---|---|
 | Ag (FCC_A1) | 1234.930 K | 1234.93 ± 0.1 K | -0.000 K |
 | Cu (FCC_A1) | 1357.770 K | 1357.77 ± 0.1 K | -0.000 K |
+
+Reference temperatures: ITS-90 freezing point of silver, 1234.93 K and ITS-90 freezing point of copper, 1357.77 K (H. Preston-Thomas, The International Temperature Scale of 1990 (ITS-90), Metrologia 27 (1990) 3-10, https://doi.org/10.1088/0026-1394/27/1/002).
 
 Melting detected from equilibria at x = 1e-9 and 1 - 1e-9 agrees with these crossings to within 0.05 K.
 

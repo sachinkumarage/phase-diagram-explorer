@@ -4,7 +4,7 @@
 [![Tests](https://github.com/sachinkumarage/phase-diagram-explorer/actions/workflows/tests.yml/badge.svg?branch=main)](https://github.com/sachinkumarage/phase-diagram-explorer/actions/workflows/tests.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 
-Phase Diagram Explorer computes binary temperature-composition phase diagrams at 1 atm from assessed CALPHAD thermodynamic databases. From the Gibbs energy of every phase, it finds the equilibrium phases, their compositions and fractions at any temperature and composition, traces the phase boundaries from exact common tangents, and locates invariant reactions (eutectic, eutectoid, peritectic) by root-finding, so that no result depends on a composition grid. Results are validated in three ways: against pycalphad reading the same database files (invariant temperatures within 0.01 K, compositions within 1e-4 in mole fraction), against the database authors' own published calculations, and against experimental and textbook values. The validated systems are Ag-Cu and Pb-Sn (NIST solder database) and Fe-C (Hallstedt et al. 2010), the last as both the metastable Fe-Fe3C and the stable Fe-graphite diagram. An interactive web app and a command-line interface present the results, with vector (SVG, PDF) figure export and full-precision CSV data.
+Phase Diagram Explorer computes binary temperature-composition phase diagrams at 1 atm from assessed CALPHAD thermodynamic databases. From the Gibbs energy of every phase, it finds the equilibrium phases, their compositions and fractions at any temperature and composition, traces the phase boundaries from exact common tangents, and locates invariant reactions (eutectic, eutectoid, peritectic) by root-finding, so that no result depends on a composition grid. Results are validated in three ways: against pycalphad reading the same database files (invariant temperatures within 0.01 K, compositions within 1e-4 in mole fraction), against the database authors' own published calculations, and, for Ag-Cu and Fe-C, against an experimental assessment and commonly quoted textbook values. The validated systems are Ag-Cu and Pb-Sn (NIST solder database) and Fe-C (Hallstedt et al. 2010), the last as both the metastable Fe-Fe3C and the stable Fe-graphite diagram. An interactive web app and a command-line interface present the results, with vector (SVG, PDF) figure export and full-precision CSV data.
 
 ![Fe-C metastable (Fe-Fe3C) phase diagram computed by Phase Diagram Explorer](docs/img/fe_c_metastable.png)
 
@@ -12,14 +12,14 @@ Phase Diagram Explorer computes binary temperature-composition phase diagrams at
 
 ## Validation
 
-Key invariant reactions computed by this engine, by pycalphad 0.11.2 on the same database file, the database reference values, and experimental or textbook values. Temperatures in °C, compositions of the eutectic or eutectoid liquid or austenite in wt% of the second element (mole fraction for Ag-Cu). Full tables, tolerances and overlay plots: [docs/validation/](docs/validation/).
+Key invariant reactions computed by this engine, by pycalphad 0.11.2 on the same database file, the database reference values, and, where a source is given, experimental or textbook values. Temperatures in °C, compositions of the eutectic or eutectoid liquid or austenite in wt% of the second element (mole fraction for Ag-Cu). Full tables, tolerances and overlay plots: [docs/validation/](docs/validation/).
 
-| System | Reaction | Quantity | This engine | pycalphad | Database reference | Experiment / literature |
+| System | Reaction | Quantity | This engine | pycalphad | Database reference | Experiment / textbook |
 |---|---|---|---|---|---|---|
 | Ag-Cu | L → (Ag) + (Cu) | T (°C) | 779.13 | 779.12 | 779.1 (NIST) | 779 ± 3 [1] |
 | | | liquid x(Cu) | 0.40254 | — | 0.40250 (NIST) | 0.399 ± 0.010 [1] |
-| Pb-Sn | L → (Pb) + (Sn) | T (°C) | 182.24 | 182.24 | 182.2 (NIST) | 183 ± 2 [2] |
-| | | liquid wt% Sn | 62.13 | — | 62.13 (NIST) | 61.9 ± 1.5 [2] |
+| Pb-Sn | L → (Pb) + (Sn) | T (°C) | 182.24 | 182.24 | 182.2 (NIST) | — [2] |
+| | | liquid wt% Sn | 62.13 | — | 62.13 (NIST) | — [2] |
 | Fe-C, metastable | γ → α + Fe3C (eutectoid) | T (°C) | 726.53 | 726.53 | 726.53 | 727 ± 2 [3] |
 | | | γ wt% C | 0.7617 | 0.7616 | 0.7617 | 0.76 ± 0.03 [3] |
 | | L → γ + Fe3C (eutectic) | T (°C) | 1148.16 | 1148.16 | 1148.16 | 1147 ± 2 [3] |
@@ -29,7 +29,11 @@ Key invariant reactions computed by this engine, by pycalphad 0.11.2 on the same
 | | L → γ + graphite | T (°C) | 1153.43 | 1153.44 | 1153.43 | 1153 ± 2 [3] |
 
 - **Database reference.** For Ag-Cu and Pb-Sn, NIST's published calculation from the same database (converted from mass % with the database's molar masses). For Fe-C, the values recorded when the system was added, when this engine and pycalphad agreed to 0.002 K and 4e-5 in mole fraction; the tests hold them to 0.05 K and 0.0005 wt% to catch regressions.
-- **Experiment / literature.** [1] Subramanian and Perepezko, J. Phase Equilib. 14 (1993) 62-75. [2] Commonly reported values for the Pb-Sn eutectic; the repository does not record a single source for them. [3] Textbook and compilation values; the tolerances cover the spread between published assessments and are justified in `tests/test_fe_c.py`.
+- **Experiment / textbook.**
+  - [1] Assessed eutectic (779.1 °C, liquid 39.9 at.% Cu) of P.R. Subramanian and J.H. Perepezko, The Ag-Cu (silver-copper) system, J. Phase Equilib. 14 (1993) 62-75, https://doi.org/10.1007/BF02652162.
+  - [2] No experimental value is shown for Pb-Sn. The commonly quoted eutectic (183 °C, 61.9 wt% Sn) could not be confirmed against a published assessment, so Pb-Sn is validated against NIST's calculation from the same database and against pycalphad only.
+  - [3] Commonly quoted textbook values. They are not taken from a single assessed source and serve as a plausibility check; the tolerances cover the spread between published assessments and are justified in `tests/test_fe_c.py`.
+  - Pure-element melting points (in the per-system pages) are compared with the ITS-90 freezing points of Ag, Cu and Sn (Preston-Thomas, Metrologia 27 (1990) 3-10) and the ITS-90 secondary reference point for Pb (Bedford et al., Metrologia 33 (1996) 133-154).
 - **pycalphad.** The invariant temperature is where the reacting phase appears or disappears inside the reaction line, bisected to 0.001-0.002 K. "—": for Ag-Cu and Pb-Sn the comparison covers the solid phases only (see the system pages).
 - **Engine against pycalphad, more broadly.** Synthetic fixtures (interstitial, magnetic, miscibility gap) and pycalphad's own literature test databases (Pb-Sn, Cu-Mg, Fe-C) agree in Gibbs energies at the same site fractions (within 1e-6 J/mol), stable phases, fractions and compositions at 30 points per system (within 1e-3), and invariant temperatures (within 0.5 K, in practice 0.005 K): [docs/validation/engine_vs_pycalphad.md](docs/validation/engine_vs_pycalphad.md).
 
